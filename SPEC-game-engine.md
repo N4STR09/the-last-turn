@@ -139,7 +139,7 @@ Esta secuencia conserva el orden de `eventos()` seguido de `niveles_dificultad()
 | Acción | Regla portable |
 |---|---|
 | Ayuda | No aplica costes de turno. En Agonía todavía puede producir un evento. Después se ejecutan los hitos/penalizaciones del turno actual. |
-| Buscar comida | Un turno. 40% añade una comida; 60% no cambia la comida. |
+| Buscar comida | Un turno. 60% añade una comida; 40% no cambia la comida. |
 | Descansar | Un turno. Sin refugio no recupera energía. Con refugio, 20% suma 3 de energía antes del coste y 80% suma 5; el coste final resta 1. |
 | Explorar | Un turno. 20% establece refugio, 25% añade una comida y 55% no encuentra nada. |
 | Reparar | Dos turnos. 10% falla; 90% establece `hasShelter = true`. |
