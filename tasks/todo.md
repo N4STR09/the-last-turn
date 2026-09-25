@@ -410,6 +410,7 @@
 - [x] Build estático portable generado en `dist/`.
 - [x] Rutas relativas, favicon local y `.node-version` configurados.
 - [x] Guía de integración Git, carga directa, aceptación y rollback documentada.
-- [ ] Crear o autorizar un repositorio remoto para la publicación.
-- [ ] Crear el proyecto de Cloudflare Pages y elegir Git o carga directa.
-- [ ] Desplegar el build y verificar la URL HTTPS pública.
+- [x] Modo decidido: integración Git, irreversible, con el nombre `the-last-turn`.
+- [ ] Crear el repositorio `the-last-turn` en GitHub y publicarlo.
+- [ ] Conectar el repositorio a un proyecto de Cloudflare Pages llamado `the-last-turn`.
+- [ ] Desplegar y verificar `https://the-last-turn.pages.dev`.

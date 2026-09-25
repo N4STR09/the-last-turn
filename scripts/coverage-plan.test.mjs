@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { coverageArgsFor, scopeFor } from './coverage-plan.mjs';
+import {
+  coverageArgsFor,
+  scopeFor,
+  unrecognizedScopesFor,
+} from './coverage-plan.mjs';
 
 describe('coverage plan', () => {
   it('uses 100% thresholds for the game engine', () => {
@@ -30,5 +34,20 @@ describe('coverage plan', () => {
 
   it('does not confuse a similar directory with a supported scope', () => {
     expect(scopeFor(['src/application'])).toBeUndefined();
+  });
+
+  it('reports nothing unrecognized for a supported scope or no scope', () => {
+    expect(unrecognizedScopesFor([])).toEqual([]);
+    expect(unrecognizedScopesFor(['src/game'])).toEqual([]);
+    expect(unrecognizedScopesFor(['src\\ui', '--reporter=dot'])).toEqual([]);
+  });
+
+  it.each([
+    ['src/ap', 'a typo that would silently fall back to global thresholds'],
+    ['src/application', 'a near-miss directory'],
+    ['C:/repo/src/app', 'an absolute path'],
+  ])('rejects %s instead of failing open', (argument) => {
+    expect(scopeFor([argument])).toBeUndefined();
+    expect(unrecognizedScopesFor([argument])).toEqual([argument]);
   });
 });

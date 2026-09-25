@@ -16,8 +16,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "node scripts/run-coverage.mjs",
+    "test:coverage:scoped": "node scripts/run-coverage.mjs src/app && node scripts/run-coverage.mjs src/ui && node scripts/run-coverage.mjs src/game",
     "check:budget": "node scripts/check-budget.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run test:coverage && npm run build && npm run check:budget"
+    "verify": "npm run typecheck && npm run lint && npm run test:coverage && npm run test:coverage:scoped && npm run build && npm run check:budget"
   },
   "dependencies": {
     "lucide-react": "1.48.0",

@@ -90,7 +90,7 @@ Las reglas y los defectos intencionales están registrados en [`docs/fidelity.md
 
 ## Build web estático
 
-El build se genera en `dist/` y se publica directamente como contenido estático, sin backend ni Pages Functions. El build informa de **77.02 KiB JS gzip** y **2.83 KiB CSS gzip**; la puerta `npm run check:budget` mide los mismos archivos de forma independiente y confirma que están dentro de los presupuestos de 200 KiB y 50 KiB respectivamente. El favicon y todos los recursos visuales se incluyen en el artefacto.
+El build se genera en `dist/` y se publica directamente como contenido estático, sin backend ni Pages Functions. Vite informa de **77.02 kB JS gzip** y **2.83 kB CSS gzip** (kB decimales, que es la unidad que usa Vite); en KiB eso es 74.30 KiB y 2.77 KiB. La puerta `npm run check:budget` mide los archivos ya comprimidos y confirma que están dentro de los presupuestos de 200 KiB y 50 KiB respectivamente. El favicon y todos los recursos visuales se incluyen en el artefacto.
 
 ## Alcance de QA
 

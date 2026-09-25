@@ -1,5 +1,17 @@
 # Publicación web con Cloudflare Pages
 
+## Decisión de publicación
+
+| Aspecto | Valor |
+|---|---|
+| Repositorio | GitHub |
+| Modo | Integración Git |
+| Nombre del proyecto | `the-last-turn` |
+| URL prevista | `https://the-last-turn.pages.dev` |
+| Dominio propio | No en la primera publicación |
+
+El modo de integración Git es irreversible en Cloudflare Pages, así que queda registrado aquí para que la decisión no dependa de una conversación.
+
 ## Objetivo
 
 *The Last Turn* se distribuye como una web 100 % estática. Una persona jugará abriendo una URL HTTPS en su navegador, sin instalar la aplicación, crear una cuenta ni configurar un servidor. El proyecto no necesita Pages Functions, Workers, backend, base de datos ni variables de entorno de producto.
@@ -41,14 +53,14 @@ Si todavía no se quiere conectar un repositorio, Cloudflare Pages permite publi
 npm run build
 ```
 
-Después se puede subir la carpeta `dist/` desde el dashboard o usar Wrangler de forma puntual:
+Después se puede subir la carpeta `dist/` desde el dashboard o usar Wrangler de forma puntual. Se fija la versión para que el comando sea reproducible y no ejecute un paquete de terceros sin versión conocida:
 
 ```text
-npx wrangler pages project create
-npx wrangler pages deploy dist
+npx wrangler@4 pages project create the-last-turn
+npx wrangler@4 pages deploy dist --project-name=the-last-turn
 ```
 
-Wrangler es una herramienta de mantenimiento, no una dependencia del juego ni un requisito para la persona que juega.
+Wrangler es una herramienta de mantenimiento, no una dependencia del juego ni un requisito para la persona que juega. Este camino no es el elegido para la primera publicación: el proyecto `the-last-turn` se creará con integración Git, que es irreversible.
 
 **Decisión que conviene tomar antes del primer despliegue:** la integración Git y la carga directa son modos de proyecto distintos. Cloudflare indica que un proyecto Pages creado con uno no puede cambiar al otro; habría que crear otro proyecto.
 

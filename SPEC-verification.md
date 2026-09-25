@@ -104,10 +104,14 @@ npm run verify
 npm run typecheck
 npm run lint
 npm run test:coverage
+npm run test:coverage:scoped
 npm run build
+npm run check:budget
 ```
 
-El script `test:coverage` usa `scripts/run-coverage.mjs` para conservar la cobertura global cuando no recibe filtros. Si se ejecuta con `src/app`, `src/ui` o `src/game`, restringe `coverage.include` a ese árbol para aplicar los umbrales de la capacidad correspondiente sin reducir el alcance de la verificación global.
+El script `test:coverage` usa `scripts/run-coverage.mjs` para conservar la cobertura global cuando no recibe filtros. Si se ejecuta con `src/app`, `src/ui` o `src/game`, restringe `coverage.include` a ese árbol para aplicar los umbrales de la capacidad correspondiente.
+
+`test:coverage:scoped` ejecuta los tres ámbitos por capacidad dentro de la barrera. Sin esta cadena, los umbrales por capacidad existirían pero nadie los aplicaría: la cobertura global ponderada podría seguir por encima de 80/70/80/80 mientras una capacidad concreta hubiera caído por debajo de su propio umbral, y `verify` pasaría en silencio. Un argumento que apunta bajo `src/` pero no coincide con ninguna capacidad se rechaza con error en lugar de degradar silenciosamente a los umbrales globales.
 
 ## Criterios automáticos
 
