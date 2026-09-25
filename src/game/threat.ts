@@ -30,6 +30,18 @@ export function extraHungerPerTurn(threat: number): number {
   return Math.min(6, Math.floor(threatLoad(threat) / 2));
 }
 
+/**
+ * Hambre que cuesta cada turno: el 1 del coste normal más el extra de amenaza.
+ * Con amenaza 0 el extra es 0 y el coste es el de siempre.
+ *
+ * Vive aquí y no en `actions.ts` porque la interfaz necesita mostrar el coste
+ * por acción antes de que el jugador elija, y dos copias de la misma regla
+ * acabarían discrepando en cuanto una cambiara.
+ */
+export function hungerPerTurn(threat: number): number {
+  return 1 + extraHungerPerTurn(threat);
+}
+
 /** Hambre que quita el nivel normal de la Fase 1, sin escalada. */
 export const BASE_FOOD_RELIEF = 4;
 

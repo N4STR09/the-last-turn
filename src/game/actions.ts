@@ -1,8 +1,9 @@
+import { MAX_FISHING_ATTEMPTS } from './action-cost';
 import { drawRandomInt } from './random';
 import {
-  extraHungerPerTurn,
   foodRelief,
   forageSuccessLimit,
+  hungerPerTurn,
   repairFailureRadius,
   repairTurnCost,
   restEnergyCap,
@@ -23,14 +24,6 @@ type ActionResolver = (
   state: GameCoreState,
   randomInt: RandomInt,
 ) => ActionResolution;
-
-/**
- * Hambre que cuesta cada turno: el 1 del coste normal más el extra de
- * amenaza. Con amenaza 0 el extra es 0 y el coste es el de siempre.
- */
-function hungerPerTurn(threat: number): number {
-  return 1 + extraHungerPerTurn(threat);
-}
 
 function applyTurnCost(state: GameCoreState, turns: number): GameCoreState {
   return {
@@ -148,13 +141,11 @@ function resolveRepair(
   };
 }
 
-const maxFishingAttempts = 6;
-
 function resolveFish(
   state: GameCoreState,
   randomInt: RandomInt,
 ): ActionResolution {
-  for (let attempts = 1; attempts <= maxFishingAttempts; attempts += 1) {
+  for (let attempts = 1; attempts <= MAX_FISHING_ATTEMPTS; attempts += 1) {
     const value = drawRandomInt(randomInt, 1, 3);
 
     if (value === 1) {
@@ -174,13 +165,13 @@ function resolveFish(
   return {
     state: {
       ...state,
-      turn: state.turn + maxFishingAttempts,
+      turn: state.turn + MAX_FISHING_ATTEMPTS,
       hunger:
         state.hunger +
-        maxFishingAttempts * hungerPerTurn(state.threat),
-      energy: state.energy - maxFishingAttempts,
+        MAX_FISHING_ATTEMPTS * hungerPerTurn(state.threat),
+      energy: state.energy - MAX_FISHING_ATTEMPTS,
     },
-    outcome: { type: 'fish-failed', attempts: maxFishingAttempts },
+    outcome: { type: 'fish-failed', attempts: MAX_FISHING_ATTEMPTS },
   };
 }
 
