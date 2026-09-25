@@ -290,7 +290,7 @@ describe('resolveAction', () => {
       expect(calls).toEqual([{ min: 1, max: 3 }]);
     });
 
-    it('acumula los intentos en turno, hambre y coste de energía', () => {
+    it('acumula los intentos en turno, hambre y energía, pero añade una sola vez la comida', () => {
       const state = createCoreState();
 
       const { resolution, calls } = resolve(state, 'fish', [2, 3, 1]);
@@ -300,7 +300,7 @@ describe('resolveAction', () => {
           turn: 4,
           hunger: 3,
           energy: 7,
-          food: 9,
+          food: 3,
         }),
         outcome: { type: 'fish-catch', attempts: 3 },
       });

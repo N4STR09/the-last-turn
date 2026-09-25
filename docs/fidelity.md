@@ -39,7 +39,7 @@ La revisión de solo lectura de los fuentes C detectó y corrigió cuatro desvia
 - Buscar comida obtiene comida con `1..3` y falla con `4..5`.
 - Explorar obtiene comida con `16..20`; `5..15` no encuentra nada.
 - Reparar falla únicamente con `5` y consume dos turnos en ambos casos.
-- Pescar aplica `stat_modifier(attempts)`: turno, hambre y energía suman exactamente el número de intentos, no una suma triangular. Comer no reduce el hambre, pero sí paga el coste normal de un turno.
+- Pescar aplica `stat_modifier(attempts)`: turno, hambre y energía suman exactamente el número de intentos, no una suma triangular; la comida aumenta una sola vez en 3 después del bucle. Comer no reduce el hambre, pero sí paga el coste normal de un turno.
 
 El C comprueba los hitos exactos 15 y 30 antes de aplicar las penalizaciones por superarlos. Esta secuencia queda documentada en la especificación del motor.
 

@@ -143,7 +143,7 @@ function resolveFish(
       turn: state.turn + attempts,
       hunger: state.hunger + attempts,
       energy: state.energy - attempts,
-      food: state.food + attempts * 3,
+      food: state.food + 3,
     },
     outcome: { type: 'fish-catch', attempts },
   };
