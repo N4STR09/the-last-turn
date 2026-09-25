@@ -476,10 +476,10 @@ volverse más difícil de forma continua sin hacerse aritméticamente imposible.
 - [x] `D-01` detectado, medido y resuelto. Antes: techo absoluto 50, ruta ingenua muerta en el 37, niveles 4 a 10 inalcanzables. Después: techo absoluto 191 y turno 103 con juego ordenado.
 - [x] Los tests que afirmaban el defecto se invirtieron: ahora exigen superar el turno 100 y alcanzar el nivel 6 con juego ordenado.
 - [x] Comprobar el artefacto servido: documento y los tres recursos responden 200 y el bundle no contiene URLs de terceros.
-- [ ] Repetir QA manual del aviso, teclado, foco, red y anchos con el build de Fase 2; está bloqueado porque no hay navegador de escritorio conectado a la sesión.
+- [ ] Repetir QA manual del aviso, teclado, foco, red y anchos con el build de Fase 2. Sigue bloqueado: no hay navegador de escritorio conectado a la sesión. Ahora es la única cosa que impide cerrar la fase, porque el despliegue ya está hecho.
 - [x] Decidir y aplicar el reequilibrio que resuelve `D-01`. Aprobada la opción 1: escalar el alivio de la ración.
 - [x] Confirmado con la persona usuaria el ritmo 10, 22, 36, 52… frente a "cada 10 turnos fijos". Se mantiene `n² + 9n`.
-- [ ] Obtener autorización explícita antes de hacer push o desplegar la Fase 2.
+- [x] Autorización explícita obtenida y `push` a `origin/main` realizado con el commit `4e6d856`. Cloudflare compiló y publicó de forma automática, lo que confirma la integración Git sobre `main`. Bundle publicado verificado byte a byte contra el build local.
 
 Los resultados y los puntos pendientes de esta fase están en
 [`docs/qa.md`](../docs/qa.md). El defecto abierto está detallado en

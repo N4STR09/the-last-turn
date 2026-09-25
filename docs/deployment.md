@@ -6,10 +6,29 @@
 |---|---|
 | Repositorio | GitHub |
 | Modo | Integración Git |
+| Rama de producción | `main` |
 | Nombre del proyecto | `the-last-turn` |
 | URL pública disponible | `https://the-last-turn.erpro-ferru.workers.dev` |
 | URL prevista originalmente | `https://the-last-turn.pages.dev` |
 | Dominio propio | No en la primera publicación |
+| Estado | **Integración Git confirmada activa.** El despliegue de la Fase 2 (commit `4e6d856`) se compiló y publicó solo, en unos 50 segundos tras el `push`. No hace falta usar Wrangler para actualizar. |
+
+## Publicar una actualización
+
+```text
+npm run verify
+git push origin main
+```
+
+El `verify` es obligatorio antes del `push`: Cloudflare compila la rama sin volver
+a pasar la barrera, así que un commit que no la haya pasado llega a producción
+igual. Tras el `push`, la publicación tarda del orden de un minuto. Para
+confirmarla, comparar el nombre del bundle servido con el de `dist/assets/`: si
+coinciden, el despliegue es el esperado.
+
+Cloudflare conserva los despliegues anteriores, así que una regresión se puede
+revertir desde el dashboard. La alternativa es revertir el commit en local y
+volver a hacer `push`.
 
 Cloudflare permite publicar contenido estático en dos superficies distintas: Pages, normalmente bajo `*.pages.dev`, y Workers con Static Assets, normalmente bajo `*.workers.dev`. La URL pública observada es `workers.dev`; por eso el registro no afirma que exista un proyecto Pages clásico. El repositorio no contiene `wrangler.toml`, `wrangler.jsonc`, `functions/` ni código de Worker, y la aceptación confirmó que el sitio publicado es el build estático sin peticiones a terceros.
 

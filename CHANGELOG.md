@@ -63,8 +63,14 @@
 - 256 pruebas en verde. Cobertura global 94.04% statements, 87.15% branches, 100%
   functions y 93.96% lines. `src/game` y `src/ui` al 100% en las cuatro
   métricas. Bundle de 75.44 KiB JS gzip y 3.01 KiB CSS gzip.
-- La publicación pública existente todavía no contiene estos cambios locales;
-  queda pendiente una autorización explícita para empujar o desplegar.
+- **Publicado en `https://the-last-turn.erpro-ferru.workers.dev`** con el commit
+  `4e6d856`, que incluye la Fase 1 y la Fase 2. Cloudflare compiló desde `main` de
+  forma automática. El bundle servido (`index-CLf495kK.js`, 248 053 bytes) coincide
+  byte a byte con el build local, y el copy de escalada está dentro del artefacto.
+- La aceptación en navegador del despliegue queda pendiente: no hay navegador de
+  escritorio conectado a la sesión, así que el aviso de escalada, el foco, el
+  cierre con teclado y los anchos estrechos no están verificados sobre la URL
+  pública. Sí están cubiertos por pruebas de componente y de sesión.
 
 ### Known issue
 

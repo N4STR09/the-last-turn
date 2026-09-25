@@ -142,9 +142,56 @@ El build se copió a un host estático estricto, sin fallback de SPA, y se sirvi
 
 Esto confirma que `base: './'` funciona tanto en la raíz de un dominio como en un subdirectorio, que es el motivo de esa configuración.
 
-## Aceptación en la URL pública (build 0.1.0)
+## Aceptación en la URL pública (Fase 2, desplegada)
 
-La publicación accesible está en `https://the-last-turn.erpro-ferru.workers.dev` y se comprobó con Edge/CDP sobre el build servido por Cloudflare. **Este despliegue es anterior a la Fase 1**: los assets públicos son `assets/index-DWaHKHCl.js` y `assets/index-DutSG5GR.css`, mientras que el build local actual produce `assets/index-D3tQLqmK.js`. La URL pública no incluye todavía comer, la pesca acotada ni el meteorito recuperable.
+La publicación accesible está en `https://the-last-turn.erpro-ferru.workers.dev`.
+
+**Despliegue de la Fase 2:** `git push origin main` con el commit `4e6d856` (9 commits
+de Fase 1 y Fase 2). Cloudflare compiló y publicó de forma automática en unos
+50 segundos, lo que **confirma que la integración Git está activa sobre `main`**,
+la duda que quedó abierta tras la publicación de `0.1.0`. Antes del push el sitio
+servía `assets/index-DWaHKHCl.js`; durante la comprobación ya servía
+`assets/index-CLf495kK.js`.
+
+Verificación por HTTP sobre el despliegue:
+
+| Comprobación | Resultado |
+|---|---|
+| `npm run verify` en el commit publicado | Pasa; 256 pruebas, presupuestos dentro de límite |
+| Documento | HTTP 200, `lang="es"`, título `The Last Turn`, referencias `./assets/...` y `./favicon.svg` |
+| JavaScript | HTTP 200, 248 053 bytes, `text/javascript` — **idéntico** al build local |
+| CSS | HTTP 200, 12 498 bytes, `text/css` — **idéntico** al build local |
+| Favicon | HTTP 200, 319 bytes, `image/svg+xml` — **idéntico** al build local |
+| Cabeceras | `Server: cloudflare`, `CF-Cache-Status` fluctuando entre `MISS` y `HIT` según el momento del despliegue |
+
+El bundle servido contiene la Fase 2: aparecen `Haz click para continuar...`,
+`El hambre ya camina más deprisa`, `quitarte salud`, `recuperar un poco de salud` y
+`turnos aguantados`, y el CSS servido contiene `--color-blood`, `--color-hint` y las
+reglas `.escalation-overlay*`. El copy retirado por la Fase 2 no aparece: `Hito`,
+`quince turnos`, `treinta turnos` y `provocar una muerte` están ausentes.
+
+Restricciones de producto, comprobadas sobre el bundle publicado:
+
+| Construcción | Apariciones | Lectura |
+|---|---:|---|
+| `localStorage`, `sessionStorage`, `indexedDB`, `document.cookie` | 0 | Sin persistencia |
+| `navigator.sendBeacon`, `gtag(`, `analytics` | 0 | Sin telemetría |
+| `XMLHttpRequest`, `WebSocket`, `EventSource`, `eval(` | 0 | Sin backend ni evaluación dinámica |
+| `fetch(` | 1 | Polyfill `modulepreload` de react-dom (`preinit`). **No se ejecuta**: la app no crea scripts ni hace `import()` dinámico, y el documento solo referencia un script y una hoja de estilos del propio origen. Queda registrado en vez de declare cero, porque el código está en el artefacto. |
+| URLs externas en el bundle | 5 | `http://www.w3.org` (espacios de nombres XML/SVG/MathML) y `https://react.dev/errors/` (cadena de un mensaje de React). Ninguna se solicita en runtime. |
+
+**Límite de esta aceptación:** no se pudo recorrer la interfaz. No hay navegador de
+escritorio conectado a esta sesión, así que el aviso de escalada a negro, el foco
+del diálogo, el cierre con click, `Enter` y `Espacio`, los atajos inactivos y los
+anchos estrechos **no están verificados en el despliegue**. Quedan pendientes y no
+se afirman aquí.
+
+## Aceptación en la URL pública (build 0.1.0, anterior a la Fase 1)
+
+Se conserva el registro del despliegue inicial, que se comprobó con Edge/CDP. Los
+assets públicos en ese momento eran `assets/index-DWaHKHCl.js` y
+`assets/index-DutSG5GR.css`. La URL pública no incluía entonces comer, la pesca
+acotada ni el meteorito recuperable.
 
 Aun así se verificó sobre el despliegue:
 
@@ -157,7 +204,7 @@ Aun así se verificó sobre el despliegue:
 - El reinicio volvió a `screen--difficulty` y una recarga durante la partida volvió a `screen--start`, sin persistencia.
 - La auditoría de contraste sobre los 42 nodos de texto visibles en el estado auditado no encontró fallos; la auditoría completa de 64 nodos de las cuatro pantallas está registrada arriba.
 
-**Nota de infraestructura:** la URL disponible termina en `workers.dev`, no en `pages.dev`. Cloudflare sirve correctamente el artefacto estático en ese endpoint, pero si la intención era usar el producto Pages clásico, hay que revisar en el dashboard si el proyecto se creó como Pages o como Workers con Static Assets. No se da por verificado un proyecto Pages clásico mientras la URL no sea `*.pages.dev`.
+**Nota de infraestructura:** la URL disponible termina en `workers.dev`, no en `pages.dev`. Cloudflare sirve correctamente el artefacto estático en ese endpoint. El despliegue de la Fase 2 demuestra que la compilación es automática desde `main`, lo que significa que la integración Git está configurada; lo que sigue sin confirmarse es si el proyecto se creó como Pages clásico o como Workers con Static Assets, porque ambos compilan desde Git. Hay que revisarlo en el dashboard. No se da por verificado un proyecto Pages clásico mientras la URL no sea `*.pages.dev`.
 
 Las capturas de pantalla de 360, 768 y 1440 px se generaron temporalmente para la inspección y no forman parte del repositorio. La primera versión no incluye E2E automatizado; la comprobación de navegador se mantiene como QA manual reproducible.
 
