@@ -291,14 +291,14 @@
 **Descripción:** Añadir atajos de acciones y gestión de foco sin interferir con controles.
 
 **Criterios de aceptación:**
-- [ ] B/D/E/R/P/C/? activan únicamente la partida.
-- [ ] Se ignoran repetición, modificadores y eventos en controles interactivos.
-- [ ] Inicio, Dificultad y Fin no registran atajos.
-- [ ] El foco se mueve al `h1` enfocable de cada pantalla.
+- [x] B/D/E/R/P/C/? activan únicamente la partida.
+- [x] Se ignoran repetición, modificadores y eventos en controles interactivos.
+- [x] Inicio, Dificultad y Fin no registran atajos.
+- [x] El foco se mueve al `h1` enfocable de cada pantalla.
 
 **Verificación:**
-- [ ] `npm run test -- src/app` pasa.
-- [ ] `npm run lint` pasa sin warnings.
+- [x] `npm run test -- src/app` pasa.
+- [x] `npm run lint` pasa sin warnings.
 
 **Dependencias:** Tarea 10.
 
