@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 
 import type { GameAction } from '../../game/types';
+import { AppButton } from './AppButton';
 
 export interface ActionGridProps {
   readonly onAction: (action: GameAction) => void;
@@ -79,13 +80,13 @@ export function ActionGrid({ onAction }: ActionGridProps) {
       </div>
       <div className="action-grid">
         {actionDefinitions.map(({ id, label, description, icon: Icon }) => (
-          <button
+          <AppButton
             aria-label={label}
             className="action-button"
             data-action={id}
             key={id}
-            type="button"
             onClick={() => onAction(id)}
+            variant="quiet"
           >
             <span className="action-button__icon" aria-hidden="true">
               <Icon size={22} strokeWidth={1.8} />
@@ -94,7 +95,7 @@ export function ActionGrid({ onAction }: ActionGridProps) {
               <strong>{label}</strong>
               <span>{description}</span>
             </span>
-          </button>
+          </AppButton>
         ))}
       </div>
     </section>

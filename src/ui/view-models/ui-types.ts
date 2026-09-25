@@ -1,4 +1,5 @@
 import type {
+  DeathCause,
   Difficulty,
   GameAction,
 } from '../../game/types';
@@ -41,4 +42,10 @@ export interface GameViewModel {
   readonly turn: number;
   readonly resources: ReadonlyArray<ResourceViewModel>;
   readonly resolution: ResolutionViewModel | null;
+}
+
+export interface GameOverViewModel {
+  readonly difficulty: Difficulty;
+  readonly reportedCause: DeathCause;
+  readonly turnsSurvived: number;
 }

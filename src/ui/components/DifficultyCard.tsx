@@ -1,4 +1,5 @@
 import type { Difficulty } from '../../game';
+import { AppButton } from './AppButton';
 
 export interface DifficultyCardProps {
   readonly difficulty: Difficulty;
@@ -22,13 +23,12 @@ export function DifficultyCard({
         <h2 id={titleId}>{title}</h2>
         <p>{description}</p>
       </div>
-      <button
-        className="button button--secondary"
-        type="button"
+      <AppButton
+        variant="secondary"
         onClick={() => onSelect(difficulty)}
       >
         Jugar en {title}
-      </button>
+      </AppButton>
     </section>
   );
 }

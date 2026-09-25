@@ -1,3 +1,5 @@
+import { AppButton } from '../components/AppButton';
+
 export interface StartScreenProps {
   readonly onBegin: () => void;
 }
@@ -14,9 +16,7 @@ export function StartScreen({ onBegin }: StartScreenProps) {
           Cada decisión cuenta. Overvive todo lo que puedas antes de que el
           refugio, la energía o la comida te abandonen.
         </p>
-        <button className="button button--primary" type="button" onClick={onBegin}>
-          Comenzar
-        </button>
+        <AppButton onClick={onBegin}>Comenzar</AppButton>
         <p className="screen-note">
           La partida no se guarda: dura mientras la página permanezca abierta.
         </p>
