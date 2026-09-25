@@ -311,18 +311,76 @@ describe('resolveAction', () => {
       ]);
     });
 
-    it('no impone un límite artificial de intentos', () => {
+    it('falla tras seis intentos sin éxito', () => {
+      const state = createCoreState({ food: 2 });
+
+      const { resolution, calls } = resolve(state, 'fish', [2, 3, 2, 3, 2, 3]);
+
+      expect(resolution).toEqual({
+        state: createCoreState({
+          turn: 7,
+          hunger: 6,
+          energy: 4,
+          food: 2,
+        }),
+        outcome: { type: 'fish-failed', attempts: 6 },
+      });
+      expect(calls).toEqual([
+        { min: 1, max: 3 },
+        { min: 1, max: 3 },
+        { min: 1, max: 3 },
+        { min: 1, max: 3 },
+        { min: 1, max: 3 },
+        { min: 1, max: 3 },
+      ]);
+    });
+
+    it('permite capturar en el sexto intento', () => {
       const state = createCoreState();
 
-      expect(() => resolve(state, 'fish', [2, 3])).toThrow(
-        'La secuencia de azar se agotó durante la prueba.',
-      );
+      const { resolution } = resolve(state, 'fish', [2, 3, 2, 3, 2, 1]);
+
+      expect(resolution).toEqual({
+        state: createCoreState({
+          turn: 7,
+          hunger: 6,
+          energy: 4,
+          food: 3,
+        }),
+        outcome: { type: 'fish-catch', attempts: 6 },
+      });
     });
   });
 
   describe('eat', () => {
-    it('no consume comida disponible en un estado alcanzable', () => {
-      const state = createCoreState({ food: 5, hunger: 2 });
+    it('consume una comida, reduce el hambre y recupera salud', () => {
+      const state = createCoreState({ food: 5, hunger: 2, health: 6 });
+
+      const result = resolveAction(
+        state,
+        'eat',
+        failIfRandomIntIsCalled(),
+      );
+
+      expect(result).toEqual({
+        state: createCoreState({
+          turn: 2,
+          hunger: 0,
+          energy: 9,
+          food: 4,
+          health: 7,
+        }),
+        outcome: {
+          type: 'eat-consumed',
+          foodConsumed: 1,
+          hungerReduced: 2,
+          healthRecovered: 1,
+        },
+      });
+    });
+
+    it('mantiene el coste cruel cuando no hay comida', () => {
+      const state = createCoreState({ food: 0, hunger: 2 });
 
       const result = resolveAction(
         state,
@@ -335,33 +393,14 @@ describe('resolveAction', () => {
           turn: 2,
           hunger: 3,
           energy: 9,
-          food: 5,
+          food: 0,
         }),
         outcome: { type: 'eat-no-food' },
       });
     });
 
-    it('no limita artificialmente el hambre al aplicar el coste', () => {
-      const state = createCoreState({ food: 0, hunger: -3 });
-
-      const result = resolveAction(
-        state,
-        'eat',
-        failIfRandomIntIsCalled(),
-      );
-
-      expect(result.state).toEqual(
-        createCoreState({
-          turn: 2,
-          hunger: -2,
-          energy: 9,
-          food: 0,
-        }),
-      );
-    });
-
-    it('conserva la rama artificial con food menor que cero', () => {
-      const state = createCoreState({ food: -1, hunger: 3 });
+    it('no baja el hambre de cero al comer con el estómago vacío', () => {
+      const state = createCoreState({ food: 1, hunger: 0, health: 10 });
 
       const result = resolveAction(
         state,
@@ -373,6 +412,32 @@ describe('resolveAction', () => {
         state: createCoreState({
           turn: 2,
           hunger: 0,
+          energy: 9,
+          food: 0,
+          health: 10,
+        }),
+        outcome: {
+          type: 'eat-consumed',
+          foodConsumed: 1,
+          hungerReduced: 0,
+          healthRecovered: 0,
+        },
+      });
+    });
+
+    it('trata la comida negativa como ausencia de comida', () => {
+      const state = createCoreState({ food: -1, hunger: 3 });
+
+      const result = resolveAction(
+        state,
+        'eat',
+        failIfRandomIntIsCalled(),
+      );
+
+      expect(result).toEqual({
+        state: createCoreState({
+          turn: 2,
+          hunger: 4,
           energy: 9,
           food: -1,
         }),

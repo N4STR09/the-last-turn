@@ -57,6 +57,13 @@ export type ActionOutcome =
   | { readonly type: 'repair-failed' }
   | { readonly type: 'repair-succeeded' }
   | { readonly type: 'fish-catch'; readonly attempts: number }
+  | { readonly type: 'fish-failed'; readonly attempts: number }
+  | {
+      readonly type: 'eat-consumed';
+      readonly foodConsumed: 1;
+      readonly hungerReduced: number;
+      readonly healthRecovered: 0 | 1;
+    }
   | { readonly type: 'eat-no-food' };
 
 export type GameEvent =

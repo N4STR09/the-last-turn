@@ -193,7 +193,9 @@ function actionIdForOutcome(outcome: ActionOutcome): GameAction {
     case 'repair-succeeded':
       return 'repair';
     case 'fish-catch':
+    case 'fish-failed':
       return 'fish';
+    case 'eat-consumed':
     case 'eat-no-food':
       return 'eat';
   }
@@ -265,6 +267,13 @@ function outcomeCopy(outcome: ActionOutcome): OutcomeCopy {
         headline: 'Levantas o reparas el refugio.',
         details: ['El trabajo consume dos turnos.'],
       };
+    case 'fish-failed':
+      return {
+        headline: 'La pesca no consigue nada.',
+        details: [
+          `La pesca agota ${outcome.attempts} intentos y no añade comida.`,
+        ],
+      };
     case 'fish-catch': {
       const attempts = outcome.attempts;
       return {
@@ -275,6 +284,16 @@ function outcomeCopy(outcome: ActionOutcome): OutcomeCopy {
         ],
       };
     }
+    case 'eat-consumed':
+      return {
+        headline: 'Comes una ración.',
+        details: [
+          `Consumes 1 comida y reduces el hambre en ${outcome.hungerReduced}.`,
+          outcome.healthRecovered === 1
+            ? 'La comida te ayuda a recuperar 1 de salud.'
+            : 'Tu salud ya estaba al máximo.',
+        ],
+      };
     case 'eat-no-food':
       return {
         headline: 'No tienes nada que comer.',

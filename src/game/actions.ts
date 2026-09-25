@@ -125,47 +125,71 @@ function resolveRepair(
   };
 }
 
+const maxFishingAttempts = 6;
+
 function resolveFish(
   state: GameCoreState,
   randomInt: RandomInt,
 ): ActionResolution {
-  let attempts = 0;
-  let value: number;
+  for (let attempts = 1; attempts <= maxFishingAttempts; attempts += 1) {
+    const value = drawRandomInt(randomInt, 1, 3);
 
-  do {
-    attempts += 1;
-    value = drawRandomInt(randomInt, 1, 3);
-  } while (value !== 1);
+    if (value === 1) {
+      return {
+        state: {
+          ...state,
+          turn: state.turn + attempts,
+          hunger: state.hunger + attempts,
+          energy: state.energy - attempts,
+          food: state.food + 3,
+        },
+        outcome: { type: 'fish-catch', attempts },
+      };
+    }
+  }
 
   return {
     state: {
       ...state,
-      turn: state.turn + attempts,
-      hunger: state.hunger + attempts,
-      energy: state.energy - attempts,
-      food: state.food + 3,
+      turn: state.turn + maxFishingAttempts,
+      hunger: state.hunger + maxFishingAttempts,
+      energy: state.energy - maxFishingAttempts,
     },
-    outcome: { type: 'fish-catch', attempts },
+    outcome: { type: 'fish-failed', attempts: maxFishingAttempts },
   };
 }
 
 function resolveEat(state: GameCoreState): ActionResolution {
+  if (state.food <= 0) {
+    return {
+      state: applyTurnCost(state, 1),
+      outcome: { type: 'eat-no-food' },
+    };
+  }
+
+  const hungerReduced = Math.min(state.hunger, 3);
+  const healthRecovered = state.health < 10 ? 1 : 0;
   const nextState = applyTurnCost(
-    state.food >= 0
-      ? state
-      : {
-          ...state,
-          hunger: state.hunger - 4,
-        },
+    {
+      ...state,
+      food: state.food - 1,
+      hunger: state.hunger - 4,
+      health: state.health + healthRecovered,
+    },
     1,
   );
 
   return {
-    state:
-      state.food < 0
-        ? { ...nextState, hunger: Math.max(0, nextState.hunger) }
-        : nextState,
-    outcome: { type: 'eat-no-food' },
+    state: {
+      ...nextState,
+      hunger: Math.max(0, nextState.hunger),
+    },
+    outcome: {
+      type: 'eat-consumed',
+      foodConsumed: 1,
+      hungerReduced,
+      healthRecovered,
+    },
   };
 }
 
