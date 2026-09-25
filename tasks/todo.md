@@ -90,18 +90,18 @@
 **Descripción:** Portar las siete acciones, tiradas y costes del C sin añadir correcciones.
 
 **Criterios de aceptación:**
-- [ ] Cada resultado de acción tiene pruebas y 100% de cobertura para `src/game/actions.ts` y `src/game/random.ts`.
-- [ ] Descansar con y sin refugio consume las tiradas correctas.
-- [ ] Explorar cubre 1–4, 5–15 y 16–20.
-- [ ] Reparar falla únicamente con 5.
-- [ ] Pescar termina cuando obtiene 1 y mantiene la tirada hasta 3.
-- [ ] Comer conserva la rama inalcanzable de `food < 0` sin modificar comida.
-- [ ] El estado de entrada no se muta.
+- [x] Cada resultado de acción tiene pruebas y 100% de cobertura para `src/game/actions.ts` y `src/game/random.ts`.
+- [x] Descansar con y sin refugio consume las tiradas correctas.
+- [x] Explorar cubre 1–4, 5–15 y 16–20.
+- [x] Reparar falla únicamente con 1.
+- [x] Pescar termina cuando obtiene 1 y mantiene la tirada hasta 3.
+- [x] Comer conserva la rama inalcanzable de `food < 0` sin modificar comida.
+- [x] El estado de entrada no se muta.
 
 **Verificación:**
-- [ ] Se observa RED antes de cada implementación.
-- [ ] `npm run test -- src/game` pasa.
-- [ ] `npm run test:coverage -- src/game` pasa.
+- [x] Se observa RED antes de cada implementación.
+- [x] `npm run test -- src/game` pasa.
+- [x] `npm run test:coverage -- src/game` pasa.
 
 **Dependencias:** Tarea 3.
 
