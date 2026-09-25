@@ -2,7 +2,7 @@
 
 ## Resumen
 
-Construiremos una aplicación React + Vite + TypeScript como web 100 % estática que migre las reglas actuales del prototipo C sin corregirlas silenciosamente. El motor de juego se implementará primero mediante TDD y con azar inyectable; después se construirán la interfaz, la capa de aplicación y la verificación integral.
+Construiremos una aplicación React + Vite + TypeScript como web 100 % estática que migre las reglas del prototipo C y aplique explícitamente la Fase 1 aprobada de supervivencia. El motor de juego se implementará primero mediante TDD y con azar inyectable; después se construirán la interfaz, la capa de aplicación y la verificación integral.
 
 ## Objetivo de la primera entrega
 
@@ -12,7 +12,7 @@ Completar un flujo web jugable mediante navegador, sin instalación para la pers
 Inicio → Dificultad → Partida → Acción → Resultado → Fin o siguiente turno → Reinicio
 ```
 
-La entrega se considera terminada cuando `npm run verify` pasa, el build es estático, el navegador no muestra errores y el ledger de fidelidad demuestra que los comportamientos conocidos del C no fueron corregidos.
+La entrega se considera terminada cuando `npm run verify` pasa, el build es estático, el navegador no muestra errores y el ledger de fidelidad demuestra qué comportamiento del C se conserva y qué regla de la Fase 1 se cambió de forma explícita.
 
 ## Decisiones de arquitectura
 
@@ -25,6 +25,12 @@ La entrega se considera terminada cuando `npm run verify` pasa, el build es est�
 - Las acciones y reglas se implementarán en cortes pequeños con RED → GREEN → REFACTOR.
 - Las versiones se fijarán en `package.json` y `package-lock.json`.
 - Cada corte verificado se guardará en un commit atómico.
+
+## Actualización de alcance: Fase 1 de supervivencia
+
+La entrega inicial ya está construida. Antes de esta actualización, el motor reproducía los bloqueos matemáticos del C. La Fase 1 los sustituye por reglas documentadas de forma explícita: comer consume comida y recupera salud, la pesca está acotada, el meteorito quita un punto de salud y los hitos solo se atraviesan una vez. La prueba de aceptación es una ruta determinista que supera el turno 100 en Normal y Agonía, sin introducir victoria, persistencia ni backend.
+
+La especificación vigente es [`SPEC-game-engine.md`](../SPEC-game-engine.md); el contraste con la línea base está en [`docs/fidelity.md`](../docs/fidelity.md).
 
 ## Dependencias
 
@@ -81,12 +87,12 @@ Especificaciones aprobadas
 ### Tarea 4: Acciones
 
 - Implementar por TDD las siete acciones.
-- Preservar orden de tiradas, costes y bugs de comer/pescar.
+- Preservar orden de tiradas y costes; aplicar las reglas aprobadas de comer y pesca renovable con pruebas de límites.
 
 ### Tarea 5: Eventos, hitos y fin
 
 - Implementar eventos de Agonía.
-- Implementar hitos/penalizaciones en ambas dificultades.
+- Implementar meteorito recuperable y hitos/penalizaciones de una sola vez en ambas dificultades.
 - Separar condición de fin y causa comunicada.
 
 ### Tarea 6: API del motor
@@ -182,7 +188,7 @@ Especificaciones aprobadas
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
 | Corregir accidentalmente un defecto del C | Alto | Registro `F-*`, pruebas de fidelidad y revisión del diff contra la especificación. |
-| La pesca infinita bloquea una prueba | Alto | No probar secuencias infinitas; conservar el azar real sin límite y probar solo secuencias finitas. |
+| La pesca infinita bloquea una prueba | Alto | Imponer el máximo aprobado de seis intentos y probar éxito temprano, éxito en el sexto y agotamiento. |
 | Diferencia entre el azar de C y el de la web | Medio | Inyectar `RandomInt`; documentar la diferencia `W-03` sin replicar el comportamiento binario. |
 | El reducer consume azar y React lo duplica en modo estricto | Alto | Resolver fuera del reducer y despachar una transición pura. |
 | La interfaz reimplementa la lógica del juego | Alto | Componentes con modelos de vista y callbacks; se prohíbe importar `resolveTurn`. |

@@ -87,15 +87,15 @@
 
 ## Tarea 4: Implementar acciones con TDD
 
-**Descripción:** Portar las siete acciones, tiradas y costes del C sin añadir correcciones.
+**Descripción:** Portar las siete acciones, tiradas y costes del C, aplicando las correcciones explícitas de la Fase 1 donde corresponda.
 
 **Criterios de aceptación:**
 - [x] Cada resultado de acción tiene pruebas y 100% de cobertura para `src/game/actions.ts` y `src/game/random.ts`.
 - [x] Descansar con y sin refugio consume las tiradas correctas.
 - [x] Explorar cubre 1–4, 5–15 y 16–20.
 - [x] Reparar falla únicamente con 5.
-- [x] Pescar termina cuando obtiene 1 y mantiene la tirada hasta 3.
-- [x] Comer conserva la rama inalcanzable de `food < 0` sin modificar comida.
+- [x] Pescar termina al obtener 1 o tras seis intentos como máximo, con éxito permitido en el sexto.
+- [x] Comer consume una ración, reduce el hambre y recupera salud; sin comida conserva el coste cruel.
 - [x] El estado de entrada no se muta.
 
 **Verificación:**
@@ -115,20 +115,20 @@
 
 ## Tarea 5: Implementar eventos, dificultad y fin
 
-**Descripción:** Portar eventos, hitos, penalizaciones y las dos causas de muerte observables.
+**Descripción:** Portar eventos, hitos, presión de dificultad y las dos causas de muerte observables, con las reglas de Fase 1 aplicadas de forma explícita.
 
 **Criterios de aceptación:**
 - [x] Tormenta cubre 1–10, mapache 51–59 y meteorito 99.
 - [x] Normal no consume RNG de evento; Agonía consume uno por resolución.
-- [x] Los hitos exactos 15 y 30 y las penalizaciones `>15` y `>30` se aplican en ambas dificultades.
-- [x] Una acción multiturno no repite penalizaciones por turnos saltados.
+- [x] Los hitos exactos 15 y 30, y una penalización por cada cruce, se aplican en ambas dificultades.
+- [x] Una acción multiturno cruza cada hito como máximo una vez.
 - [x] `condition` y `reportedCause` reproducen las precedencias diferentes del C.
-- [x] Meteorito termina la partida mediante salud.
+- [x] Meteorito quita un punto de salud y termina la partida solo cuando la salud llega a cero.
 
 **Verificación:**
 - [x] `npm run test -- src/game` pasa.
 - [x] `npm run typecheck` pasa.
-- [x] No se ejecutan secuencias de pesca infinitas.
+- [x] No se ejecutan secuencias de pesca infinitas; el máximo por acción es seis.
 
 **Dependencias:** Tarea 3.
 
@@ -415,3 +415,38 @@
 - [x] Conectar el repositorio al despliegue estático de Cloudflare.
 - [x] Desplegar y verificar `https://the-last-turn.erpro-ferru.workers.dev`.
 - [ ] Confirmar en el dashboard si Cloudflare lo ha registrado como Pages clásico o Workers con Static Assets; la URL pública disponible termina en `workers.dev`, no en `pages.dev`.
+
+## Fase 1: supervivencia infinita
+
+**Descripción:** Reemplazar los bloqueos matemáticos del prototipo C por reglas
+renovables documentadas, manteniendo la ausencia de victoria y la arquitectura
+estática.
+
+**Criterios de aceptación:**
+- [x] Comer consume una ración, reduce el hambre y recupera salud.
+- [x] La pesca termina tras seis intentos como máximo y tiene un resultado de fallo explícito.
+- [x] El meteorito quita un punto de salud y solo mata cuando la salud llega a cero.
+- [x] Los hitos 15 y 30 aplican presión solo al cruzarse, incluso con acciones multiturno.
+- [x] Una estrategia determinista supera el turno 100 en Normal y Agonía.
+- [x] La UI mantiene la salud oculta y comunica las nuevas resoluciones.
+- [x] La línea base del C y las desviaciones de Fase 1 están separadas en la documentación.
+
+**Verificación de esta fase:**
+- [x] Ejecutar `npm test`, `npm run verify` y `npm run build` con el árbol final: 158 pruebas, cobertura global 91.32% statements / 84.42% branches / 100% functions / 91.25% lines, bundle de 74.58 KiB JS gzip y 2.77 KiB CSS gzip.
+- [x] Comprobar el artefacto servido: documento y los tres recursos responden 200 y el bundle no contiene URLs de terceros.
+- [ ] Repetir QA manual del flujo, teclado, foco, red y anchos con el build de Fase 1; está bloqueado porque no hay navegador de escritorio conectado a la sesión.
+- [ ] Obtener autorización explícita antes de hacer push o desplegar la Fase 1.
+
+Los resultados y los puntos pendientes de esta fase están en
+[`docs/qa.md`](../docs/qa.md).
+
+**Archivos probables:**
+- `src/game/actions.ts`
+- `src/game/events.ts`
+- `src/game/difficulty.ts`
+- `src/game/engine.ts`
+- `src/game/__tests__/`
+- `src/app/game-view-model.ts`
+- `SPEC-infinite-survival.md`
+- `SPEC-game-engine.md`
+- `docs/fidelity.md`

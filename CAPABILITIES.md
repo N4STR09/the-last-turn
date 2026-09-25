@@ -2,11 +2,11 @@
 
 ## Objetivo
 
-Migrar el prototipo C a una aplicación web estática, reproducible y verificable, preparada para publicarse por Internet sin instalación para quien juega. Se conservarán las reglas actuales y los defectos conocidos se registrarán como desviaciones fieles pendientes de mejora posterior.
+Migrar el prototipo C a una aplicación web estática, reproducible y verificable, preparada para publicarse por Internet sin instalación para quien juega. La línea base se conserva como referencia; la Fase 1 aplica de forma explícita reglas renovables que permiten sobrevivir sin victoria.
 
 | ID | Capacidad | Responsabilidad | Depende de |
 |---|---|---|---|
-| `game-engine` | Motor de reglas | Estado del juego, acciones, turnos, azar, eventos, dificultad y condiciones de fin mediante una interfaz independiente de React y del navegador. | — |
+| `game-engine` | Motor de reglas | Estado del juego, acciones renovables, turnos, azar, eventos, dificultad y condiciones de fin mediante una interfaz independiente de React y del navegador. | — |
 | `web-interface` | Interfaz interactiva | Presentación del estado, controles de acciones, resultados, eventos, dificultad y pantalla final; accesibilidad y adaptación a distintos tamaños de pantalla. | `game-engine` |
 | `app-shell` | Experiencia web | Inicio de partida, selección de dificultad, ciclo de vida sin persistencia y conexión entre motor e interfaz. | `game-engine`, `web-interface` |
 | `verification` | Calidad verificable | Pruebas del motor, pruebas de componentes, lint, TypeScript, build de producción y comprobación manual en navegador. | `game-engine`, `web-interface`, `app-shell` |
@@ -26,7 +26,7 @@ Migrar el prototipo C a una aplicación web estática, reproducible y verificabl
 - Navegadores modernos, con diseño responsive y accesible.
 - Estado de juego explícito y funciones de transición deterministas mediante una fuente de azar inyectable.
 - La interfaz muestra la partida; no utiliza `localStorage`, servicios externos ni animaciones que bloqueen la acción.
-- Los bugs conocidos de la versión C se conservan durante la migración fiel y quedan registrados para correcciones posteriores.
+- La línea base de las reglas C se conserva en el ledger; los cambios de Fase 1 están justificados, probados y no se presentan como correcciones silenciosas.
 
 ## Orden de construcción
 

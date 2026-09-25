@@ -35,9 +35,9 @@ No habrá selector de dificultad en esta pantalla.
 Opciones:
 
 - **Normal:** no habilita eventos aleatorios.
-- **Agonía:** habilita eventos aleatorios que pueden destruir el refugio, robar comida o matar al jugador.
+- **Agonía:** habilita eventos aleatorios que pueden destruir el refugio, robar comida o quitarte salud.
 
-La interfaz aclarará que ambas dificultades comparten el aumento de hambre, la pérdida de energía y los hitos de los turnos 15 y 30. Esta aclaración refleja el C y evita atribuir a Agonía una penalización que también existe en Normal.
+La interfaz aclarará que ambas dificultades comparten el aumento del hambre, la pérdida de energía y una presión de una sola vez al cruzar los hitos de los turnos 15 y 30. Esta aclaración mantiene la presión compartida sin atribuirle a Agonía una regla que también existe en Normal.
 
 Cada opción será un control grande, con teclado, foco claro y confirmación mediante botón. No se usarán inputs ocultos ni tarjetas que parezcan clicables sin serlo.
 

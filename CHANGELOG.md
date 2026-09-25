@@ -2,7 +2,16 @@
 
 ## [Unreleased]
 
-Sin cambios pendientes.
+### Changed
+
+- Fase 1 de supervivencia: comer consume una ración, reduce el hambre y recupera salud; la pesca termina tras seis intentos como máximo; el meteorito quita un punto de salud en lugar de matar desde salud inicial; los hitos 15 y 30 aplican una penalización solo al cruzarse.
+- La interfaz comunica las nuevas resoluciones sin mostrar la salud y permite una estrategia determinista que supera el turno 100 en Normal y Agonía.
+- `docs/fidelity.md` y `SPEC-game-engine.md` separan la línea base histórica del C de las desviaciones explícitas de la Fase 1.
+
+### Verification
+
+- Se añadieron pruebas de supervivencia, meteorito recuperable, pesca fallida, hitos cruzados y copy de interfaz.
+- La publicación pública existente todavía no contiene estos cambios locales; queda pendiente una autorización explícita para empujar o desplegar.
 
 ## 0.1.0
 

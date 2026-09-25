@@ -1,6 +1,6 @@
 # The Last Turn
 
-Versión web de *The Last Turn* construida con React + Vite + TypeScript. La aplicación reproduce las reglas del prototipo C auditado y conserva también sus defectos deliberados: no hay victoria, la salud no se muestra, comer no reduce el hambre y la partida termina únicamente por las condiciones del modelo.
+Versión web de *The Last Turn* construida con React + Vite + TypeScript. La aplicación parte del prototipo C auditado y aplica explícitamente la Fase 1 de supervivencia: no hay victoria, la salud permanece oculta, comer consume una ración y reduce el hambre, la pesca tiene un máximo de seis intentos y los hitos solo presionan una vez.
 
 La aplicación es una web 100 % estática preparada para publicarse en Cloudflare Pages. No tiene backend, cuentas, multijugador, telemetría, persistencia, Web Storage, endpoints ni recursos de terceros en runtime. Una persona jugará abriendo una URL HTTPS, sin instalar ni configurar nada.
 
@@ -86,11 +86,11 @@ El azar se inyecta en el motor. El adaptador de producción (`browserRandomInt`)
 
 ## Fidelidad
 
-Las reglas y los defectos intencionales están registrados en [`docs/fidelity.md`](docs/fidelity.md). La web no intenta reproducir bit a bit el `rand()` de MinGW: usa enteros nominalmente uniformes con extremos inclusivos y documenta esa diferencia.
+Las reglas actuales, la línea base histórica del C y los cambios deliberados de la Fase 1 están registrados en [`docs/fidelity.md`](docs/fidelity.md) y [`SPEC-game-engine.md`](SPEC-game-engine.md). La web no intenta reproducir bit a bit el `rand()` de MinGW: usa enteros nominalmente uniformes con extremos inclusivos y documenta esa diferencia.
 
 ## Build web estático
 
-El build se genera en `dist/` y se publica directamente como contenido estático, sin backend ni Pages Functions. Vite informa de **77.02 kB JS gzip** y **2.83 kB CSS gzip** (kB decimales, que es la unidad que usa Vite); en KiB eso es 74.30 KiB y 2.77 KiB. La puerta `npm run check:budget` mide los archivos ya comprimidos y confirma que están dentro de los presupuestos de 200 KiB y 50 KiB respectivamente. El favicon y todos los recursos visuales se incluyen en el artefacto.
+El build se genera en `dist/` y se publica directamente como contenido estático, sin backend ni Pages Functions. La puerta `npm run check:budget` vuelve a comprimir cada archivo de `dist/assets/` con gzip nivel 9 y confirma que el total está dentro de los presupuestos: **74.58 KiB de JavaScript** (37,3 % de 200 KiB) y **2.77 KiB de CSS** (5,5 % de 50 KiB). Vite imprime cifras propias (**77.30 kB** y **2.83 kB** gzip) que difieren en unos pocos KiB porque ajusta gzip de forma distinta; la puerta aplica siempre su propia medición. El favicon y todos los recursos visuales se incluyen en el artefacto.
 
 ## Alcance de QA
 
