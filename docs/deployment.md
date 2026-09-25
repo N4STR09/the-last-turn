@@ -1,4 +1,4 @@
-# Publicación web con Cloudflare Pages
+# Publicación web con Cloudflare
 
 ## Decisión de publicación
 
@@ -7,16 +7,17 @@
 | Repositorio | GitHub |
 | Modo | Integración Git |
 | Nombre del proyecto | `the-last-turn` |
-| URL prevista | `https://the-last-turn.pages.dev` |
+| URL pública disponible | `https://the-last-turn.erpro-ferru.workers.dev` |
+| URL prevista originalmente | `https://the-last-turn.pages.dev` |
 | Dominio propio | No en la primera publicación |
 
-El modo de integración Git es irreversible en Cloudflare Pages, así que queda registrado aquí para que la decisión no dependa de una conversación.
+Cloudflare permite publicar contenido estático en dos superficies distintas: Pages, normalmente bajo `*.pages.dev`, y Workers con Static Assets, normalmente bajo `*.workers.dev`. La URL pública observada es `workers.dev`; por eso el registro no afirma que exista un proyecto Pages clásico. El repositorio no contiene `wrangler.toml`, `wrangler.jsonc`, `functions/` ni código de Worker, y la aceptación confirmó que el sitio publicado es el build estático sin peticiones a terceros.
 
 ## Objetivo
 
-*The Last Turn* se distribuye como una web 100 % estática. Una persona jugará abriendo una URL HTTPS en su navegador, sin instalar la aplicación, crear una cuenta ni configurar un servidor. El proyecto no necesita Pages Functions, Workers, backend, base de datos ni variables de entorno de producto.
+*The Last Turn* se distribuye como una web 100 % estática. Una persona jugará abriendo una URL HTTPS en su navegador, sin instalar la aplicación, crear una cuenta ni configurar un servidor. El proyecto no necesita Pages Functions, una Worker con código, backend, base de datos ni variables de entorno de producto.
 
-El resultado de `npm run build` es el directorio `dist/`. Este directorio contiene el único artefacto que Cloudflare Pages necesita publicar.
+El resultado de `npm run build` es el directorio `dist/`. Este directorio contiene el único artefacto que Cloudflare necesita publicar.
 
 ## Verificación antes de publicar
 
@@ -93,3 +94,4 @@ Cloudflare conserva los despliegues anteriores; desde el dashboard se puede volv
 - Cloudflare Pages, integración Git: https://developers.cloudflare.com/pages/get-started/git-integration/
 - Cloudflare Pages, carga directa: https://developers.cloudflare.com/pages/get-started/direct-upload/
 - Cloudflare Pages, rollback: https://developers.cloudflare.com/pages/configuration/rollbacks/
+- Cloudflare Workers, Static Assets: https://developers.cloudflare.com/workers/static-assets/

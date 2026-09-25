@@ -84,6 +84,19 @@ El build se copió a un host estático estricto, sin fallback de SPA, y se sirvi
 
 Esto confirma que `base: './'` funciona tanto en la raíz de un dominio como en un subdirectorio, que es el motivo de esa configuración.
 
-Esta comprobación valida el artefacto que se entregaría a Cloudflare Pages, no una URL pública: todavía no se ha creado ni desplegado un proyecto remoto.
+## Aceptación en la URL pública
+
+La publicación accesible está en `https://the-last-turn.erpro-ferru.workers.dev` y se comprobó con Edge/CDP sobre el build servido por Cloudflare:
+
+- Respuesta HTTP 200; `Server: cloudflare` y `CF-Cache-Status: HIT`.
+- `index.html` conserva `lang="es"`, título `The Last Turn` y referencias relativas a `./assets/...` y `./favicon.svg`.
+- Los tres recursos visuales cargaron con estado 200: JavaScript `244378` bytes, CSS `11416` bytes y favicon `319` bytes.
+- La carga inicial realizó 4 peticiones, todas al mismo origen; 0 peticiones a terceros, 0 errores de red, 0 errores de consola y 0 excepciones.
+- Flujo verificado: Inicio → Dificultad → Normal → Ayuda → Descansar → Agonía → muerte real → «Volver a jugar».
+- La muerte en Agonía se alcanzó por inanición en el turno 5 (10 interacciones de acción); la pantalla final mostró `h1` «La partida ha terminado», el aviso de causa, el foco en `game-over-title` y un único botón «Volver a jugar».
+- El reinicio volvió a `screen--difficulty` y una recarga durante la partida volvió a `screen--start`, sin persistencia.
+- La auditoría de contraste sobre los 42 nodos de texto visibles en el estado auditado no encontró fallos; la auditoría completa de 64 nodos de las cuatro pantallas está registrada arriba.
+
+**Nota de infraestructura:** la URL disponible termina en `workers.dev`, no en `pages.dev`. Cloudflare sirve correctamente el artefacto estático en ese endpoint, pero si la intención era usar el producto Pages clásico, hay que revisar en el dashboard si el proyecto se creó como Pages o como Workers con Static Assets. No se da por verificado un proyecto Pages clásico mientras la URL no sea `*.pages.dev`.
 
 Las capturas de pantalla de 360, 768 y 1440 px se generaron temporalmente para la inspección y no forman parte del repositorio. La primera versión no incluye E2E automatizado; la comprobación de navegador se mantiene como QA manual reproducible.

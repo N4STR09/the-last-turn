@@ -13,6 +13,7 @@ aplicación web estática preparada para publicarse en Cloudflare Pages.
 
 - Migración web de *The Last Turn* a React, Vite y TypeScript como aplicación 100 % estática.
 - Preparación para Cloudflare Pages con Node.js fijado, rutas relativas y guía de publicación y rollback.
+- Publicación inicial verificada en `https://the-last-turn.erpro-ferru.workers.dev`; la URL disponible termina en `workers.dev` y queda pendiente confirmar si el proyecto es Pages clásico o Workers con Static Assets.
 - Motor puro con las siete acciones, eventos, hitos, dificultad y condiciones de fin del prototipo C.
 - Inicio, selección de dificultad, partida, pantalla final, atajos y gestión de foco.
 - Verificación con Vitest, React Testing Library, ESLint, TypeScript, cobertura y build estático.
