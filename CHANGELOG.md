@@ -16,6 +16,7 @@
 - La pesca añade una sola vez las 3 comidas definidas por el C, con independencia del número de intentos.
 - Los bordes de los botones de acción alcanzan el contraste mínimo de componentes gráficos.
 - La cobertura por capacidad aplica sus propios umbrales y reconoce rutas con separadores Windows.
+- Auditoría de contraste WCAG 1.4.3 sobre los 64 nodos de texto de las cuatro pantallas, sin fallos.
 
 ### Fidelity notes
 

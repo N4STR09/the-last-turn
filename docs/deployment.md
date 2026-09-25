@@ -56,6 +56,8 @@ Wrangler es una herramienta de mantenimiento, no una dependencia del juego ni un
 
 Vite genera rutas relativas mediante `base: './'`, por lo que el mismo build funciona en la raíz de un dominio y en directorios de alojamiento. El favicon también usa una ruta relativa. La aplicación no tiene rutas de navegación interna que requieran una regla SPA de redirección.
 
+Este comportamiento se comprobó sirviendo `dist/` desde `/juego/` en un host estático sin fallback de SPA: el documento, el script, la hoja de estilos y el favicon resolvieron bajo ese prefijo y la aplicación fue interactiva. En Cloudflare Pages el proyecto se sirve en la raíz del dominio, de modo que las rutas relativas se resuelven igual y no es necesario añadir reglas de reescritura.
+
 ## Aceptación tras publicar
 
 1. Abrir la URL HTTPS en una ventana privada.

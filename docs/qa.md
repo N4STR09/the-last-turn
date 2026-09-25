@@ -46,6 +46,30 @@ Se volvió a servir el build de producción con `vite preview` en `127.0.0.1:417
 - Consola y excepciones: 0; las cuatro peticiones fueron al mismo origen y no hubo ninguna petición a terceros.
 - Los bordes de las tarjetas informativas que no son controles permanecen sutiles; la legibilidad y la estructura los identifican sin depender del color, mientras que los bordes de controles mantienen el contraste de 3:1.
 
+## Auditoría de contraste WCAG 1.4.3
+
+Se recorrieron las cuatro pantallas en `1440 × 1000` y se midió cada nodo de texto contra el fondo efectivo, compositando la cadena de ancestros hasta el primer fondo opaco. El umbral aplicado fue 4.5:1 para texto normal y 3:1 para texto grande (>= 24 px, o >= 18.66 px en negrita).
+
+| Pantalla | Nodos de texto | Fallos |
+|---|---:|---:|
+| Inicio | 5 | 0 |
+| Dificultad | 12 | 0 |
+| Partida | 39 | 0 |
+| Fin de partida | 8 | 0 |
+| **Total** | **64** | **0** |
+
+La muerte se alcanzó de forma real en Agonía por inanición tras 10 turnos: la pantalla final mostró `h1` «La partida ha terminado», el aviso de causa, «Dificultad Agonía / Supervivencia 10 turnos aguantados», el foco en `game-over-title` y un único botón «Volver a jugar», que devolvió a `screen--difficulty` sin conservar la partida. Consola y excepciones: 0.
+
+## Comprobación en subdirectorio
+
+El build se copió a un host estático estricto, sin fallback de SPA, y se sirvió en `http://127.0.0.1:4180/juego/`:
+
+- `./favicon.svg` y `./assets/...` resolvieron a `/juego/favicon.svg` y `/juego/assets/...`, con estado 200.
+- La aplicación montó, mostró `h1` «The Last Turn» y el botón «Comenzar»; al pulsarlo pasó a «Elige dificultad», lo que confirma que React es interactivo bajo subdirectorio.
+- 0 peticiones a terceros, 0 errores de consola, 0 excepciones.
+
+Esto confirma que `base: './'` funciona tanto en la raíz de un dominio como en un subdirectorio, que es el motivo de esa configuración.
+
 Esta comprobación valida el artefacto que se entregaría a Cloudflare Pages, no una URL pública: todavía no se ha creado ni desplegado un proyecto remoto.
 
 Las capturas de pantalla de 360, 768 y 1440 px se generaron temporalmente para la inspección y no forman parte del repositorio. La primera versión no incluye E2E automatizado; la comprobación de navegador se mantiene como QA manual reproducible.
