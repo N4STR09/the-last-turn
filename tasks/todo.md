@@ -65,14 +65,14 @@
 **Descripción:** Crear los contratos TypeScript, el estado inicial y el registro de fidelidades antes de implementar transiciones.
 
 **Criterios de aceptación:**
-- [ ] `PlayingGameState` y `FinishedGameState` son internamente consistentes.
-- [ ] `createGame` devuelve siempre una partida activa con los valores iniciales del C.
-- [ ] `docs/fidelity.md` contiene `F-01…F-11` y `W-01…W-04`.
-- [ ] `src/game/` no importa React, CSS ni APIs del navegador.
+- [x] `PlayingGameState` y `FinishedGameState` son internamente consistententes.
+- [x] `createGame` devuelve siempre una partida activa con los valores iniciales del C.
+- [x] `docs/fidelity.md` contiene `F-01…F-11` y `W-01…W-04`.
+- [x] `src/game/` no importa React, CSS ni APIs del navegador.
 
 **Verificación:**
-- [ ] `npm run test -- src/game` pasa.
-- [ ] `npm run typecheck` pasa.
+- [x] `npm run test -- src/game` pasa.
+- [x] `npm run typecheck` pasa.
 
 **Dependencias:** Tarea 2.
 
