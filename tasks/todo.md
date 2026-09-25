@@ -118,17 +118,17 @@
 **Descripción:** Portar eventos, hitos, penalizaciones y las dos causas de muerte observables.
 
 **Criterios de aceptación:**
-- [ ] Tormenta cubre 1–10, mapache 51–59 y meteorito 99.
-- [ ] Normal no consume RNG de evento; Agonía consume uno por resolución.
-- [ ] Los hitos exactos 15 y 30 y las penalizaciones `>15` y `>30` se aplican en ambas dificultades.
-- [ ] Una acción multiturno no repite penalizaciones por turnos saltados.
-- [ ] `condition` y `reportedCause` reproducen las precedencias diferentes del C.
-- [ ] Meteorito termina la partida mediante salud.
+- [x] Tormenta cubre 1–10, mapache 51–59 y meteorito 99.
+- [x] Normal no consume RNG de evento; Agonía consume uno por resolución.
+- [x] Los hitos exactos 15 y 30 y las penalizaciones `>15` y `>30` se aplican en ambas dificultades.
+- [x] Una acción multiturno no repite penalizaciones por turnos saltados.
+- [x] `condition` y `reportedCause` reproducen las precedencias diferentes del C.
+- [x] Meteorito termina la partida mediante salud.
 
 **Verificación:**
-- [ ] `npm run test -- src/game` pasa.
-- [ ] `npm run typecheck` pasa.
-- [ ] No se ejecutan secuencias de pesca infinitas.
+- [x] `npm run test -- src/game` pasa.
+- [x] `npm run typecheck` pasa.
+- [x] No se ejecutan secuencias de pesca infinitas.
 
 **Dependencias:** Tarea 3.
 
