@@ -1,3 +1,4 @@
+import { actionCost } from '../game/action-cost';
 import type {
   ActionOutcome,
   FinishedGameState,
@@ -8,6 +9,7 @@ import type {
   GameState,
 } from '../game';
 import type {
+  ActionViewModel,
   EventViewModel,
   GameOverViewModel,
   GameViewModel,
@@ -25,6 +27,19 @@ const resourceIds: ReadonlyArray<ResourceId> = [
   'shelter',
 ];
 
+/**
+ * Bloques de cada barra. Los tres recursos numéricos comparten escala para que
+ * las filas queden alineadas; el refugio es un interruptor de un solo bloque.
+ * Un valor por encima de la capacidad satura la barra, y la cifra sigue siendo
+ * la verdad: la barra es una pista visual, no el dato.
+ */
+const barCapacity: Record<ResourceId, number> = {
+  hunger: 12,
+  energy: 12,
+  food: 12,
+  shelter: 1,
+};
+
 function resourceValue(id: ResourceId, state: GameCoreState): string {
   switch (id) {
     case 'hunger':
@@ -35,6 +50,19 @@ function resourceValue(id: ResourceId, state: GameCoreState): string {
       return `${state.food}`;
     case 'shelter':
       return state.hasShelter ? 'Presente' : 'Ausente';
+  }
+}
+
+function resourceUnits(id: ResourceId, state: GameCoreState): number {
+  switch (id) {
+    case 'hunger':
+      return state.hunger;
+    case 'energy':
+      return state.energy;
+    case 'food':
+      return state.food;
+    case 'shelter':
+      return state.hasShelter ? 1 : 0;
   }
 }
 
@@ -80,6 +108,24 @@ function resourceTone(id: ResourceId, state: GameCoreState): Tone {
   }
 }
 
+/**
+ * Punto en el que un recurso mata o deja al borde. Solo los tres recursos
+ * numéricos: quedarse sin refugio es una advertencia, no una muerte, y una
+ * fila que parpadea desde el primer turno sería ruido.
+ */
+function resourceIsCritical(id: ResourceId, state: GameCoreState): boolean {
+  switch (id) {
+    case 'hunger':
+      return state.hunger >= 10;
+    case 'energy':
+      return state.energy <= 3;
+    case 'food':
+      return state.food === 0;
+    case 'shelter':
+      return false;
+  }
+}
+
 function createResource(
   id: ResourceId,
   state: GameCoreState,
@@ -90,6 +136,9 @@ function createResource(
     value: resourceValue(id, state),
     stateLabel: resourceStateLabel(id, state),
     tone: resourceTone(id, state),
+    units: resourceUnits(id, state),
+    capacity: barCapacity[id],
+    critical: resourceIsCritical(id, state),
   };
 }
 
@@ -326,6 +375,47 @@ function eventCopy(event: GameEvent): EventViewModel {
   }
 }
 
+const actionLabels: ReadonlyArray<readonly [GameAction, string]> = [
+  ['forage', 'Buscar comida'],
+  ['rest', 'Descansar'],
+  ['explore', 'Explorar'],
+  ['repair', 'Reparar refugio'],
+  ['fish', 'Cazar o pescar'],
+  ['eat', 'Comer'],
+  ['help', 'Ayuda'],
+];
+
+/**
+ * Gasto de una acción en hambre y energía, en tres o cuatro palabras.
+ *
+ * Hambre y energía se gastan por turno, no por acción, así que la cifra sale de
+ * la amenaza vigente. Cuando el gasto es un rango, de la pesca, se enuncia el
+ * peor caso: es el número con el que el jugador decide si vale la pena.
+ */
+export function actionCostLabel(action: GameAction, threat: number): string {
+  const cost = actionCost(action, threat);
+
+  if (cost.span.max === 0) {
+    return '(sin coste)';
+  }
+
+  if (cost.minHunger === cost.maxHunger) {
+    return `(+${cost.minHunger} hambre, −${cost.minEnergy} energía)`;
+  }
+
+  return `(hasta +${cost.maxHunger} hambre, −${cost.maxEnergy} energía)`;
+}
+
+function createAction(action: GameAction, threat: number): ActionViewModel {
+  const label = actionLabels.find(([id]) => id === action);
+
+  return {
+    id: action,
+    label: label === undefined ? action : label[1],
+    cost: actionCostLabel(action, threat),
+  };
+}
+
 export function createResolutionViewModel(
   resolution: GameResolution,
   previousState?: GameCoreState,
@@ -346,11 +436,13 @@ export function createGameViewModel(
   return {
     difficulty: game.difficulty,
     turn: game.turn,
+    threat: game.threat,
     resources: resourceIds.map((id) => createResource(id, game)),
     resolution:
       resolution === null
         ? null
         : createResolutionViewModel(resolution, previousState),
+    actions: actionLabels.map(([id]) => createAction(id, game.threat)),
   };
 }
 
