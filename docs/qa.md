@@ -1,11 +1,11 @@
 # Registro de QA final
 
 **Fecha:** 25 de septiembre de 2026
-**Alcance:** entrega web estática de *The Last Turn Web* con las reglas de la Fase 1 de supervivencia y la Fase 2 de escalada progresiva
+**Alcance:** entrega web estática de *The Last Turn Web* con las reglas de la Fase 1 de supervivencia y la Fase 2 de escalada progresiva, y el rediseño completo de la interfaz
 
 ## Estado de este registro
 
-Las tablas de la sección «Comandos automáticos» reflejan el árbol con Fase 2. Las secciones de navegador real y de aceptación pública se realizaron sobre el build `0.1.0`, publicado antes de la Fase 1, y están etiquetadas como tales; la repetición en navegador con el build actual queda registrada como pendiente porque no hay navegador de escritorio conectado a esta sesión.
+Las tablas de la sección «Comandos automáticos» reflejan el árbol con el rediseño. Las secciones de navegador real y de aceptación pública se realizaron sobre el build `0.1.0`, publicado antes de la Fase 1, y están etiquetadas como tales; la repetición en navegador con el build actual queda registrada como pendiente porque no hay navegador de escritorio conectado a esta sesión. El rediseño agrava esa limitación: su objeto de entrega es visual, así que ninguna prueba automática dice si la interfaz queda bien.
 
 ## Comandos automáticos
 
@@ -14,14 +14,14 @@ Las tablas de la sección «Comandos automáticos» reflejan el árbol con Fase 
 | `npm ci` | Pasa; instalación reproducible sin vulnerabilidades reportadas |
 | `npm run typecheck` | Pasa |
 | `npm run lint` | Pasa sin warnings |
-| `npm run test:coverage` | Pasa; 18 archivos y 256 pruebas; cobertura global 94.04% statements, 87.15% branches, 100% functions, 93.96% lines |
+| `npm run test:coverage` | Pasa; 19 archivos y 290 pruebas; cobertura global 94.95% statements, 88.96% branches, 100% functions, 94.88% lines |
 | `npm run test:coverage:scoped` | Pasa; aplica los umbrales de `src/app`, `src/ui` y `src/game` dentro de `verify` |
-| `npm run test:coverage -- src\app` | Pasa; cobertura de `src/app` 88.62% statements, 81.03% branches, 100% functions, 88.55% lines (61 pruebas) |
-| `npm run test:coverage -- src\game` | Pasa; cobertura de `src/game` 100% en las cuatro métricas (151 pruebas) |
-| `npm run test:coverage -- src\ui` | Pasa; cobertura de `src/ui` 100% en las cuatro métricas (28 pruebas) |
+| `npm run test:coverage -- src\app` | Pasa; cobertura de `src/app` 90.47% statements, 83.15% branches, 100% functions, 90.37% lines (69 pruebas) |
+| `npm run test:coverage -- src\game` | Pasa; cobertura de `src/game` 100% en las cuatro métricas (165 pruebas) |
+| `npm run test:coverage -- src\ui` | Pasa; cobertura de `src/ui` 100% en las cuatro métricas (39 pruebas) |
 | `npm run verify` | Pasa; typecheck, lint, cobertura global, cobertura por capacidad, build y presupuestos |
 | `npm run build` | Pasa; bundle estático dentro de presupuesto |
-| `npm run check:budget` | Pasa; 75.44 KiB JS gzip (37,7 % de 200 KiB) y 3.01 KiB CSS gzip (6 % de 50 KiB) |
+| `npm run check:budget` | Pasa; 76.13 KiB JS gzip (38,1 % de 200 KiB) y 3.48 KiB CSS gzip (7 % de 50 KiB) |
 | `npm audit` | 0 vulnerabilidades |
 
 La puerta mide con gzip nivel 9 sobre `dist/assets/` e informa de 75.44 KiB, mientras que Vite imprime su propia cifra para el mismo archivo. La diferencia es esperable y está explicada en `scripts/check-budget.mjs`: ambos ajustan gzip de forma distinta y la puerta aplica siempre su propia medición.
@@ -141,6 +141,86 @@ El build se copió a un host estático estricto, sin fallback de SPA, y se sirvi
 - 0 peticiones a terceros, 0 errores de consola, 0 excepciones.
 
 Esto confirma que `base: './'` funciona tanto en la raíz de un dominio como en un subdirectorio, que es el motivo de esa configuración.
+
+## Rediseño de interfaz
+
+Un rediseño visual no se puede cerrar con pruebas. Lo que sí se ha hecho es
+sustituir cada suposición por una medición, y dejar por escrito lo que queda sin
+comprobar.
+
+### Contraste
+
+Medido con la fórmula de WCAG 2.x, no estimado. Fondo de página `#050706`, panel
+de terminal `#0a0e0d`, aviso de escalada sobre negro puro.
+
+| Uso | Color | Sobre | Ratio | Resultado |
+|---|---|---|---|---|
+| Texto normal | `#b9c4bd` | `#050706` | 11.25:1 | AAA |
+| Texto apagado | `#93a09a` | `#050706` | 7.44:1 | AAA |
+| Pista y etiquetas | `#7a7a7a` | `#050706` | 4.71:1 | AA |
+| Pista y etiquetas | `#7a7a7a` | `#0a0e0d` | 4.52:1 | AA |
+| Luz del banner | `#ffffff` | `#050706` | 20.20:1 | AAA |
+| Luz del banner | `#ffffff` | `#0a0e0d` | 19.42:1 | AAA |
+| Hambre | `#ff5f4d` | `#050706` | 6.73:1 | AA |
+| Energía | `#ffd166` | `#050706` | 14.01:1 | AAA |
+| Comida | `#7ee08a` | `#050706` | 12.43:1 | AAA |
+| Refugio | `#5ec8f5` | `#050706` | 10.64:1 | AAA |
+| Aviso de escalada | `#8b0000` | `#000000` | 2.10:1 | **No cumple**, `W-05` ya documentado |
+
+`#7a7a7a` queda por debajo de AAA en las dos superficies. Se acepta porque son
+pistas y etiquetas, no el texto que sostiene la partida, y porque subirlas a
+`#93a09a` haría que el minimalismo se convirtiera en ruido. El valor va
+deliberadamente justo para no perder margen con el realce de la calavera detrás.
+
+### Geometría de la calavera
+
+El modelo no puede mirar una imagen, así que la calavera se rasterizó con `sharp`
+y se comprobó de forma numérica sobre los píxeles. Eso no dice si queda guapa, y
+por eso se registra como lo que es.
+
+| Medida | Normal | Agonía |
+|---|---|---|
+| Asimetría horizontal | 0.00 % | 0.00 % |
+| Dentro del lienzo | Sí | Sí |
+| Caja (ancho × alto) | 283 × 297 px | 283 × 306 px |
+
+La asimetría a cero descarta trazados invertidos y desajustes entre la mitad
+izquierda y la derecha. Los 9 px de diferencia en Agonía son los cuernos, que
+asoman por encima del cráneo. La silueta mide algo más de alto que de ancho, que
+es la proporción de una calavera vista de frente.
+
+### Lo que no se ha comprobado
+
+- **El aspecto visual.** Nadie ha visto la pantalla. Las medidas confirman que
+  las formas son correctas, no que la interfaz sea fea.
+- El brillo por `text-shadow` sobre cada combinación de fondo real, con la
+  calavera detrás del texto.
+- Que la calavera se lea como «inquietante pero sin dar mucho miedo» y que los
+  cuernos en Agonía se entiendan sin scary.
+- La legibilidad de las barras con 12 bloques a 320 px.
+- El ritmo del parpadeo crítico en pantalla real, y que no moleste al jugar.
+- Anchos 320, 360, 768 y 1440 px, y `prefers-reduced-motion`.
+
+Todo eso necesita navegador de escritorio, que sigue sin estar conectado.
+
+### Defectos detectados en este rediseño
+
+Tres cosas que aparecieron al implementar y que se corrigieron:
+
+1. **Las etiquetas del banner salían de CSS.** `Ronda` y `Nivel` se generaban con
+   `content: attr(data-label)`, que no entra en el árbol de accesibilidad. Un
+   lector de pantalla habría anunciado «3 1» sin decir qué es cada número. Ahora
+   son elementos de verdad.
+2. **El copy de dificultad sobrevivió a la Fase 2.** Seguía describiendo «los
+   hitos de los turnos 15 y 30», que la escalada progresiva había eliminado. La
+   comprobación del bundle no la pilló porque buscaba «quince turnos» en palabras
+   y el texto usaba cifras.
+3. **El CHANGELOG declaraba 23 mensajes de escalada y hay 12.** La prueba
+   existente comprobaba que los primeros doce fueran distintos, lo que no ata la
+   cifra al código. Se añadió una prueba del periodo del ciclo.
+
+Ninguno era visible desde las pruebas, y los tres eran del tipo que se acumula
+en silencio.
 
 ## Aceptación en la URL pública (Fase 2, desplegada)
 

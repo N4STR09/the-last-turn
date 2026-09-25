@@ -501,3 +501,62 @@ Los resultados y los puntos pendientes de esta fase están en
 - `src/ui/styles/tokens.css`
 - `SPEC-threat.md`
 - `docs/fidelity.md`
+
+## Fase 3: rediseño de interfaz
+
+**Descripción:** Llevar el lenguaje del aviso de escalada al resto de la
+pantalla. Negro casi puro, una fuente de luz por elemento, y una sola terminal
+como excepción que fija el tono. La partida pasa a una columna estrecha con
+banner, recursos en barras, registro del turno y acciones.
+
+**Decisiones confirmadas antes de implementar:**
+- El registro del turno muestra **solo el turno actual**, no historial con scroll.
+- Los botones llevan icono y título, sin descripción. El gasto en hambre y
+  energía va en una línea de tres o cuatro palabras.
+- Los recursos son barras de bloques, un bloque por unidad, que laten en rojo
+  rojizo cuando llegan a un punto crítico.
+
+**Criterios de aceptación:**
+- [x] Fondo casi puro y brillo por `text-shadow`, nunca aclarando el color del texto.
+- [x] Un color por recurso, medido sobre el fondo de página. Todos AA o mejor.
+- [x] Banner con el nombre del juego y, debajo, ronda y nivel en blanco con halo. El nivel es el de escalada, no el modo de dificultad.
+- [x] La dificultad la dice la calavera y no se repite en el banner.
+- [x] Una fila por recurso con etiqueta, cifra y barra de un bloque por unidad. El refugio usa un bloque.
+- [x] Barra oculta a lectores de pantalla, con la cifra y la etiqueta en texto al lado.
+- [x] El estado en texto aparece solo cuando hay algo que avisar, y entonces no depende del color.
+- [x] Punto crítico explícito, distinto de `tone === 'warning'`: sin refugio avisa pero no late.
+- [x] El parpadeo va a 0.55 Hz, por debajo del umbral de 3 destellos, y se anula con `prefers-reduced-motion`.
+- [x] Terminal con monoespaciada del sistema y calavera en SVG en línea, decorativa, sin peticiones de red.
+- [x] La calavera lleva cuernos y ojos rojos solo en Agonía, también en la tarjeta de dificultad.
+- [x] El gasto de cada acción se calcula contra la escalada vigente. Reparar imprime su coste exacto y pescar su peor caso.
+- [x] Los botones sin descripción y con el gasto en línea de tres o cuatro palabras.
+- [x] Ninguna etiqueta visible generada con `content: attr()`.
+- [x] `src/game` y `src/ui` siguen al 100 % en las cuatro métricas.
+
+**Verificación de esta fase:**
+- [x] `npm run verify` pasa: 290 pruebas, cobertura global 94.95% statements / 88.96% branches / 100% functions / 94.88% lines, `src/game` y `src/ui` al 100 %, bundle de 76.13 KiB JS gzip y 3.48 KiB CSS gzip.
+- [x] Contraste medido, no estimado. Todo el texto AA o mejor salvo `#8b0000` del aviso, que es la desviación `W-05` ya documentada.
+- [x] Geometría de la calavera verificada sobre el PNG rasterizado: 0.00 % de asimetría, dentro del lienzo, cuernos por encima del cráneo en Agonía.
+- [x] Defectos encontrados al implementar y corregidos: etiquetas del banner fuera del árbol de accesibilidad, copy de dificultad con los hitos 15 y 30, y CHANGELOG declarando 23 mensajes de escalada cuando hay 12.
+- [ ] Mirar la pantalla. Es el punto que ninguna prueba cubre y el que más pesa en un rediseño. Bloqueado: no hay navegador de escritorio conectado a la sesión.
+- [ ] Comprobar el brillo real, las barras a 320 px y el ritmo del parpadeo en pantalla.
+- [ ] Publicar. Requiere autorización explícita: hoy la URL pública sigue sirviendo el build anterior al rediseño.
+
+**Archivos probables:**
+- `src/game/action-cost.ts` (nuevo)
+- `src/game/threat.ts`
+- `src/game/index.ts`
+- `src/app/game-view-model.ts`
+- `src/ui/view-models/ui-types.ts`
+- `src/ui/screens/GameScreen.tsx`
+- `src/ui/screens/DifficultyScreen.tsx`
+- `src/ui/components/ResourcePanel.tsx`
+- `src/ui/components/ResolutionPanel.tsx`
+- `src/ui/components/ActionGrid.tsx`
+- `src/ui/components/DifficultyCard.tsx`
+- `src/ui/components/Skull.tsx` (nuevo)
+- `src/ui/styles/tokens.css`
+- `src/ui/styles/components.css`
+- `src/ui/styles/screens.css`
+- `src/styles/app.css`
+- `SPEC-web-interface.md`

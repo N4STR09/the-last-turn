@@ -2,20 +2,46 @@
 
 ## Objetivo
 
-Crear una interfaz oscura, atmosférica e interactiva para jugar *The Last Turn* en un navegador moderno. La interfaz debe hacer comprensible el estado y cada resolución sin copiar el diseño de terminal ni ocultar el comportamiento real de las reglas.
+Crear una interfaz oscura, atmosférica e interactiva para jugar *The Last Turn* en un navegador moderno. La interfaz debe hacer comprensible el estado y cada resolución sin ocultar el comportamiento real de las reglas, y sin caer en el panel de administración: negro, una luz por elemento y nada más.
 
 ## Dirección visual
 
-- Tema oscuro con fondos carbón, texto marfil y acentos desaturados.
-- Rojo oscuro reservado para peligro, hambre, meteoritos y estado final.
-- Ámbar para refugio, energía y progreso.
-- Verde apagado para resultados favorables que no sean refugio.
-- Tipografía sans serif del sistema; no se cargarán fuentes externas.
-- Iconos de `lucide-react`, decorativos cuando el texto ya aporta el nombre y con nombre accesible si un icono es el único contenido.
-- Texturas y profundidad mediante CSS: gradientes, bordes y sombras; sin imágenes externas ni peticiones de red.
+- **La pantalla es oscuridad y cada elemento es una fuente de luz.** El fondo es
+  negro casi puro (`#050706`) y el brillo se consigue con `text-shadow` en varias
+  capas, nunca aclarando el color del texto: un texto claro sobre fondo claro
+  pierde contraste, mientras que un texto brillante sobre negro lo gana.
+- El brillo va siempre en `text-shadow` y no en el color, para que el relleno
+  del glifo siga siendo sólido y el contraste no dependa del halo.
+- Un color por recurso, medidos sobre el fondo de página: hambre `#ff5f4d`
+  (6.73:1), energía `#ffd166` (14.01:1), comida `#7ee08a` (12.43:1) y refugio
+  `#5ec8f5` (10.64:1). Todos AA o mejor.
+- El peligro es un color solo, `--color-alarm`, deliberadamente el mismo que el
+  del hambre: no hay una segunda familia roja que compita con ella.
+- Tipografía del sistema: sans para el cuerpo, serif para los titulares y
+  monoespaciada del sistema para la terminal. No se cargarán fuentes externas.
+- Iconos de `lucide-react`, decorativos cuando el texto ya aporta el nombre y
+  con nombre accesible si un icono es el único contenido.
+- Texturas y profundidad mediante CSS: gradientes, bordes y sombras; sin imágenes
+  externas ni peticiones de red.
 - Animaciones breves y no esenciales, desactivadas con `prefers-reduced-motion`.
 
-La estética será de supervivencia oscura, no una terminal ni un panel administrativo genérico.
+La estética es de supervivencia oscura con un único elemento deliberadamente
+terminal, el registro del turno. Ese elemento es la excepción que da el tono, y
+no se extiende a la aplicación: el resto son superficies planas sobre negro, sin
+marcos ni paneles que parezcan una aplicación de oficina.
+
+### Registro del turno
+
+Recuadro oscuro con monoespaciada, y detrás una calavera en SVG en línea
+decorativa: gris apagado, perceptible sin leerse como amenaza. En Agonía la
+calavera lleva cuernos y los ojos cambian a rojo con aura. La calavera es la
+única representación de la dificultad dentro de la partida, así que la interfaz
+no repite la dificultad en el banner.
+
+El registro muestra solo la última resolución, no un historial: acumular turnos
+empujaría los botones fuera de la pantalla. El aviso de escalada conserva su
+propio lenguaje, que es el que fija el tono: negro puro, mensaje en rojo sangre
+y pista en gris apagado.
 
 ## Pantallas
 
@@ -37,34 +63,62 @@ Opciones:
 - **Normal:** no habilita eventos aleatorios.
 - **Agonía:** habilita eventos aleatorios que pueden destruir el refugio, robar comida o quitarte salud.
 
-La interfaz aclarará que ambas dificultades comparten el aumento del hambre, la pérdida de energía y una presión de una sola vez al cruzar los hitos de los turnos 15 y 30. Esta aclaración mantiene la presión compartida sin atribuirle a Agonía una regla que también existe en Normal.
+La interfaz aclarará que ambas dificultades comparten el aumento del hambre, la pérdida de energía y la escalada progresiva del nivel. Esta aclaración mantiene la presión compartida sin atribuirle a Agonía una regla que también existe en Normal. La Fase 2 sustituyó los antiguos hitos de los turnos 15 y 30 por escalada continua, y el copy de esta pantalla ya no debe mencionarlos.
 
-Cada opción será un control grande, con teclado, foco claro y confirmación mediante botón. No se usarán inputs ocultos ni tarjetas que parezcan clicables sin serlo.
+Cada opción será un control grande, con teclado, foco claro y confirmación mediante botón. No se usarán inputs ocultos ni tarjetas que parezcan clicables sin serlo. La tarjeta de Agonía lleva la calavera con cuernos, en pequeño, para que el jugador vea la diferencia antes de empezar y no se la encuentre de golpe dentro del juego.
 
 ### 3. Partida
 
-Composición de escritorio:
+Una sola columna estrecha, de 52 rem como máximo. El vacío a los lados es lo que hace que lo que brille destaque; a dos columnas el ojo saltaría entre paneles y se perdería el efecto.
 
-- Cabecera: turno actual, dificultad y acceso a ayuda.
-- Panel de recursos: hambre, energía, comida y refugio.
-- Panel narrativo: resultado de la última acción, evento opcional e hito opcional.
-- Panel de acciones: seis acciones jugables más ayuda.
+El orden es el de lectura y no cambia con el tamaño:
 
-En móvil, el orden será cabecera → recursos → resolución → acciones. Cada estadística tendrá icono, etiqueta, valor y estado textual; nunca dependerá solo del color.
+1. **Banner.** Nombre del juego en blanco, en serif con mucho `letter-spacing`, discreto. Debajo, la ronda y el nivel de escalada en blanco puro y con halo, que es lo más brillante de la pantalla mientras haya partida.
+2. **Recursos.** Una fila por recurso, en el orden hambre, energía, comida y refugio. Cada fila lleva etiqueta con icono, cifra y barra de bloques.
+3. **Registro del turno.** La terminal descrita en la dirección visual.
+4. **Acciones.** Siete botones: icono, título y gasto.
+
+El nivel que se muestra es el de escalada, no el modo de dificultad. La dificultad la dice la calavera.
 
 Las acciones, en orden de presentación, serán:
 
 1. Buscar comida.
 2. Descansar.
 3. Explorar.
-4. Fabricar o reparar refugio.
+4. Reparar refugio.
 5. Cazar o pescar.
 6. Comer.
 7. Ayuda.
 
-La salud no se mostrará como recurso, igual que en la interfaz C. El meteorito y la muerte por salud se comunicarán mediante el resultado de la acción y la pantalla final.
-
 Atajos de teclado durante la partida: `B`, `D`, `E`, `R`, `P`, `C` y `?`. Repetirán los botones; no crearán acciones nuevas.
+
+#### Barras de recursos
+
+Un bloque por unidad, hasta un máximo de doce. Por encima de la capacidad la barra satura y la cifra sigue siendo la verdad: la barra es una pista visual, no el dato. El refugio es binario y se dibuja con un solo bloque.
+
+Los bloques van ocultos a lectores de pantalla porque la cifra y la etiqueta ya están en texto a su lado.
+
+#### Gasto por acción
+
+Cada botón imprime su gasto en hambre y energía, calculado contra la escalada vigente, no un número fijo.
+
+- Hambre y energía se gastan por turno, no por acción: el gasto es el número de turnos por el gasto unitario.
+- La ayuda no gasta nada: `(sin coste)`.
+- Las acciones de un turno imprimen su cifra exacta, que cambia con la escalada.
+- Reparar imprime su coste exacto, y sube con el nivel porque cada turno cuesta más.
+- Pescar imprime su **peor caso**, porque su coste es azar: un rango fijo mentiría en la mitad de las partidas.
+
+La razón está en `src/game/action-cost.ts`. La regla vive en el motor y no en la vista, porque es conocimiento de reglas y la interfaz no puede inventárselo.
+
+#### Aviso de estado
+
+Un recurso en estado de aviso late en rojo: la fila entera pulsa entre el 50 % y el 100 % de opacidad, en 1,8 s por ciclo, que son 0,55 Hz y muy por debajo del umbral de 3 destellos de WCAG 2.3.1. Con `prefers-reduced-motion` la fila se queda en rojo fijo, que ya comunica lo mismo sin parpadear.
+
+El aviso crítico no es lo mismo que `tone === 'warning'`: estar sin refugio es una advertencia, no una muerte, y una fila que latiera desde el primer turno sería ruido. Los tres recursos numéricos tienen punto crítico; el refugio no.
+
+El estado en texto aparece **solo cuando hay algo que avisar**. En el resto de la partida la fila es etiqueta, cifra y barra. Así el aviso no depende del color ni del parpadeo, porque está escrito, y así la pantalla no arrastra cuatro líneas de texto que no aportan nada.
+
+La salud no se mostrará como recurso, igual que en la interfaz C. El meteorito y la muerte por salud se comunicarán mediante el resultado de la acción y la pantalla final.
 
 ### 4. Fin de partida
 
@@ -80,12 +134,21 @@ No habrá pantalla de victoria en esta migración.
 La interfaz consumirá view models, no el estado interno del motor:
 
 ```ts
+export type ResourceId = 'hunger' | 'energy' | 'food' | 'shelter';
+export type Tone = 'neutral' | 'warning' | 'positive';
+
 export interface ResourceViewModel {
-  readonly id: 'hunger' | 'energy' | 'food' | 'shelter';
+  readonly id: ResourceId;
   readonly label: string;
   readonly value: string;
   readonly stateLabel: string;
-  readonly tone: 'neutral' | 'warning' | 'positive';
+  readonly tone: Tone;
+  /** Unidades actuales. La barra dibuja un bloque por unidad. */
+  readonly units: number;
+  /** Bloques que caben en la barra. */
+  readonly capacity: number;
+  /** Punto sin retorno. Distinto de `tone === 'warning'` a propósito. */
+  readonly critical: boolean;
 }
 
 export interface ResolutionViewModel {
@@ -93,15 +156,24 @@ export interface ResolutionViewModel {
   readonly headline: string;
   readonly details: readonly string[];
   readonly deltas: ReadonlyArray<ResourceDeltaViewModel>;
-  readonly event: EventViewModel | null;
-  readonly milestone: string | null;
+  readonly events: readonly EventViewModel[];
+}
+
+export interface ActionViewModel {
+  readonly id: GameAction;
+  readonly label: string;
+  /** Gasto en hambre y energía contra la escalada vigente. */
+  readonly cost: string;
 }
 
 export interface GameViewModel {
   readonly difficulty: Difficulty;
   readonly turn: number;
+  /** Nivel de escalada vigente. */
+  readonly threat: number;
   readonly resources: ReadonlyArray<ResourceViewModel>;
   readonly resolution: ResolutionViewModel | null;
+  readonly actions: ReadonlyArray<ActionViewModel>;
 }
 
 export interface GameOverViewModel {
@@ -127,7 +199,13 @@ export interface GameOverScreenProps {
   readonly model: GameOverViewModel;
   readonly onRestart: () => void;
 }
+
+export interface SkullProps {
+  readonly difficulty: Difficulty;
+}
 ```
+
+`ResolutionViewModel.events` es una lista, no un evento único, porque la escalada añade tiradas extra y el mismo evento puede salir repetido en un turno. La Fase 2 eliminó `milestone`: la escalada progresiva absorbe lo que los hitos hacían.
 
 La capa de aplicación construirá estos view models. Los componentes solo representarán los datos o emitirán callbacks; no calcularán resultados ni mutarán `GameState`.
 
@@ -135,8 +213,8 @@ La capa de aplicación construirá estos view models. Los componentes solo repre
 
 1. El usuario activa un botón o atajo.
 2. La aplicación resuelve la acción mediante el motor.
-3. Se muestra la resolución completa en este orden: resultado de acción, evento opcional e hito opcional.
-4. Se actualizan el turno y los recursos sin recargar la página.
+3. Se muestra la resolución completa en este orden: resultado de acción, detalles, cambios de recurso y eventos opcionales.
+4. Se actualizan el turno, el nivel de escalada y los recursos sin recargar la página.
 5. Si la partida termina, la capa de aplicación sustituye la pantalla de juego por la pantalla final.
 6. El panel de resolución se anuncia de forma accesible a lectores de pantalla.
 
@@ -159,6 +237,9 @@ Objetivo: WCAG 2.2 AA para los flujos del MVP.
 - Los bordes que identifican controles interactivos deben alcanzar 3:1; los separadores puramente decorativos pueden ser sutiles cuando el texto y la estructura ya identifican el contenido.
 - Objetivos táctiles de al menos 44 × 44 CSS pixels.
 - `aria-live="polite"` y `aria-atomic="true"` para la resolución de una acción.
+- El estado de cada recurso se escribe en texto cuando hay algo que avisar. El color y el parpadeo son refuerzo, nunca el canal único.
+- Las barras de recursos van `aria-hidden`: son redundancia visual sobre una cifra y una etiqueta que ya están en texto.
+- Ninguna etiqueta visible se genera con `content: attr()`. El texto de CSS no entra en el árbol de accesibilidad, y el lector anunciaría las cifras sin decir qué es cada una.
 - La pantalla final recibirá foco al aparecer y se anunciará como error sin duplicar dos regiones `alert`; sus encabezados de pantalla usarán `tabIndex={-1}` para recibir foco programático.
 - Respeto de `prefers-reduced-motion`.
 - Sin información comunicada exclusivamente mediante color o iconografía.
@@ -188,6 +269,8 @@ src/ui/
     ResolutionPanel.tsx
     DifficultyCard.tsx
     AppButton.tsx
+    EscalationOverlay.tsx
+    Skull.tsx
   view-models/
     ui-types.ts
   styles/
@@ -199,6 +282,8 @@ src/styles/
   app.css
 ```
 
+`Skull.tsx` no se posiciona a sí mismo: solo lleva el color y los trazos, y quien la coloca es el contenedor. Así la misma calavera sirve de fondo en la terminal y de marca en la tarjeta de Agonía sin reglas de posición duplicadas.
+
 `src/styles/app.css` será la entrada global. No se usarán Tailwind, Bootstrap ni una librería de componentes.
 
 ## Estrategia de pruebas
@@ -208,7 +293,10 @@ Con Vitest, jsdom y React Testing Library:
 - Cada pantalla representa su estado principal.
 - Los botones llaman callbacks con la acción o dificultad correcta.
 - La selección de dificultad funciona con teclado y puntero.
-- Los recursos tienen etiquetas textuales además de color.
+- Los recursos tienen etiquetas textuales además de color, y encienden un bloque por unidad.
+- El aviso de estado aparece en texto solo cuando el recurso está en peligro.
+- El gasto impreso en cada botón se compara con el cálculo del motor para los siete niveles de amenaza.
+- La calavera lleva cuernos solo en Agonía, tanto en la terminal como en la tarjeta de dificultad.
 - La resolución se anuncia correctamente.
 - La pantalla final muestra la causa comunicada y los turnos.
 - Los atajos se ignoran al repetir una tecla, usar modificadores o pulsar otro control interactivo.
@@ -237,10 +325,11 @@ npm run typecheck
 
 ## Criterios de éxito
 
-- El jugador identifica en un vistazo turno, recursos, refugio y último resultado.
+- El jugador identifica en un vistazo ronda, nivel, recursos y último resultado.
 - Todas las acciones son accesibles con puntero y teclado.
 - La interfaz es usable a 360 px y 1440 px sin desbordamiento horizontal.
 - Los estados peligrosos son identificables sin depender del color.
+- El gasto de cada botón es el real: el que cobra el motor con la escalada vigente.
 - No hay errores de consola ni peticiones externas al cargar o jugar.
 - Las pruebas semánticas cubren todos los flujos principales.
 

@@ -108,6 +108,35 @@ Fase 1, así que la línea base queda intacta hasta el turno 10.
 - Energía y comida no tienen techo; la salud sí tiene el máximo jugable 10.
 - La UI continúa mostrando hambre, energía, comida y refugio, pero no la salud.
 
+## Fase 3 aprobada: rediseño de interfaz
+
+El rediseño no toca ninguna regla. Su riesgo no era aritmético sino de
+representación: una interfaz puede mentir sin tocar el motor. Las tres
+desviaciones de este bloque son de ese tipo, y por eso se declaran aquí.
+
+| ID | Regla actual y efecto |
+|---|---|
+| `U-01` | **El gasto impreso no es un coste por acción, es un coste por turno.** Hambre y energía se gastan por turno, así que la etiqueta de cada botón se calcula en `src/game/action-cost.ts` a partir de la amenaza vigente. Casi todas las acciones cuestan un turno; reparar cuesta `min(5, 2 + ⌊load/5⌋)` y pescar entre 1 y 6 al azar. Un número fijo en los botones habría mentido en reparación con cualquier nivel y en la mitad de las pesca. La regla vive en el motor, no en la vista, porque es conocimiento de reglas. |
+| `U-02` | **Pescar enuncia su peor caso, no un rango.** El gasto de la pesca es azar, así que el botón dice «hasta +6 hambre, −6 energía» y no «entre +1 y +6». El jugador decide con el número del riesgo, que es el que puede tumbarlo. No es una estimación: es el valor exacto del peor caso. |
+| `U-03` | **El nivel del banner es el de escalada, no el modo de dificultad.** `Nivel 3` significa amenaza 3, que es lo que cambia la partida. El modo lo comunica la calavera, con cuernos y ojos rojos en Agonía, y no se repite en texto. Repetirlo en el banner lo diría dos veces de dos maneras, y la segunda sería solo texto. |
+| `U-04` | **El aviso crítico no es lo mismo que `tone === 'warning'`.** Estar sin refugio es una advertencia, no una muerte: avisa en texto pero no late. Una fila que pulsara desde el primer turno sería ruido, y el ruido entrena al jugador a ignorar el parpadeo justo cuando importa. |
+| `U-05` | **La barra de recursos no es el dato.** Un bloque por unidad hasta doce y, por encima, satura. La cifra numérica sigue siendo la verdad y la barra va `aria-hidden`, porque es redundancia visual sobre un texto que ya está al lado. Un recurso con 30 de comida llenaría la pantalla de bloques si cada bloque fuera una unidad sin tope. |
+| `U-06` | **`#8b0000` del aviso de escalada sigue sin cumplir contraste.** 2.10:1 sobre negro puro. Es `W-05`, una desviación ya documentada que el rediseño no amplía ni reduce: el aviso conserva su lenguaje porque es el que fija el tono. Todo el texto nuevo cumple AA o mejor. |
+
+### Desviaciones de la interfaz anterior
+
+Estas no son reglas de juego, pero cambian lo que el jugador ve y por eso se
+registran:
+
+| ID | Antes | Ahora |
+|---|---|---|
+| `U-07` | El turno y la dificultad aparecían como un `dl` etiquetado «Turno» y «Dificultad». | La ronda y el nivel de escalada van en el banner como cifra grande y brillante. La dificultad sale del texto y pasa a la calavera. |
+| `U-08` | Los botones llevaban icono, título y descripción de una línea. | Icono y título, con el gasto en una línea de tres o cuatro palabras. La descripción larga se sustituyó por un dato calculado. |
+| `U-09` | Los recursos eran tarjetas con etiqueta, valor grande y frase de estado siempre visible. | Una fila por recurso con barra de bloques, y la frase de estado solo cuando hay algo que avisar. |
+| `U-10` | El panel narrativo mostraba «Lo que acaba de ocurrir / Última resolución». | Es la terminal, con la ronda en el prompt y la calavera detrás. |
+| `U-11` | La pantalla de dificultad describía los hitos 15 y 30, que la Fase 2 había eliminado. | Describe la escalada progresiva. El copy obsoleto sobrevivió a la Fase 2 porque la comprobación del bundle buscaba «quince turnos» en palabras y el texto usaba cifras. |
+
+
 ## Evidencia y trazabilidad
 
 - `SPEC-threat.md` define el alcance, las fórmulas, el orden de resolución, el

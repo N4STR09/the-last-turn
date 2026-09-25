@@ -20,7 +20,7 @@
   1..100. La tabla de eventos se mantiene en tres tipos.
 - `SPEC-threat.md` con el alcance, las fórmulas, el orden de resolución y el
   defecto abierto de esta fase.
-- 23 mensajes de escalada que ciclan, con el nivel anotado a partir del segundo
+- 12 mensajes de escalada que ciclan, con el nivel anotado a partir del segundo
   ciclo.
 - Reequilibrio de la economía de comida: comer quita `4 + hambreExtraPorTurno`
   en lugar de 4 fijos. Con carga 0 y 1 no cambia nada, así que la Fase 1 queda
@@ -28,6 +28,30 @@
 
 ### Changed
 
+- **Rediseño completo de la interfaz.** La partida es una sola columna estrecha
+  sobre negro casi puro, y cada elemento es una fuente de luz. En orden de
+  lectura: banner con el nombre del juego y, debajo, la ronda y el nivel de
+  escalada en blanco puro con halo; una fila por recurso en el color que le
+  toca; el registro del turno como un recuadro de terminal con calavera de fondo;
+  y las acciones debajo, sin descriptions.
+- **Barras de recursos por bloques.** Un bloque encendido por unidad, hasta doce.
+  Por encima la barra satura y la cifra sigue siendo la verdad. El refugio es
+  binario y usa un solo bloque.
+- **Gasto por acción impreso en el botón.** Hambre y energía se gastan por turno,
+  no por acción, así que la etiqueta se calcula contra la escalada vigente. La
+  ayuda no gasta; las acciones simples imprimen su cifra exacta; reparar imprime
+  la suya, que sube con el nivel; y pescar imprime su peor caso, porque su coste
+  es azar y un rango fijo mentiría en la mitad de las partidas.
+- **Calavera de fondo en el registro del turno**, en SVG en línea y decorativa. En
+  Agonía lleva cuernos y los ojos cambian a rojo con aura. Es la única
+  representación de la dificultad dentro de la partida, así que el banner ya no
+  la repite.
+- **Aviso de estado en las barras.** Un recurso en punto crítico late en rojo a
+  0.55 Hz, muy por debajo del umbral de 3 destellos de WCAG 2.3.1, y con
+  `prefers-reduced-motion` se queda en rojo fijo. El aviso crítico es un campo
+  explícito y no coincide con `tone === 'warning'`: quedarse sin refugio es una
+  advertencia, no una muerte, y una fila que latiera desde el primer turno sería
+  ruido.
 - Fase 1 de supervivencia: comer consume una ración, reduce el hambre y recupera salud; la pesca termina tras seis intentos como máximo; el meteorito quita un punto de salud en lugar de matar desde salud inicial.
 - La interfaz comunica las nuevas resoluciones sin mostrar la salud.
 - `docs/fidelity.md` y `SPEC-game-engine.md` separan la línea base histórica del C de las desviaciones explícitas de la Fase 1 y de la Fase 2.
@@ -39,6 +63,9 @@
   decisión de Fase 2, no una corrección silenciosa.
 - El decaimiento pasivo de la salud, que se decidió no introducir: con la salud
   oculta, un desgaste silencioso sería ilegible.
+- Las descripciones largas de los botones de acción y los encabezados de sección.
+  El texto se suprime y la información que no cabe en la etiqueta se calcula y se
+  imprime en el sitio donde se necesita.
 
 ### Fixed
 
@@ -46,6 +73,13 @@
   hacía que la reparación nunca fallara con carga 0. Ahora la banda de fallo es
   un radio centrado en 5 (`|tirada − 5| ≤ radio`), de modo que con carga 0 sigue
   fallando únicamente la tirada 5, como en el prototipo C.
+- **El copy de la pantalla de dificultad ya no habla de los hitos 15 y 30**, que
+  la Fase 2 eliminó. Sobrevivió a la Fase 2 porque la comprobación del bundle
+  buscaba «quince turnos» en palabras y el texto usaba cifras.
+- **Las etiquetas visibles del banner no se generan con `content: attr()`.** El
+  texto producido por CSS no entra en el árbol de accesibilidad, así que un
+  lector de pantalla anunciaba «3 1» sin decir qué es cada número. Ahora Ronda y
+  Nivel son elementos de verdad.
 - El listener de teclado del aviso se retira al desmontar el diálogo.
 - Se eliminó la regla `eslint-disable` de `EscalationOverlay.tsx`, que
   referenciaba reglas de un plugin no configurado y hacía fallar el lint.
@@ -57,20 +91,37 @@
   `Milestone` se elimina del contrato público.
 - `energyRecovered` pasa de `3 | 5` a `number`, porque el tope de energía al
   descansar depende de la carga.
+- `ResourceViewModel` añade `units`, `capacity` y `critical`, que son lo que
+  dibuja la barra y decide el aviso.
+- `GameViewModel` añade `threat` y `actions`. `actions` mueve las etiquetas y el
+  gasto de los botones a la capa de aplicación, donde vive el texto.
+- `ResolutionPanel` recibe `turn` y `difficulty`, porque la terminal imprime la
+  ronda en el prompt y decide la variante de la calavera.
+- `ResolutionViewModel.events` es una lista. Con tiradas extra el mismo evento
+  puede repetirse en un turno, así que `event` singular ya no alcanza.
 
 ### Verification
 
-- 256 pruebas en verde. Cobertura global 94.04% statements, 87.15% branches, 100%
-  functions y 93.96% lines. `src/game` y `src/ui` al 100% en las cuatro
-  métricas. Bundle de 75.44 KiB JS gzip y 3.01 KiB CSS gzip.
+- 290 pruebas en verde. Cobertura global 94.95% statements, 88.96% branches, 100%
+  functions y 94.88% lines. `src/game` y `src/ui` al 100% en las cuatro métricas.
+  Bundle de 76.13 KiB JS gzip y 3.48 KiB CSS gzip.
+- Contraste medido sobre el fondo de página `#050706`: texto `#b9c4bd` 11.25:1,
+  apagado `#93a09a` 7.44:1, pista `#7a7a7a` 4.71:1, blanco 20.20:1. Recursos:
+  hambre `#ff5f4d` 6.73:1, energía `#ffd166` 14.01:1, comida `#7ee08a` 12.43:1,
+  refugio `#5ec8f5` 10.64:1. Todos AA o mejor.
+- Geometría de la calavera comprobada numéricamente sobre el PNG rasterizado:
+  0.00% de asimetría horizontal en las dos variantes, silueta dentro del lienzo, y
+  en Agonía 9 px más alta por los cuernos. **No se ha visto la imagen**: el
+  aspecto queda pendiente de navegador real.
+- La aceptación en navegador del despliegue sigue pendiente: no hay navegador de
+  escritorio conectado a la sesión, así que el aviso de escalada, el foco, el
+  cierre con teclado, los anchos estrechos y el aspecto de la calavera no están
+  verificados sobre la URL pública.
 - **Publicado en `https://the-last-turn.erpro-ferru.workers.dev`** con el commit
   `4e6d856`, que incluye la Fase 1 y la Fase 2. Cloudflare compiló desde `main` de
   forma automática. El bundle servido (`index-CLf495kK.js`, 248 053 bytes) coincide
   byte a byte con el build local, y el copy de escalada está dentro del artefacto.
-- La aceptación en navegador del despliegue queda pendiente: no hay navegador de
-  escritorio conectado a la sesión, así que el aviso de escalada, el foco, el
-  cierre con teclado y los anchos estrechos no están verificados sobre la URL
-  pública. Sí están cubiertos por pruebas de componente y de sesión.
+  **El rediseño de esta entrada todavía no está desplegado.**
 
 ### Known issue
 
