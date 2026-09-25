@@ -69,21 +69,65 @@ describe('createGameViewModel', () => {
       'La búsqueda añade 1 comida.',
     ]);
     expect(model.resolution?.deltas).toEqual([
-      { id: 'hunger', label: 'Hambre', value: '+1', tone: 'warning' },
-      { id: 'energy', label: 'Energía', value: '−1', tone: 'warning' },
+      { id: 'hunger', label: 'Hambre', value: '+2', tone: 'warning' },
+      { id: 'energy', label: 'Energía', value: '−2', tone: 'warning' },
       { id: 'food', label: 'Comida', value: '+1', tone: 'positive' },
     ]);
     expect(model.resolution?.event).toBeNull();
     expect(model.resolution?.milestone).toBe(
-      'El ambiente empieza a desprender un aura rara. Empiezas a estar mas hambriento y cansado cada turno...',
+      'El ambiente empieza a desprender un aura rara. Una presión inicial castiga tu cuerpo...',
     );
+  });
+
+  it('traduce comer una ración y sus cambios', () => {
+    const previous = createCoreState({ food: 1, hunger: 2, health: 6 });
+    const resolution = resolveTurn(
+      { ...previous, status: 'playing' },
+      'eat',
+      () => 1,
+    );
+
+    const model = createGameViewModel(resolution.state, resolution, previous);
+
+    expect(model.resolution?.actionId).toBe('eat');
+    expect(model.resolution?.headline).toBe('Comes una ración.');
+    expect(model.resolution?.details).toEqual([
+      'Consumes 1 comida y reduces el hambre en 2.',
+      'La comida te ayuda a recuperar 1 de salud.',
+    ]);
+    expect(model.resolution?.deltas).toEqual([
+      { id: 'hunger', label: 'Hambre', value: '−2', tone: 'positive' },
+      { id: 'energy', label: 'Energía', value: '−1', tone: 'warning' },
+      { id: 'food', label: 'Comida', value: '−1', tone: 'warning' },
+    ]);
+  });
+
+  it('traduce una pesca fallida sin añadir comida', () => {
+    const previous = createCoreState();
+    const resolution = resolveTurn(
+      { ...previous, status: 'playing' },
+      'fish',
+      () => 2,
+    );
+
+    const model = createGameViewModel(resolution.state, resolution, previous);
+
+    expect(model.resolution?.actionId).toBe('fish');
+    expect(model.resolution?.headline).toBe('La pesca no consigue nada.');
+    expect(model.resolution?.details).toEqual([
+      'La pesca agota 6 intentos y no añade comida.',
+    ]);
+    expect(model.resolution?.deltas).toEqual([
+      { id: 'hunger', label: 'Hambre', value: '+6', tone: 'warning' },
+      { id: 'energy', label: 'Energía', value: '−6', tone: 'warning' },
+    ]);
   });
 
   it('traduce los tres eventos de Agonía', () => {
     const cases = [
       [1, 'Tormenta', 'Tu refugio ha resultado dañado por las fuertes tormentas!'],
       [51, 'Mapache', 'Un mapache te ha robado tu comida!'],
-      [99, 'Meteorito', 'Ha caido un meteorito y has fallecido...'],
+      [99, 'Meteorito', 'Un meteorito te golpea y te deja herido.'],
     ] as const;
 
     for (const [value, headline, description] of cases) {

@@ -167,14 +167,14 @@ function resolveEat(state: GameCoreState): ActionResolution {
     };
   }
 
-  const hungerReduced = Math.min(state.hunger, 3);
+  const hungerReduced = Math.max(0, Math.min(state.hunger, 3));
   const healthRecovered = state.health < 10 ? 1 : 0;
   const nextState = applyTurnCost(
     {
       ...state,
       food: state.food - 1,
       hunger: state.hunger - 4,
-      health: state.health + healthRecovered,
+      health: Math.min(10, state.health + healthRecovered),
     },
     1,
   );

@@ -57,7 +57,7 @@ const actionDefinitions: ReadonlyArray<ActionDefinition> = [
   {
     id: 'eat',
     label: 'Comer',
-    description: 'Intenta aprovechar lo que llevas.',
+    description: 'Convierte una ración en alimento y recuperación.',
     icon: Utensils,
   },
   {

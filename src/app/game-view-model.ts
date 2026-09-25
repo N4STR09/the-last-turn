@@ -322,7 +322,7 @@ function eventCopy(event: GameEvent): EventViewModel {
       return {
         type: event.type,
         headline: 'Meteorito',
-        description: 'Ha caido un meteorito y has fallecido...',
+        description: 'Un meteorito te golpea y te deja herido.',
       };
   }
 }
@@ -330,9 +330,9 @@ function eventCopy(event: GameEvent): EventViewModel {
 function milestoneCopy(milestone: Milestone): string {
   switch (milestone.type) {
     case 'turn-15':
-      return 'El ambiente empieza a desprender un aura rara. Empiezas a estar mas hambriento y cansado cada turno...';
+      return 'El ambiente empieza a desprender un aura rara. Una presión inicial castiga tu cuerpo...';
     case 'turn-30':
-      return 'Esto cada vez resulta mas dificil. Creo que esto terminara pronto...';
+      return 'Has cruzado otro umbral. Esto cada vez resulta más difícil, pero todavía puedes sobrevivir...';
   }
 }
 

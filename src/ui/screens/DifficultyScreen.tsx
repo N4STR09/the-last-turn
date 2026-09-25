@@ -34,7 +34,8 @@ export function DifficultyScreen({ onSelect }: DifficultyScreenProps) {
       </div>
       <p className="rules-note">
         Solo Agonía añade eventos aleatorios. Ambas dificultades comparten el
-        aumento del hambre, la pérdida de energía y los hitos de los turnos 15 y 30.
+        aumento del hambre, la pérdida de energía y una presión de una sola vez
+        al cruzar los hitos de los turnos 15 y 30.
       </p>
     </main>
   );

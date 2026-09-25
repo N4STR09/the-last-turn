@@ -23,7 +23,10 @@ export function resolveTurn(
     actionResolution.state,
     randomInt,
   );
-  const difficultyResolution = applyDifficulty(eventResolution.state);
+  const difficultyResolution = applyDifficulty(
+    eventResolution.state,
+    state.turn,
+  );
   const finalState = finishGame(difficultyResolution.state);
 
   return {

@@ -55,7 +55,9 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: 'Comenzar' }));
     await user.click(screen.getByRole('button', { name: 'Jugar en Agonía' }));
-    await user.click(screen.getByRole('button', { name: 'Ayuda' }));
+    for (let impact = 0; impact < 10; impact += 1) {
+      await user.click(screen.getByRole('button', { name: 'Ayuda' }));
+    }
 
     expect(
       screen.getByRole('heading', {

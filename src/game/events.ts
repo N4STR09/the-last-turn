@@ -32,7 +32,7 @@ export function resolveRandomEvent(
 
   if (value === 99) {
     return {
-      state: { ...state, health: 0 },
+      state: { ...state, health: Math.max(0, state.health - 1) },
       event: { type: 'meteorite' },
     };
   }

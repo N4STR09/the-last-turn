@@ -31,7 +31,7 @@ describe('resolveRandomEvent', () => {
     [59, 'raccoon', { food: 0 }],
     [60, null, {}],
     [98, null, {}],
-    [99, 'meteorite', { health: 0 }],
+    [99, 'meteorite', { health: 7 }],
     [100, null, {}],
   ] as const)(
     'resuelve la tirada de evento %i como %s',
@@ -53,20 +53,44 @@ describe('resolveRandomEvent', () => {
       expect(random.calls).toEqual([{ min: 1, max: 100 }]);
     },
   );
+
+  it('deja al jugador vivo tras un meteorito con salud inicial', () => {
+    const state = createCoreState({ difficulty: 'agony', health: 10 });
+    const random = sequenceRandomInt([99]);
+
+    const result = resolveRandomEvent(state, random.randomInt);
+
+    expect(result).toEqual({
+      state: { ...state, health: 9 },
+      event: { type: 'meteorite' },
+    });
+  });
+
+  it('mantiene mortal un meteorito cuando la salud ya es crítica', () => {
+    const state = createCoreState({ difficulty: 'agony', health: 1 });
+    const random = sequenceRandomInt([99]);
+
+    const result = resolveRandomEvent(state, random.randomInt);
+
+    expect(result).toEqual({
+      state: { ...state, health: 0 },
+      event: { type: 'meteorite' },
+    });
+  });
 });
 
 describe('applyDifficulty', () => {
   it.each([
     [14, 0, 10, null],
-    [15, 0, 10, { type: 'turn-15' }],
-    [16, 1, 9, null],
-    [20, 1, 9, null],
-    [29, 1, 9, null],
+    [15, 1, 9, { type: 'turn-15' }],
+    [16, 0, 10, null],
+    [20, 0, 10, null],
+    [29, 0, 10, null],
     [30, 1, 9, { type: 'turn-30' }],
-    [31, 2, 8, null],
-    [40, 2, 8, null],
+    [31, 0, 10, null],
+    [40, 0, 10, null],
   ] as const)(
-    'aplica el hito y las penalizaciones del turno %i',
+    'aplica el hito y la penalización del turno %i',
     (turn, hunger, energy, milestone) => {
       const state = createCoreState({ turn });
 
@@ -78,6 +102,17 @@ describe('applyDifficulty', () => {
       });
     },
   );
+
+  it('aplica una penalización al cruzar un hito con una acción multiturno', () => {
+    const state = createCoreState({ turn: 16 });
+
+    const result = applyDifficulty(state, 14);
+
+    expect(result).toEqual({
+      state: createCoreState({ turn: 16, hunger: 1, energy: 9 }),
+      milestone: { type: 'turn-15' },
+    });
+  });
 });
 
 describe('finishGame', () => {
@@ -159,15 +194,15 @@ describe('composición del pipeline', () => {
 
     const action = resolveAction(state, 'repair', random.randomInt);
     const event = resolveRandomEvent(action.state, random.randomInt);
-    const difficulty = applyDifficulty(event.state);
+    const difficulty = applyDifficulty(event.state, state.turn);
     const finished = finishGame(difficulty.state);
 
     expect(finished).toEqual({
       difficulty: 'agony',
       status: 'dead',
       turn: 31,
-      hunger: 12,
-      energy: 6,
+      hunger: 11,
+      energy: 7,
       food: 0,
       health: 10,
       hasShelter: true,
@@ -193,14 +228,9 @@ describe('composición del pipeline', () => {
     const finished = finishGame(difficulty.state);
 
     expect(finished).toMatchObject({
-      status: 'dead',
+      status: 'playing',
       turn: 1,
-      health: 0,
-      end: {
-        condition: 'health',
-        reportedCause: 'health',
-        turnsSurvived: 0,
-      },
+      health: 9,
     });
     expect(random.calls).toEqual([{ min: 1, max: 100 }]);
   });

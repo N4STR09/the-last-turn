@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { finishGame } from '../end-state';
 import { createGame, resolveTurn } from '..';
-import type { Difficulty, PlayingGameState } from '..';
+import type { Difficulty, GameState, PlayingGameState } from '..';
 import { createCoreState } from './test-state';
 import { failIfRandomIntIsCalled, sequenceRandomInt } from './test-random';
 
@@ -40,18 +40,13 @@ describe('resolveTurn', () => {
     expect(result).toEqual({
       state: {
         difficulty: 'agony',
-        status: 'dead',
+        status: 'playing',
         turn: 3,
         hunger: 2,
         energy: 8,
         food: 0,
-        health: 0,
+        health: 9,
         hasShelter: true,
-        end: {
-          condition: 'health',
-          reportedCause: 'health',
-          turnsSurvived: 2,
-        },
       },
       actionOutcome: { type: 'repair-succeeded' },
       randomEvent: { type: 'meteorite' },
@@ -91,8 +86,8 @@ describe('resolveTurn', () => {
     expect(result.state).toMatchObject({
       status: 'dead',
       turn: 31,
-      hunger: 12,
-      energy: 6,
+      hunger: 11,
+      energy: 7,
       end: {
         condition: 'hunger',
         reportedCause: 'hunger',
@@ -100,8 +95,31 @@ describe('resolveTurn', () => {
       },
     });
     expect(result.randomEvent).toBeNull();
-    expect(result.milestone).toBeNull();
+    expect(result.milestone).toEqual({ type: 'turn-30' });
   });
+
+  it.each(['normal', 'agony'] as const)(
+    'permite una estrategia renovable hasta superar el turno 100 en %s',
+    (difficulty) => {
+      let state: GameState = createGame(difficulty);
+      const randomInt = (min: number, max: number) =>
+        max === 100 ? 50 : min;
+      const renewableActions = ['forage', 'eat', 'rest'] as const;
+
+      state = resolveTurn(state, 'repair', randomInt).state;
+
+      for (let cycle = 0; cycle < 33; cycle += 1) {
+        for (const action of renewableActions) {
+          const resolution = resolveTurn(state, action, randomInt);
+          expect(resolution.state.status).toBe('playing');
+          state = resolution.state;
+        }
+      }
+
+      expect(state.turn).toBeGreaterThan(100);
+      expect(state.status).toBe('playing');
+    },
+  );
 
   it('rechaza resolver una partida terminada sin consumir azar', () => {
     const deadState = finishGame(createCoreState({ hunger: 11 }));

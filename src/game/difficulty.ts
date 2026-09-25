@@ -7,33 +7,29 @@ export interface DifficultyResolution {
 
 export function applyDifficulty(
   state: GameCoreState,
+  previousTurn = state.turn - 1,
 ): DifficultyResolution {
-  let nextState = state;
-  let milestone: Milestone | null = null;
+  const crossedTurn15 = previousTurn < 15 && state.turn >= 15;
+  const crossedTurn30 = previousTurn < 30 && state.turn >= 30;
+  const reachedTurn15 = state.turn === 15 || crossedTurn15;
+  const reachedTurn30 = state.turn === 30 || crossedTurn30;
+  const milestone: Milestone | null = reachedTurn30
+    ? { type: 'turn-30' }
+    : reachedTurn15
+      ? { type: 'turn-15' }
+      : null;
+  const penalties = Number(crossedTurn15) + Number(crossedTurn30);
 
-  if (state.turn === 15) {
-    milestone = { type: 'turn-15' };
+  if (penalties === 0) {
+    return { state, milestone };
   }
 
-  if (state.turn === 30) {
-    milestone = { type: 'turn-30' };
-  }
-
-  if (state.turn > 15) {
-    nextState = {
-      ...nextState,
-      hunger: nextState.hunger + 1,
-      energy: nextState.energy - 1,
-    };
-  }
-
-  if (state.turn > 30) {
-    nextState = {
-      ...nextState,
-      hunger: nextState.hunger + 1,
-      energy: nextState.energy - 1,
-    };
-  }
-
-  return { state: nextState, milestone };
+  return {
+    state: {
+      ...state,
+      hunger: state.hunger + penalties,
+      energy: state.energy - penalties,
+    },
+    milestone,
+  };
 }
