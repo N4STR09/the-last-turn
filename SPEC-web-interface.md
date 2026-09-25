@@ -156,6 +156,7 @@ Objetivo: WCAG 2.2 AA para los flujos del MVP.
 - Foco visible y nunca eliminado.
 - Navegación completa por teclado.
 - Contraste mínimo 4.5:1 para texto normal y 3:1 para texto grande y componentes gráficos.
+- Los bordes que identifican controles interactivos deben alcanzar 3:1; los separadores puramente decorativos pueden ser sutiles cuando el texto y la estructura ya identifican el contenido.
 - Objetivos táctiles de al menos 44 × 44 CSS pixels.
 - `aria-live="polite"` y `aria-atomic="true"` para la resolución de una acción.
 - La pantalla final recibirá foco al aparecer y se anunciará como error sin duplicar dos regiones `alert`; sus encabezados de pantalla usarán `tabIndex={-1}` para recibir foco programático.
@@ -245,4 +246,4 @@ npm run typecheck
 
 ## Preguntas abiertas
 
-Ninguna. La dirección visual, el alcance local y la migración fiel fueron confirmados.
+Ninguna. La dirección visual, el alcance de web estática sin instalación y la migración fiel fueron confirmados.

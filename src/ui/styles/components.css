@@ -44,7 +44,7 @@
   min-height: 4.75rem;
   padding: 0.8rem 0.9rem;
   color: var(--color-text);
-  border-color: var(--color-border);
+  border-color: var(--color-border-strong);
   background: rgb(21 29 26 / 88%);
   text-align: left;
 }
