@@ -14,11 +14,11 @@ Las tablas de la sección «Comandos automáticos» reflejan el árbol con Fase 
 | `npm ci` | Pasa; instalación reproducible sin vulnerabilidades reportadas |
 | `npm run typecheck` | Pasa |
 | `npm run lint` | Pasa sin warnings |
-| `npm run test:coverage` | Pasa; 15 archivos y 158 pruebas; cobertura global 91.32% statements, 84.42% branches, 100% functions, 91.25% lines |
+| `npm run test:coverage` | Pasa; 15 archivos y 159 pruebas; cobertura global 91.32% statements, 84.42% branches, 100% functions, 91.25% lines |
 | `npm run test:coverage:scoped` | Pasa; aplica los umbrales de `src/app`, `src/ui` y `src/game` dentro de `verify` |
 | `npm run test:coverage -- src\app` | Pasa; cobertura de `src/app` 84.96% statements, 76.10% branches, 100% functions, 84.86% lines |
 | `npm run test:coverage -- src\game` | Pasa; cobertura de `src/game` 100% en las cuatro métricas (85 pruebas) |
-| `npm run test:coverage -- src\ui` | Pasa; cobertura de `src/ui` 100% en las cuatro métricas (17 pruebas) |
+| `npm run test:coverage -- src\ui` | Pasa; cobertura de `src/ui` 100% en las cuatro métricas (18 pruebas) |
 | `npm run verify` | Pasa; typecheck, lint, cobertura global, cobertura por capacidad, build y presupuestos |
 | `npm run build` | Pasa; bundle estático dentro de presupuesto |
 | `npm run check:budget` | Pasa; 74.58 KiB JS gzip (37,3 % de 200 KiB) y 2.77 KiB CSS gzip (5,5 % de 50 KiB) |
@@ -92,7 +92,7 @@ Esto confirma que `base: './'` funciona tanto en la raíz de un dominio como en 
 
 ## Aceptación en la URL pública (build 0.1.0)
 
-La publicación accesible está en `https://the-last-turn.erpro-ferru.workers.dev` y se comprobó con Edge/CDP sobre el build servido por Cloudflare. **Este despliegue es anterior a la Fase 1**: los assets públicos son `assets/index-DWaHKHCl.js` y `assets/index-DutSG5GR.css`, mientras que el build local actual produce `assets/index-BUUsalrY.js`. La URL pública no incluye todavía comer, la pesca acotada ni el meteorito recuperable.
+La publicación accesible está en `https://the-last-turn.erpro-ferru.workers.dev` y se comprobó con Edge/CDP sobre el build servido por Cloudflare. **Este despliegue es anterior a la Fase 1**: los assets públicos son `assets/index-DWaHKHCl.js` y `assets/index-DutSG5GR.css`, mientras que el build local actual produce `assets/index-D3tQLqmK.js`. La URL pública no incluye todavía comer, la pesca acotada ni el meteorito recuperable.
 
 Aun así se verificó sobre el despliegue:
 
@@ -111,7 +111,7 @@ Las capturas de pantalla de 360, 768 y 1440 px se generaron temporalmente para l
 
 ## Pendiente para el build de Fase 1
 
-El build actual se verificó con los comandos automáticos de arriba y con una comprobación del artefacto servido: `npm run preview` en `http://localhost:4185` devuelve 200 para el documento y para los tres recursos (`assets/index-BUUsalrY.js` 245211 bytes, `assets/index-DutSG5GR.css` 11416 bytes y `favicon.svg` 319 bytes). Un barrido de URLs sobre el bundle solo encuentra `http://www.w3.org` (espacio de nombres SVG inerte) y `https://react.dev` (cadena de un mensaje de error de React); no hay peticiones a terceros en runtime.
+El build actual se verificó con los comandos automáticos de arriba y con una comprobación del artefacto servido: `npm run preview` devuelve 200 para el documento y para los tres recursos (`assets/index-D3tQLqmK.js` 245206 bytes, `assets/index-DutSG5GR.css` 11416 bytes y `favicon.svg` 319 bytes). Un barrido de URLs sobre el bundle solo encuentra `http://www.w3.org` (espacio de nombres SVG inerte) y `https://react.dev` (cadena de un mensaje de error de React); no hay peticiones a terceros en runtime. Se confirmó además que el copy corregido está dentro del bundle servido: aparecen `quitarte salud`, `recuperar un poco de salud`, `te deja herido` y `aura rara`, y no aparecen ni `provocar una muerte` ni el copy de hito sin acentos que se había descartado.
 
 Queda pendiente, y no se afirma aquí ningún resultado hasta ejecutarlo:
 

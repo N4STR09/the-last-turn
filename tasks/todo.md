@@ -432,7 +432,7 @@ estática.
 - [x] La línea base del C y las desviaciones de Fase 1 están separadas en la documentación.
 
 **Verificación de esta fase:**
-- [x] Ejecutar `npm test`, `npm run verify` y `npm run build` con el árbol final: 158 pruebas, cobertura global 91.32% statements / 84.42% branches / 100% functions / 91.25% lines, bundle de 74.58 KiB JS gzip y 2.77 KiB CSS gzip.
+- [x] Ejecutar `npm test`, `npm run verify` y `npm run build` con el árbol final: 159 pruebas, cobertura global 91.32% statements / 84.42% branches / 100% functions / 91.25% lines, bundle de 74.58 KiB JS gzip y 2.77 KiB CSS gzip.
 - [x] Comprobar el artefacto servido: documento y los tres recursos responden 200 y el bundle no contiene URLs de terceros.
 - [ ] Repetir QA manual del flujo, teclado, foco, red y anchos con el build de Fase 1; está bloqueado porque no hay navegador de escritorio conectado a la sesión.
 - [ ] Obtener autorización explícita antes de hacer push o desplegar la Fase 1.
