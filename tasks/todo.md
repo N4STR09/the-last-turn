@@ -204,15 +204,15 @@
 **Descripción:** Crear recursos, resolución, acciones y pantalla de juego a partir de modelos de vista.
 
 **Criterios de aceptación:**
-- [ ] Se muestran hambre, energía, comida y refugio con texto; no se muestra salud.
-- [ ] La resolución muestra acción, evento opcional e hito opcional en orden.
-- [ ] Los siete botones emiten la acción correcta.
-- [ ] La región de resolución se anuncia con `aria-live="polite"` y es atómica.
-- [ ] No se importa lógica del motor en componentes.
+- [x] Se muestran hambre, energía, comida y refugio con texto; no se muestra salud.
+- [x] La resolución muestra acción, evento opcional e hito opcional en orden.
+- [x] Los siete botones emiten la acción correcta.
+- [x] La región de resolución se anuncia con `aria-live="polite"` y es atómica.
+- [x] No se importa lógica del motor en componentes.
 
 **Verificación:**
-- [ ] `npm run test -- src/ui` pasa.
-- [ ] `npm run lint` pasa sin warnings.
+- [x] `npm run test -- src/ui` pasa.
+- [x] `npm run lint` pasa sin warnings.
 
 **Dependencias:** Tarea 7.
 
