@@ -5,14 +5,14 @@
 **Descripción:** Convertir el proyecto aprobado en un repositorio limpio y versionar la documentación sin mezclar los fuentes C.
 
 **Criterios de aceptación:**
-- [ ] El repositorio usa la rama `main` y contiene las especificaciones aprobadas.
-- [ ] `CAPABILITIES.md` enlaza las cuatro especificaciones.
-- [ ] No se copia el ejecutable ni código C al proyecto.
-- [ ] No hay secretos ni artefactos generados.
+- [x] El repositorio usa la rama `main` y contiene las especificaciones aprobadas.
+- [x] `CAPABILITIES.md` enlaza las cuatro especificaciones.
+- [x] No se copia el ejecutable ni código C al proyecto.
+- [x] No hay secretos ni artefactos generados.
 
 **Verificación:**
-- [ ] `git status --short` solo contiene cambios intencionados.
-- [ ] `git log --oneline` muestra un commit inicial atómico.
+- [x] `git status --short` solo contiene cambios intencionados.
+- [x] `git log --oneline` muestra un commit inicial atómico.
 
 **Dependencias:** Ninguna.
 
@@ -28,17 +28,17 @@
 **Descripción:** Inicializar React + Vite + TypeScript y la barrera de calidad sin implementar todavía reglas ni UI final.
 
 **Criterios de aceptación:**
-- [ ] `package.json` contiene versiones exactas y los scripts aprobados.
-- [ ] TypeScript estricto incluye `noUncheckedIndexedAccess` y `exactOptionalPropertyTypes`.
-- [ ] Vitest, React Testing Library, cobertura y ESLint están configurados.
-- [ ] `.gitignore` excluye `node_modules`, `dist` y cobertura.
+- [x] `package.json` contiene versiones exactas y los scripts aprobados.
+- [x] TypeScript estricto incluye `noUncheckedIndexedAccess` y `exactOptionalPropertyTypes`.
+- [x] Vitest, React Testing Library, cobertura y ESLint están configurados.
+- [x] `.gitignore` excluye `node_modules`, `dist` y cobertura.
 
 **Verificación:**
-- [ ] `npm ci` termina correctamente.
-- [ ] `npm run typecheck` pasa.
-- [ ] `npm run lint` pasa sin warnings.
-- [ ] `npm run test` pasa.
-- [ ] `npm run build` pasa.
+- [x] `npm ci` termina correctamente.
+- [x] `npm run typecheck` pasa.
+- [x] `npm run lint` pasa sin warnings.
+- [x] `npm run test` pasa.
+- [x] `npm run build` pasa.
 
 **Dependencias:** Tarea 1.
 
@@ -56,9 +56,9 @@
 
 ## Checkpoint A: Cadena de herramientas
 
-- [ ] Instalación limpia reproducible.
-- [ ] TypeScript, ESLint, pruebas y build pasan.
-- [ ] Configuración versionada sin artefactos generados.
+- [x] Instalación limpia reproducible.
+- [x] TypeScript, ESLint, pruebas y build pasan.
+- [x] Configuración versionada sin artefactos generados.
 
 ## Tarea 3: Definir contratos y ledger del motor
 
