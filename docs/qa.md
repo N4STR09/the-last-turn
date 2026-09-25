@@ -1,7 +1,11 @@
 # Registro de QA final
 
 **Fecha:** 25 de septiembre de 2026
-**Alcance:** primera entrega web estática de *The Last Turn Web*
+**Alcance:** entrega web estática de *The Last Turn Web* con las reglas de la Fase 1 de supervivencia
+
+## Estado de este registro
+
+Las tablas de la sección «Comandos automáticos» reflejan el árbol con Fase 1. Las secciones de navegador real y de aceptación pública se realizaron sobre el build `0.1.0`, publicado antes de la Fase 1, y están etiquetadas como tales; la repetición en navegador con el build actual queda registrada como pendiente.
 
 ## Comandos automáticos
 
@@ -10,15 +14,17 @@
 | `npm ci` | Pasa; instalación reproducible sin vulnerabilidades reportadas |
 | `npm run typecheck` | Pasa |
 | `npm run lint` | Pasa sin warnings |
-| `npm run test:coverage` | Pasa; 15 archivos y 149 pruebas; cobertura global 90.34% statements, 82.53% branches, 100% functions, 90.31% lines |
+| `npm run test:coverage` | Pasa; 15 archivos y 158 pruebas; cobertura global 91.32% statements, 84.42% branches, 100% functions, 91.25% lines |
 | `npm run test:coverage:scoped` | Pasa; aplica los umbrales de `src/app`, `src/ui` y `src/game` dentro de `verify` |
-| `npm run test:coverage -- src\app` | Pasa; cobertura de `src/app` 83.44% statements, 73.85% branches, 100% functions, 83.33% lines |
-| `npm run test:coverage -- src\game` | Pasa; cobertura de `src/game` 100% en las cuatro métricas |
-| `npm run test:coverage -- src\ui` | Pasa; cobertura de `src/ui` 100% en las cuatro métricas |
+| `npm run test:coverage -- src\app` | Pasa; cobertura de `src/app` 84.96% statements, 76.10% branches, 100% functions, 84.86% lines |
+| `npm run test:coverage -- src\game` | Pasa; cobertura de `src/game` 100% en las cuatro métricas (85 pruebas) |
+| `npm run test:coverage -- src\ui` | Pasa; cobertura de `src/ui` 100% en las cuatro métricas (17 pruebas) |
 | `npm run verify` | Pasa; typecheck, lint, cobertura global, cobertura por capacidad, build y presupuestos |
 | `npm run build` | Pasa; bundle estático dentro de presupuesto |
-| `npm run check:budget` | Pasa; 74.30 KiB JS gzip (37,2 % de 200 KiB) y 2.77 KiB CSS gzip (5,5 % de 50 KiB) |
+| `npm run check:budget` | Pasa; 74.58 KiB JS gzip (37,3 % de 200 KiB) y 2.77 KiB CSS gzip (5,5 % de 50 KiB) |
 | `npm audit` | 0 vulnerabilidades |
+
+La puerta mide con gzip nivel 9 sobre `dist/assets/` e informa de 74.58 KiB, mientras que Vite imprime 77.30 kB para el mismo archivo. La diferencia es esperable y está explicada en `scripts/check-budget.mjs`: ambos ajustan gzip de forma distinta y la puerta aplica siempre su propia medición.
 
 Las puertas se comprobaron además en su sentido de fallo, porque una comprobación que solo pasa no demuestra que bloquee:
 
@@ -32,7 +38,7 @@ Las puertas se comprobaron además en su sentido de fallo, porque una comprobaci
 
 En todos los casos se restauró el estado y se volvió a comprobar que la puerta pasa con el árbol real.
 
-## Navegador real
+## Navegador real (build 0.1.0, anterior a la Fase 1)
 
 Se comprobó el build servido por `vite preview` en `127.0.0.1` con un perfil aislado de Edge y CDP. El flujo recorrido fue:
 
@@ -50,7 +56,7 @@ Resultados observados:
 - Red en este recorrido completo: 28 peticiones, todas al origen local; 0 peticiones a terceros.
 - El favicon se carga como recurso local, por lo que no se produce la solicitud 404 implícita de `favicon.ico`.
 
-## Comprobación adicional del artefacto web
+## Comprobación adicional del artefacto web (build 0.1.0)
 
 Se volvió a servir el build de producción con `vite preview` en `127.0.0.1:4175` y se inspeccionó con Edge/CDP:
 
@@ -60,7 +66,7 @@ Se volvió a servir el build de producción con `vite preview` en `127.0.0.1:417
 - Consola y excepciones: 0; en esta carga inicial fueron 4 peticiones (documento, CSS, JS y favicon), todas al mismo origen y ninguna a terceros.
 - Los bordes de las tarjetas informativas que no son controles permanecen sutiles; la legibilidad y la estructura los identifican sin depender del color, mientras que los bordes de controles mantienen el contraste de 3:1.
 
-## Auditoría de contraste WCAG 1.4.3
+## Auditoría de contraste WCAG 1.4.3 (build 0.1.0)
 
 Se recorrieron las cuatro pantallas en `1440 × 1000` y se midió cada nodo de texto contra el fondo efectivo, compositando la cadena de ancestros hasta el primer fondo opaco. El umbral aplicado fue 4.5:1 para texto normal y 3:1 para texto grande (>= 24 px, o >= 18.66 px en negrita).
 
@@ -74,7 +80,7 @@ Se recorrieron las cuatro pantallas en `1440 × 1000` y se midió cada nodo de t
 
 La muerte se alcanzó de forma real en Agonía por inanición tras 10 turnos: la pantalla final mostró `h1` «La partida ha terminado», el aviso de causa, «Dificultad Agonía / Supervivencia 10 turnos aguantados», el foco en `game-over-title` y un único botón «Volver a jugar», que devolvió a `screen--difficulty` sin conservar la partida. Consola y excepciones: 0.
 
-## Comprobación en subdirectorio
+## Comprobación en subdirectorio (build 0.1.0)
 
 El build se copió a un host estático estricto, sin fallback de SPA, y se sirvió en `http://127.0.0.1:4180/juego/`:
 
@@ -84,9 +90,11 @@ El build se copió a un host estático estricto, sin fallback de SPA, y se sirvi
 
 Esto confirma que `base: './'` funciona tanto en la raíz de un dominio como en un subdirectorio, que es el motivo de esa configuración.
 
-## Aceptación en la URL pública
+## Aceptación en la URL pública (build 0.1.0)
 
-La publicación accesible está en `https://the-last-turn.erpro-ferru.workers.dev` y se comprobó con Edge/CDP sobre el build servido por Cloudflare:
+La publicación accesible está en `https://the-last-turn.erpro-ferru.workers.dev` y se comprobó con Edge/CDP sobre el build servido por Cloudflare. **Este despliegue es anterior a la Fase 1**: los assets públicos son `assets/index-DWaHKHCl.js` y `assets/index-DutSG5GR.css`, mientras que el build local actual produce `assets/index-BUUsalrY.js`. La URL pública no incluye todavía comer, la pesca acotada ni el meteorito recuperable.
+
+Aun así se verificó sobre el despliegue:
 
 - Respuesta HTTP 200; `Server: cloudflare` y `CF-Cache-Status: HIT`.
 - `index.html` conserva `lang="es"`, título `The Last Turn` y referencias relativas a `./assets/...` y `./favicon.svg`.
@@ -100,3 +108,14 @@ La publicación accesible está en `https://the-last-turn.erpro-ferru.workers.de
 **Nota de infraestructura:** la URL disponible termina en `workers.dev`, no en `pages.dev`. Cloudflare sirve correctamente el artefacto estático en ese endpoint, pero si la intención era usar el producto Pages clásico, hay que revisar en el dashboard si el proyecto se creó como Pages o como Workers con Static Assets. No se da por verificado un proyecto Pages clásico mientras la URL no sea `*.pages.dev`.
 
 Las capturas de pantalla de 360, 768 y 1440 px se generaron temporalmente para la inspección y no forman parte del repositorio. La primera versión no incluye E2E automatizado; la comprobación de navegador se mantiene como QA manual reproducible.
+
+## Pendiente para el build de Fase 1
+
+El build actual se verificó con los comandos automáticos de arriba y con una comprobación del artefacto servido: `npm run preview` en `http://localhost:4185` devuelve 200 para el documento y para los tres recursos (`assets/index-BUUsalrY.js` 245211 bytes, `assets/index-DutSG5GR.css` 11416 bytes y `favicon.svg` 319 bytes). Un barrido de URLs sobre el bundle solo encuentra `http://www.w3.org` (espacio de nombres SVG inerte) y `https://react.dev` (cadena de un mensaje de error de React); no hay peticiones a terceros en runtime.
+
+Queda pendiente, y no se afirma aquí ningún resultado hasta ejecutarlo:
+
+- Recorrido en navegador real del build de Fase 1: comer con y sin comida, pesca con seis intentos, meteorito no mortal desde salud inicial, teclado, foco y ausencia de la salud en pantalla.
+- Repetición de anchos 320, 360, 768 y 1440 px, objetivos táctiles, movimiento reducido, consola y red sobre el build actual.
+- Confirmación de infraestructura en el dashboard de Cloudflare: si el proyecto es Pages clásico o Workers con Static Assets, y qué rama produce despliegues.
+- Empuje a `origin/main` y redespliegue, que requieren autorización explícita.
