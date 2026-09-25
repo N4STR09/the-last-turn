@@ -314,14 +314,14 @@
 **Descripción:** Adaptar el motor a español y coordinar acciones fuera del reducer.
 
 **Criterios de aceptación:**
-- [ ] Los recursos muestran etiquetas y valores sin calcular reglas.
-- [ ] La resolución traduce resultados, eventos e hitos en orden.
-- [ ] La causa final usa `reportedCause`.
-- [ ] Una acción invoca `resolveTurn` una sola vez.
-- [ ] La sesión nueva no hereda estado ni resolución.
+- [x] Los recursos muestran etiquetas y valores sin calcular reglas.
+- [x] La resolución traduce resultados, eventos e hitos en orden.
+- [x] La causa final usa `reportedCause`.
+- [x] Una acción invoca `resolveTurn` una sola vez.
+- [x] La sesión nueva no hereda estado ni resolución.
 
 **Verificación:**
-- [ ] `npm run test -- src/app` pasa.
+- [x] `npm run test -- src/app` pasa.
 - [ ] `npm run test:coverage -- src/app` cumple 80/70.
 
 **Dependencias:** Tareas 10 y 11.
