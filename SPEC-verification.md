@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Establecer una barrera de calidad reproducible para que la migración sea demostrablemente compilable, testeable, accesible y usable localmente antes de considerarla terminada.
+Establecer una barrera de calidad reproducible para que la migración sea demostrablemente compilable, testeable, accesible y publicable como web estática antes de considerarla terminada.
 
 ## Entorno y versiones
 
@@ -137,7 +137,8 @@ El script `test:coverage` usa `scripts/run-coverage.mjs` para conservar la cober
 ### Build
 
 - `npm run build` termina con código 0.
-- El resultado es una aplicación estática local.
+- El resultado es una aplicación web estática que puede publicarse directamente en Cloudflare Pages.
+- No se generan Pages Functions, Workers, endpoints ni secretos.
 - No hay endpoints, secretos ni variables sensibles.
 - El runtime de producción no realiza peticiones a terceros.
 
@@ -171,7 +172,7 @@ La inspección visual no reemplaza las pruebas; las pruebas no reemplazan la ins
 
 Si se supera un presupuesto, se medirá el tamaño y se documentará la causa antes de optimizar.
 
-## Seguridad local y suministro
+## Seguridad y suministro
 
 - No se manejan datos personales ni credenciales.
 - No se almacena estado en Web Storage durante este MVP.
@@ -189,7 +190,7 @@ Si se supera un presupuesto, se medirá el tamaño y se documentará la causa an
 - No hay errores de consola ni solicitudes de runtime a terceros.
 - La interfaz funciona con teclado, móvil y escritorio.
 - `docs/fidelity.md` enumera comportamientos `F-*` y diferencias `W-*`.
-- El README explica cómo iniciar, probar y construir localmente.
+- El README explica cómo iniciar, probar, construir y publicar el build web.
 - No se ha añadido backend, persistencia ni funcionalidad fuera de alcance.
 
 ## Preguntas abiertas

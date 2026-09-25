@@ -1,10 +1,12 @@
 # The Last Turn
 
-Migración local de *The Last Turn* a React + Vite + TypeScript. La aplicación reproduce las reglas del prototipo C auditado y conserva también sus defectos deliberados: no hay victoria, la salud no se muestra, comer no reduce el hambre y la partida termina únicamente por las condiciones del modelo.
+Versión web de *The Last Turn* construida con React + Vite + TypeScript. La aplicación reproduce las reglas del prototipo C auditado y conserva también sus defectos deliberados: no hay victoria, la salud no se muestra, comer no reduce el hambre y la partida termina únicamente por las condiciones del modelo.
 
-La primera versión es completamente local. No tiene backend, cuentas, multijugador, telemetría, persistencia, Web Storage, endpoints ni recursos de red.
+La aplicación es una web 100 % estática preparada para publicarse en Cloudflare Pages. No tiene backend, cuentas, multijugador, telemetría, persistencia, Web Storage, endpoints ni recursos de terceros en runtime. Una persona jugará abriendo una URL HTTPS, sin instalar ni configurar nada.
 
-## Requisitos
+## Requisitos de desarrollo
+
+Node.js y npm solo son necesarios para desarrollar o publicar el proyecto; no para jugar.
 
 - Node.js `24.19.0` (rango permitido: `>=24.19.0 <25`)
 - npm `11.17.0` (rango permitido: `>=11.17.0 <12`)
@@ -46,6 +48,17 @@ Para servir el resultado de producción:
 npm run preview
 ```
 
+## Publicación web
+
+El artefacto desplegable es `dist/`. En Cloudflare Pages se debe usar:
+
+- comando de build: `npm run build`;
+- directorio de salida: `dist`;
+- directorio raíz: el repositorio raíz;
+- versión de Node: `.node-version` (`24.19.0`).
+
+La guía completa para integración Git, carga directa, aceptación, rollback y límites de la versión web está en [`docs/deployment.md`](docs/deployment.md). No se ha creado un proyecto remoto ni se ha iniciado ningún despliegue.
+
 ## Flujo y controles
 
 1. **Comenzar** abre la selección de dificultad.
@@ -72,9 +85,9 @@ El azar se inyecta en el motor. El adaptador de producción (`browserRandomInt`)
 
 Las reglas y los defectos intencionales están registrados en [`docs/fidelity.md`](docs/fidelity.md). La web no intenta reproducir bit a bit el `rand()` de MinGW: usa enteros nominalmente uniformes con extremos inclusivos y documenta esa diferencia.
 
-## Build local
+## Build web estático
 
-El build se genera en `dist/` y no debe desplegarse con un backend. En la verificación actual el bundle inicial mide aproximadamente **77.02 KiB JS gzip** y **2.83 KiB CSS gzip**, dentro de los presupuestos de 200 KiB y 50 KiB respectivamente. El favicon y todos los recursos visuales son locales.
+El build se genera en `dist/` y se publica directamente como contenido estático, sin backend ni Pages Functions. En la verificación actual el bundle inicial mide aproximadamente **77.02 KiB JS gzip** y **2.83 KiB CSS gzip**, dentro de los presupuestos de 200 KiB y 50 KiB respectivamente. El favicon y todos los recursos visuales se incluyen en el artefacto.
 
 ## Alcance de QA
 

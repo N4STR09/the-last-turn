@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Conectar el motor y la interfaz para proporcionar una experiencia local completa: inicio, selección de dificultad, partida, acciones, resultado y reinicio, sin persistencia ni servicios externos.
+Conectar el motor y la interfaz para proporcionar una experiencia web completa: inicio, selección de dificultad, partida, acciones, resultado y reinicio, sin persistencia ni servicios externos. El mismo build se publicará como web estática por HTTPS sin instalación para quien juega.
 
 ## Flujo de pantallas
 

@@ -2,11 +2,11 @@
 
 ## Resumen
 
-Construiremos una aplicación React + Vite + TypeScript totalmente local que migre las reglas actuales del prototipo C sin corregirlas silenciosamente. El motor de juego se implementará primero mediante TDD y con azar inyectable; después se construirán la interfaz, la capa de aplicación y la verificación integral.
+Construiremos una aplicación React + Vite + TypeScript como web 100 % estática que migre las reglas actuales del prototipo C sin corregirlas silenciosamente. El motor de juego se implementará primero mediante TDD y con azar inyectable; después se construirán la interfaz, la capa de aplicación y la verificación integral.
 
 ## Objetivo de la primera entrega
 
-Completar un flujo local jugable:
+Completar un flujo web jugable mediante navegador, sin instalación para la persona que juega:
 
 ```text
 Inicio → Dificultad → Partida → Acción → Resultado → Fin o siguiente turno → Reinicio
@@ -20,7 +20,8 @@ La entrega se considera terminada cuando `npm run verify` pasa, el build es est�
 - Las transiciones serán inmutables y precedidas por un reducer puro de aplicación.
 - El azar se resolverá en el manejador de eventos y se despachará ya calculado al reducer.
 - `src/ui/` recibirá view models y emitirá callbacks; no invocará el motor.
-- No habrá router, store global, persistencia, backend ni recursos de red.
+- No habrá router, store global, persistencia, backend, Pages Functions ni recursos de red en runtime.
+- El build de `dist/` se publicará como web estática en Cloudflare Pages; quien juega no instalará dependencias.
 - Las acciones y reglas se implementarán en cortes pequeños con RED → GREEN → REFACTOR.
 - Las versiones se fijarán en `package.json` y `package-lock.json`.
 - Cada corte verificado se guardará en un commit atómico.
