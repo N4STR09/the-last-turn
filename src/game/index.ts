@@ -1,4 +1,5 @@
 export { createGame } from './initial-state';
+export { resolveTurn } from './engine';
 export type {
   ActionOutcome,
   DeathCause,

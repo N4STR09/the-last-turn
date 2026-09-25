@@ -145,17 +145,17 @@
 **Descripción:** Orquestar la transición completa y endurecer el contrato público antes de conectar React.
 
 **Criterios de aceptación:**
-- [ ] `resolveTurn` no acepta partidas terminadas.
-- [ ] Valida que cada resultado RNG sea entero y esté dentro del intervalo.
-- [ ] Ordena acción → evento → dificultad → fin.
-- [ ] No muta estado ni resultados previos.
-- [ ] `src/game/` alcanza 100% en statements, branches, functions y lines.
+- [x] `resolveTurn` no acepta partidas terminadas.
+- [x] Valida que cada resultado RNG sea entero y esté dentro del intervalo.
+- [x] Ordena acción → evento → dificultad → fin.
+- [x] No muta estado ni resultados previos.
+- [x] `src/game/` alcanza 100% en statements, branches, functions y lines.
 
 **Verificación:**
-- [ ] `npm run test:coverage -- src/game` pasa umbrales.
-- [ ] `npm run typecheck` pasa.
-- [ ] `npm run lint` pasa sin warnings.
-- [ ] `npm run build` pasa.
+- [x] `npm run test:coverage -- src/game` pasa umbrales.
+- [x] `npm run typecheck` pasa.
+- [x] `npm run lint` pasa sin warnings.
+- [x] `npm run build` pasa.
 
 **Dependencias:** Tareas 4 y 5.
 
@@ -168,11 +168,11 @@
 
 ## Checkpoint B: Motor
 
-- [ ] Instalación limpia reproducible.
-- [ ] Suite del motor completa.
-- [ ] Cobertura del motor al 100%.
-- [ ] Ledger de fidelidad revisado.
-- [ ] Commit de motor verificado.
+- [x] Instalación limpia reproducible.
+- [x] Suite del motor completa.
+- [x] Cobertura del motor al 100%.
+- [x] Ledger de fidelidad revisado.
+- [x] Commit de motor verificado.
 
 ## Tarea 7: Implementar Inicio y Dificultad
 
