@@ -37,10 +37,13 @@ npm run lint            # ESLint sin warnings
 npm test                # Suite Vitest + Testing Library
 npm run test:coverage   # Cobertura global y umbrales de verify
 npm run build           # Build estático de producción
-npm run verify          # typecheck → lint → cobertura → build
+npm run check:budget    # Presupuestos de bundle sobre dist/
+npm run verify          # typecheck → lint → cobertura → build → presupuestos
 ```
 
 `npm run test:coverage -- src/app` ejecuta la cobertura centrada en `src/app`; el wrapper de `scripts/run-coverage.mjs` limita el alcance para que los umbrales de esa tarea midan la capacidad indicada. Sin argumentos, `npm run test:coverage` mide todo `src/` y es el comando que usa `verify`.
+
+`npm run check:budget` mide los archivos de `dist/assets/` ya comprimidos con gzip y falla si se superan los presupuestos de 200 KiB de JavaScript y 50 KiB de CSS. Se ejecuta al final de `verify`, de modo que un bundle que crezca sin control detiene la entrega.
 
 Para servir el resultado de producción:
 
@@ -87,7 +90,7 @@ Las reglas y los defectos intencionales están registrados en [`docs/fidelity.md
 
 ## Build web estático
 
-El build se genera en `dist/` y se publica directamente como contenido estático, sin backend ni Pages Functions. En la verificación actual el bundle inicial mide aproximadamente **77.02 KiB JS gzip** y **2.83 KiB CSS gzip**, dentro de los presupuestos de 200 KiB y 50 KiB respectivamente. El favicon y todos los recursos visuales se incluyen en el artefacto.
+El build se genera en `dist/` y se publica directamente como contenido estático, sin backend ni Pages Functions. El build informa de **77.02 KiB JS gzip** y **2.83 KiB CSS gzip**; la puerta `npm run check:budget` mide los mismos archivos de forma independiente y confirma que están dentro de los presupuestos de 200 KiB y 50 KiB respectivamente. El favicon y todos los recursos visuales se incluyen en el artefacto.
 
 ## Alcance de QA
 

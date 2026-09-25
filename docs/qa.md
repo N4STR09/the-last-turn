@@ -10,12 +10,13 @@
 | `npm ci` | Pasa; instalación reproducible sin vulnerabilidades reportadas |
 | `npm run typecheck` | Pasa |
 | `npm run lint` | Pasa sin warnings |
-| `npm run test:coverage` | Pasa; 14 archivos y 138 pruebas; cobertura global 90.34% statements, 82.53% branches, 100% functions, 90.31% lines |
+| `npm run test:coverage` | Pasa; 15 archivos y 145 pruebas; cobertura global 90.34% statements, 82.53% branches, 100% functions, 90.31% lines |
 | `npm run test:coverage -- src\app` | Pasa; cobertura de `src/app` 83.44% statements, 73.85% branches, 100% functions, 83.33% lines |
 | `npm run test:coverage -- src\game` | Pasa; cobertura de `src/game` 100% en las cuatro métricas |
 | `npm run test:coverage -- src\ui` | Pasa; cobertura de `src/ui` 100% en las cuatro métricas |
-| `npm run verify` | Pasa; typecheck, lint, cobertura y build |
+| `npm run verify` | Pasa; typecheck, lint, cobertura, build y presupuestos |
 | `npm run build` | Pasa; bundle estático dentro de presupuesto |
+| `npm run check:budget` | Pasa; 74.30 KiB JS gzip (37,2 % de 200 KiB) y 2.77 KiB CSS gzip (5,5 % de 50 KiB) |
 | `npm audit` | 0 vulnerabilidades |
 
 ## Navegador real

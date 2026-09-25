@@ -14,7 +14,7 @@ npm run verify
 npm run build
 ```
 
-`npm run verify` incluye typecheck, lint, cobertura y build. La publicación debe usar un commit que haya pasado esa barrera completa.
+`npm run verify` incluye typecheck, lint, cobertura, build y la comprobación de presupuestos de bundle. La publicación debe usar un commit que haya pasado esa barrera completa.
 
 ## Opción recomendada: integración Git
 

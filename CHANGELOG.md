@@ -9,6 +9,7 @@
 - Motor puro con las siete acciones, eventos, hitos, dificultad y condiciones de fin del prototipo C.
 - Inicio, selección de dificultad, partida, pantalla final, atajos y gestión de foco.
 - Verificación con Vitest, React Testing Library, ESLint, TypeScript, cobertura y build estático.
+- Puerta `npm run check:budget` que bloquea la entrega si el bundle supera 200 KiB JS o 50 KiB CSS gzip.
 - Ledger de fidelidad en [`docs/fidelity.md`](docs/fidelity.md).
 
 ### Fixed

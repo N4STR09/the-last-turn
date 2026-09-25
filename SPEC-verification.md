@@ -169,7 +169,7 @@ La inspección visual no reemplaza las pruebas; las pruebas no reemplazan la ins
 - Las animaciones no bloquean la entrada del usuario.
 - Valores de estadísticas grandes no amplían el documento horizontalmente.
 
-Si se supera un presupuesto, se medirá el tamaño y se documentará la causa antes de optimizar.
+Estos presupuestos no se comprueban a ojo: `npm run check:budget` mide con gzip los archivos generados en `dist/assets/` y devuelve código de salida 1 al superarse. `npm run verify` ejecuta esa puerta después del build, de modo que crecer el bundle sin documentarlo detiene la entrega en lugar de quedar como un hecho informado. Si se supera un presupuesto, se medirá el tamaño y se documentará la causa antes de optimizar.
 
 ## Seguridad y suministro
 

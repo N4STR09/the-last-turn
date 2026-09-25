@@ -376,6 +376,7 @@
 - [x] `npm ci` y `npm run verify` pasan desde cero.
 - [x] `npm audit` no contiene riesgos alcanzables en runtime sin resolver o documentar.
 - [x] Bundle inicial cumple 200 KiB JS gzip y 50 KiB CSS gzip.
+- [x] `npm run check:budget` bloquea la entrega si se supera un presupuesto.
 - [x] Navegador sin peticiones a terceros.
 - [x] README explica instalación, desarrollo, test, verify y build.
 - [x] `docs/fidelity.md` distingue claramente migración y mejoras futuras.
