@@ -23,9 +23,14 @@ body {
   margin: 0;
   overflow-x: hidden;
   color: var(--color-text);
+  /*
+   * Negro casi puro. El resplandor radial superior es lo unico que separa el
+   * fondo del vacio: sin el, la pagina se lee como una superficie plana y las
+   * zonas que brillan no tienen contra que destacar.
+   */
   background:
-    radial-gradient(circle at 50% -20%, rgb(44 66 54 / 32%), transparent 42rem),
-    linear-gradient(180deg, #0d1411 0%, var(--color-bg) 55%, #080b0a 100%);
+    radial-gradient(ellipse 60rem 26rem at 50% -12%, rgb(255 255 255 / 4%), transparent 70%),
+    var(--color-bg);
 }
 
 button,
@@ -40,8 +45,8 @@ button {
 }
 
 ::selection {
-  color: var(--color-bg);
-  background: var(--color-accent-bright);
+  color: var(--color-void);
+  background: var(--color-light);
 }
 
 :focus-visible {
