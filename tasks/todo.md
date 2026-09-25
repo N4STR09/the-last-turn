@@ -230,17 +230,17 @@
 **Descripción:** Añadir pantalla final, botón compartido, tokens y estilos responsive accesibles.
 
 **Criterios de aceptación:**
-- [ ] Fin de partida muestra la causa comunicada y los turnos aguantados.
-- [ ] El botón reinicio emite un único callback.
-- [ ] Los colores cumplen los contrastes definidos.
-- [ ] No hay desplazamiento horizontal entre 320 y 1440 px.
-- [ ] Movimiento reducido elimina animaciones no esenciales.
-- [ ] Los objetivos interactivos miden al menos 44 × 44 px.
+- [x] Fin de partida muestra la causa comunicada y los turnos aguantados.
+- [x] El botón reinicio emite un único callback.
+- [x] Los colores cumplen los contrastes definidos.
+- [x] No hay desplazamiento horizontal entre 320 y 1440 px.
+- [x] Movimiento reducido elimina animaciones no esenciales.
+- [x] Los objetivos interactivos miden al menos 44 × 44 px.
 
 **Verificación:**
-- [ ] `npm run test -- src/ui` pasa.
-- [ ] Inspección en navegador a 360, 768 y 1440 px.
-- [ ] Navegación por teclado sin pérdida de foco.
+- [x] `npm run test -- src/ui` pasa.
+- [x] Inspección en navegador a 360, 768 y 1440 px.
+- [x] Navegación por teclado sin pérdida de foco.
 
 **Dependencias:** Tarea 8.
 
@@ -256,10 +256,10 @@
 
 ## Checkpoint C: Interfaz
 
-- [ ] Cuatro pantallas renderizadas.
-- [ ] Pruebas semánticas de UI pasan.
-- [ ] Teclado y foco verificados.
-- [ ] Responsive revisado en navegador.
+- [x] Cuatro pantallas renderizadas.
+- [x] Pruebas semánticas de UI pasan.
+- [x] Teclado y foco verificados.
+- [x] Responsive revisado en navegador.
 
 ## Tarea 10: Implementar estado de aplicación
 
@@ -322,7 +322,7 @@
 
 **Verificación:**
 - [x] `npm run test -- src/app` pasa.
-- [ ] `npm run test:coverage -- src/app` cumple 80/70.
+- [x] `npm run test:coverage -- src/app` cumple 80/70.
 
 **Dependencias:** Tareas 10 y 11.
 
@@ -350,7 +350,7 @@
 **Verificación:**
 - [x] `npm run test -- src/app` pasa.
 - [x] `npm run verify` pasa.
-- [ ] Flujo completo verificado en navegador real.
+- [x] Flujo completo verificado en navegador real.
 
 **Dependencias:** Tareas 9 y 12.
 
@@ -366,28 +366,28 @@
 - [x] Flujo completo funcional.
 - [x] Modo estricto de React sin azar duplicado.
 - [x] Build de producción limpio.
-- [ ] Cero errores de consola.
+- [x] Cero errores de consola.
 
 ## Tarea 14: Ejecutar QA final y documentar
 
 **Descripción:** Cerrar la entrega con instalación limpia, auditoría, navegador, rendimiento y documentación.
 
 **Criterios de aceptación:**
-- [ ] `npm ci` y `npm run verify` pasan desde cero.
-- [ ] `npm audit` no contiene riesgos alcanzables en runtime sin resolver o documentar.
-- [ ] Bundle inicial cumple 200 KiB JS gzip y 50 KiB CSS gzip.
-- [ ] Navegador sin peticiones a terceros.
-- [ ] README explica instalación, desarrollo, test, verify y build.
-- [ ] `docs/fidelity.md` distingue claramente migración y mejoras futuras.
+- [x] `npm ci` y `npm run verify` pasan desde cero.
+- [x] `npm audit` no contiene riesgos alcanzables en runtime sin resolver o documentar.
+- [x] Bundle inicial cumple 200 KiB JS gzip y 50 KiB CSS gzip.
+- [x] Navegador sin peticiones a terceros.
+- [x] README explica instalación, desarrollo, test, verify y build.
+- [x] `docs/fidelity.md` distingue claramente migración y mejoras futuras.
 
 **Verificación:**
-- [ ] `npm ci` pasa.
-- [ ] `npm run verify` pasa.
-- [ ] `npm audit` revisado.
-- [ ] Bundle medido.
-- [ ] QA a 360, 768 y 1440 px.
-- [ ] Flujo completo y teclado verificados.
-- [ ] Movimiento reducido comprobado.
+- [x] `npm ci` pasa.
+- [x] `npm run verify` pasa.
+- [x] `npm audit` revisado.
+- [x] Bundle medido.
+- [x] QA a 360, 768 y 1440 px.
+- [x] Flujo completo y teclado verificados.
+- [x] Movimiento reducido comprobado.
 
 **Dependencias:** Tarea 13.
 
@@ -400,6 +400,6 @@
 
 ## Checkpoint E: Entrega
 
-- [ ] Instalación limpia y verificación completa.
-- [ ] Auditoría y presupuestos revisados.
-- [ ] QA de navegador y documentación final completados.
+- [x] Instalación limpia y verificación completa.
+- [x] Auditoría y presupuestos revisados.
+- [x] QA de navegador y documentación final completados.

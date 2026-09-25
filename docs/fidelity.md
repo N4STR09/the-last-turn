@@ -12,7 +12,11 @@ Este documento es la línea base de la migración de *The Last Turn Web*. Las re
 
 El ejecutable existente solo sirve como referencia visual. No demuestra que su lógica sea idéntica a la de los fuentes actuales.
 
-## Comportamientos que se conservan
+## Migración base
+
+La migración base traslada las reglas sin corregir los defectos deliberados. Los elementos `F-*` y `W-*` de esta sección son el contrato de fidelidad de la primera entrega.
+
+### Comportamientos que se conservan
 
 | ID | Comportamiento fiel |
 |---|---|
@@ -39,7 +43,7 @@ La revisión de solo lectura de los fuentes C detectó y corrigió cuatro desvia
 
 El C comprueba los hitos exactos 15 y 30 antes de aplicar las penalizaciones por superarlos. Esta secuencia queda documentada en la especificación del motor.
 
-## Diferencias inevitables de la web
+### Diferencias inevitables de la web
 
 | ID | Diferencia y motivo |
 |---|---|
@@ -47,6 +51,10 @@ El C comprueba los hitos exactos 15 y 30 antes de aplicar las penalizaciones por
 | `W-02` | La dificultad se selecciona mediante una unión de dos valores. No se conservan entradas inválidas de `scanf`, incluidos valores distintos de 1. |
 | `W-03` | El adaptador web genera enteros nominalmente uniformes. No se reproduce el sesgo específico de `rand() % n` de MinGW. |
 | `W-04` | El motor devuelve datos y claves de mensaje; no imprime texto directamente. |
+
+## Mejoras futuras
+
+La primera entrega no corrige los defectos `F-*` ni convierte las diferencias `W-*` en reglas del juego. Cualquier mejora posterior debe ser una decisión explícita, con pruebas y documentación propias; no se considera parte de esta migración.
 
 ## Regla de cambio
 
