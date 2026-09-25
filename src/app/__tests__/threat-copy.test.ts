@@ -14,6 +14,17 @@ describe('threatMessageFor', () => {
     expect(new Set(messages).size).toBe(12);
   });
 
+  it('cicla con un periodo de 12 mensajes', () => {
+    // El periodo es lo que ata la cifra al codigo. Comprobar solo que los
+    // primeros doce sean distintos no alcanza: un decimotercero pasaria esa
+    // prueba y dejaria el CHANGELOG mintiendo otra vez.
+    for (let level = 1; level <= 12; level += 1) {
+      expect(threatMessageFor(level + 12)).toBe(
+        `${threatMessageFor(level)} (Nivel ${level + 12})`,
+      );
+    }
+  });
+
   it('repite el ciclo annotando el nivel a partir del segundo paso', () => {
     expect(threatMessageFor(13)).toBe(`${threatMessageFor(1)} (Nivel 13)`);
     expect(threatMessageFor(25)).toBe(`${threatMessageFor(1)} (Nivel 25)`);

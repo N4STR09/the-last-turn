@@ -1,8 +1,17 @@
+/*
+ * Estructura de pantalla.
+ *
+ * La partida es una sola columna estrecha. El ancho importa: a 52 rem el ojo
+ * recorre la pantalla de arriba abajo sin esfuerzo, y el vacío a los lados hace
+ * que lo que brille destaque. Una partida a dos columnas obligaría a saltar la
+ * vista entre paneles, que es justo lo contrario del efecto que se busca.
+ */
+
 .screen {
   width: min(100%, var(--content-width));
   min-height: 100svh;
   margin: 0 auto;
-  padding: clamp(1rem, 4vw, 3rem);
+  padding: clamp(1.25rem, 5vw, 3rem);
 }
 
 .screen--start,
@@ -15,69 +24,72 @@
 .hero-panel,
 .screen-header,
 .game-over-panel {
-  width: min(100%, 54rem);
+  width: min(100%, 40rem);
   margin: 0 auto;
 }
 
-.hero-panel {
+.hero-panel,
+.game-over-panel {
   display: grid;
   justify-items: start;
   gap: var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: clamp(1.5rem, 5vw, 4rem);
-  background:
-    radial-gradient(circle at 85% 15%, rgb(214 173 104 / 12%), transparent 35%),
-    linear-gradient(145deg, rgb(34 48 41 / 86%), rgb(16 22 20 / 92%));
-  box-shadow: var(--shadow-deep);
+  padding: clamp(1.5rem, 5vw, 3rem);
+}
+
+/*
+ * La pantalla de inicio no lleva panel. Un marco alrededor del título lo
+ * convertiría en una tarjeta de aplicación, y lo que se busca es lo
+ * contrario: negro, y una luz en mitad de la nada.
+ */
+.game-over-panel {
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 2px;
+  background: var(--color-panel);
+  overflow: hidden;
+}
+
+.screen--start .hero-panel {
+  justify-items: center;
+  text-align: center;
 }
 
 .hero-panel h1,
 .screen-header h1,
-.game-header h1,
 .game-over-panel h1 {
   margin: 0;
-  color: var(--color-text);
   font-family: var(--font-display);
-  font-weight: 500;
-  letter-spacing: -0.02em;
+  font-weight: 400;
   line-height: 1.05;
 }
 
 .hero-panel h1 {
   max-width: 10ch;
-  font-size: clamp(3.2rem, 10vw, 6.5rem);
-}
-
-.hero-panel h1:focus-visible,
-.screen-header h1:focus-visible,
-.game-header h1:focus-visible,
-.game-over-panel h1:focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 0.4rem;
-  border-radius: var(--radius-sm);
+  color: var(--color-light);
+  font-size: clamp(2.75rem, 9vw, 4.5rem);
+  text-shadow: var(--glow-far);
 }
 
 .hero-panel__lead,
 .screen-header > p:not(.eyebrow) {
   max-width: 52ch;
   margin: 0;
-  color: var(--color-text-muted);
-  font-size: clamp(1rem, 1.8vw, 1.2rem);
-  line-height: 1.65;
+  color: var(--color-muted);
+  font-size: clamp(0.98rem, 1.8vw, 1.1rem);
+  line-height: 1.7;
 }
 
 .screen-note,
 .rules-note {
   margin: 0;
-  color: var(--color-text-subtle);
-  font-size: 0.82rem;
-  line-height: 1.5;
+  color: var(--color-hint);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.6;
 }
 
 .screen--difficulty {
   align-content: start;
-  padding-top: clamp(2rem, 8vw, 6rem);
+  padding-top: clamp(2rem, 8vw, 5rem);
 }
 
 .screen-header {
@@ -88,109 +100,119 @@
 }
 
 .screen-header h1 {
-  font-size: clamp(2.5rem, 7vw, 4.75rem);
+  color: var(--color-light);
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  text-shadow: var(--glow-far);
 }
 
 .screen-header .eyebrow {
   justify-self: center;
 }
 
+.hero-panel h1:focus-visible,
+.screen-header h1:focus-visible,
+.banner__title:focus-visible,
+.game-over-panel h1:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 0.4rem;
+  border-radius: 2px;
+}
+
 .difficulty-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-4);
-  width: min(100%, 64rem);
+  gap: var(--space-3);
+  width: min(100%, 44rem);
   margin: 0 auto var(--space-5);
 }
 
-.rules-note {
-  width: min(100%, 64rem);
-  margin: 0 auto;
-  text-align: center;
-}
-
-.game-header {
+.difficulty-card {
   display: flex;
-  align-items: end;
+  min-width: 0;
+  flex-direction: column;
   justify-content: space-between;
-  gap: var(--space-5);
-  margin-bottom: var(--space-5);
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: var(--space-4);
-}
-
-.game-header h1 {
-  margin-top: var(--space-2);
-  font-size: clamp(2.2rem, 6vw, 4rem);
-}
-
-.game-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
   gap: var(--space-4);
-  align-items: start;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 2px;
+  padding: clamp(1.1rem, 3vw, 1.75rem);
+  background: var(--color-panel);
+  transition:
+    border-color var(--motion-quick),
+    box-shadow var(--motion-quick);
 }
 
-.resource-panel {
-  grid-column: 1 / -1;
+.difficulty-card:hover {
+  border-color: rgb(255 255 255 / 28%);
+  box-shadow: 0 0 1.5rem rgb(255 255 255 / 6%);
 }
 
-.game-over-panel {
-  display: grid;
-  justify-items: start;
-  gap: var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: clamp(1.5rem, 5vw, 4rem);
-  background:
-    radial-gradient(circle at 90% 10%, rgb(225 123 107 / 13%), transparent 35%),
-    linear-gradient(145deg, rgb(48 31 30 / 70%), var(--color-surface));
-  box-shadow: var(--shadow-deep);
+.difficulty-card__label {
+  margin: 0;
+  color: var(--color-hint);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.difficulty-card h2 {
+  margin: var(--space-2) 0 0;
+  color: var(--color-light);
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3.5vw, 2rem);
+  font-weight: 400;
+}
+
+.difficulty-card p {
+  max-width: 34ch;
+  margin: var(--space-3) 0 0;
+  color: var(--color-muted);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.difficulty-card--agony h2 {
+  text-shadow: 0 0 0.5em var(--color-blood);
+}
+
+.difficulty-card--agony .difficulty-card__label {
+  color: var(--color-alarm);
+}
+
+/* La calavera de la tarjeta de Agonía es la misma del juego, en pequeño. */
+.difficulty-card__skull {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  width: 4.5rem;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.difficulty-card {
+  position: relative;
+  overflow: hidden;
 }
 
 .game-over-panel h1 {
   max-width: 12ch;
-  font-size: clamp(2.6rem, 8vw, 5.5rem);
-}
-
-.game-over-panel__alert {
-  width: 100%;
+  color: var(--color-light);
+  font-size: clamp(2.1rem, 7vw, 3.5rem);
+  text-shadow: var(--glow-far);
 }
 
 .game-over-meta {
   width: 100%;
-  margin-bottom: var(--space-2);
 }
 
 @media (max-width: 760px) {
-  .screen {
-    padding: var(--space-4);
-  }
-
-  .difficulty-grid,
-  .game-layout {
+  .difficulty-grid {
     grid-template-columns: 1fr;
-  }
-
-  .game-header {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: var(--space-4);
-  }
-
-  .game-meta {
-    width: 100%;
   }
 }
 
 @media (max-width: 420px) {
   .screen {
     padding: var(--space-3);
-  }
-
-  .hero-panel,
-  .game-over-panel,
-  .screen-section {
-    border-radius: var(--radius-md);
   }
 }

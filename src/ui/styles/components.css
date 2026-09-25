@@ -1,3 +1,15 @@
+/*
+ * Componentes de la partida.
+ *
+ * La idea que ordena todo el archivo: la pantalla es oscuridad y cada elemento
+ * es una fuente de luz. El brillo se consigue con `text-shadow` en varias
+ * capas y con el color de fondo casi negro, nunca aclarando el texto, porque
+ * un texto claro sobre fondo claro pierde contraste mientras que un texto
+ * brillante sobre negro lo gana.
+ */
+
+/* ---------------------------------------------------------------- botones -- */
+
 .button {
   display: inline-flex;
   min-height: 2.75rem;
@@ -5,59 +17,76 @@
   justify-content: center;
   gap: var(--space-2);
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  border-radius: 2px;
   padding: 0.7rem 1.1rem;
-  color: var(--color-on-accent);
-  background: var(--color-accent);
-  font-weight: 750;
-  letter-spacing: 0.01em;
+  font-family: var(--font-body);
+  font-weight: 700;
+  letter-spacing: 0.02em;
   cursor: pointer;
   transition:
     background-color var(--motion-quick),
     border-color var(--motion-quick),
     color var(--motion-quick),
+    box-shadow var(--motion-quick),
     transform var(--motion-quick);
 }
 
-.button:hover {
-  background: var(--color-accent-bright);
-  transform: translateY(-1px);
+/* Variante principal: emite la luz más fuerte de la pantalla. */
+.button--primary {
+  color: var(--color-void);
+  background: var(--color-light);
+  box-shadow:
+    0 0 1rem rgb(255 255 255 / 32%),
+    0 0 2.5rem rgb(255 255 255 / 14%);
 }
 
-.button:active {
-  transform: translateY(0);
+.button--primary:hover {
+  background: #fff;
+  box-shadow:
+    0 0 1.4rem rgb(255 255 255 / 45%),
+    0 0 3.5rem rgb(255 255 255 / 22%);
+  transform: translateY(-1px);
 }
 
 .button--secondary {
   color: var(--color-text);
-  border-color: var(--color-border-strong);
-  background: var(--color-surface-raised);
+  border-color: rgb(255 255 255 / 22%);
+  background: transparent;
 }
 
 .button--secondary:hover {
-  border-color: var(--color-accent);
-  background: var(--color-surface-strong);
+  color: var(--color-light);
+  border-color: rgb(255 255 255 / 45%);
+  background: rgb(255 255 255 / 5%);
 }
 
+/*
+ * Botón de acción. Sin icono dentro de un marco: el marco se shattería en siete
+ * cajas y el conjunto dejaría de leerse como un panel. Aquí el icono flota y el
+ * texto manda.
+ */
 .button--quiet {
+  position: relative;
   justify-content: flex-start;
-  min-height: 4.75rem;
-  padding: 0.8rem 0.9rem;
+  gap: var(--space-3);
+  min-height: 3.5rem;
+  padding: 0.7rem 0.9rem;
   color: var(--color-text);
-  border-color: var(--color-border-strong);
-  background: rgb(21 29 26 / 88%);
+  border-color: rgb(255 255 255 / 12%);
+  border-radius: 2px;
+  background: rgb(255 255 255 / 2%);
   text-align: left;
 }
 
 .button--quiet:hover {
-  border-color: var(--color-accent);
-  background: var(--color-surface-raised);
+  color: var(--color-light);
+  border-color: rgb(255 255 255 / 34%);
+  background: rgb(255 255 255 / 5%);
+  box-shadow: 0 0 1.1rem rgb(255 255 255 / 7%);
 }
 
-.button:focus-visible,
-.action-button:focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 3px;
+.button--quiet:active {
+  transform: translateY(0);
 }
 
 .button:disabled {
@@ -66,342 +95,510 @@
   transform: none;
 }
 
-.eyebrow {
-  margin: 0;
-  color: var(--color-accent);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  line-height: 1.4;
-  text-transform: uppercase;
-}
+/* ----------------------------------------------------------------- banner -- */
 
-.screen-section {
-  min-width: 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: clamp(1rem, 2.5vw, 1.5rem);
-  background: rgb(21 29 26 / 86%);
-  box-shadow: var(--shadow-soft);
-}
-
-.section-heading {
+/*
+ * Cabecera. El nombre del juego es papel pintado: presente, discreto, arriba de
+ * todo. La ronda y el nivel son la luz de la sala, y por eso van en blanco
+ * puro con halo, en el cuerpo de letra grande.
+ */
+.banner {
   display: grid;
-  gap: var(--space-1);
-  margin-bottom: var(--space-4);
+  justify-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  text-align: center;
 }
 
-.section-heading h2 {
+.banner__title {
   margin: 0;
   color: var(--color-text);
   font-family: var(--font-display);
-  font-size: clamp(1.35rem, 2vw, 1.75rem);
-  font-weight: 500;
-  line-height: 1.1;
+  font-size: clamp(0.95rem, 2.4vw, 1.15rem);
+  font-weight: 400;
+  letter-spacing: 0.42em;
+  /* Compensa el letter-spacing final, que separa la última letra del resto. */
+  text-indent: 0.42em;
+  line-height: 1.2;
+  opacity: 0.7;
 }
 
-.difficulty-card {
+.banner__readout {
   display: flex;
-  min-width: 0;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: var(--space-5);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: clamp(1.25rem, 3vw, 2rem);
-  background:
-    linear-gradient(145deg, rgb(34 48 41 / 75%), transparent 60%),
-    var(--color-surface);
-  box-shadow: var(--shadow-soft);
-}
-
-.difficulty-card__content {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.difficulty-card__label {
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--space-3) var(--space-6);
   margin: 0;
-  color: var(--color-text-subtle);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
+}
+
+/*
+ * Etiqueta y cifra en elementos de verdad, no con `content: attr()`. El texto
+ * generado por CSS no entra en el árbol de accesibilidad, así que un lector de
+ * pantalla anunciaría "3 1" a secas, sin decir qué es cada número.
+ */
+.banner__stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.55ch;
+}
+
+.banner__stat-label {
+  color: var(--color-hint);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
 }
 
-.difficulty-card h2 {
-  margin: 0;
-  color: var(--color-text);
+.banner__stat-value {
+  color: var(--color-light);
   font-family: var(--font-display);
-  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-size: clamp(1.75rem, 6vw, 2.75rem);
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+  text-shadow: var(--glow-far);
 }
 
-.difficulty-card p {
-  max-width: 34ch;
-  margin: 0;
-  color: var(--color-text-muted);
-  line-height: 1.6;
-}
+/* -------------------------------------------------------------- recursos -- */
 
-.resource-grid {
+.stats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-3);
-  margin: 0;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-5);
   padding: 0;
   list-style: none;
 }
 
-.resource-card {
+/*
+ * `color` pone el tono de la fila, y de ahí cuelgan tanto el texto como el
+ * brillo de los bloques: un solo color por fila hace que no pueda desincronizarse
+ * el número y su barra.
+ */
+.stat {
   display: grid;
-  min-width: 0;
-  gap: var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
-  background: var(--color-bg-raised);
-}
-
-.resource-card--warning {
-  border-color: color-mix(in srgb, var(--color-accent) 58%, var(--color-border));
-}
-
-.resource-card--positive {
-  border-color: color-mix(in srgb, var(--color-positive) 48%, var(--color-border));
-}
-
-.resource-card__heading {
-  display: flex;
-  min-width: 0;
+  grid-template-columns: 5.5rem 3.5rem minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--space-2);
-  color: var(--color-text-muted);
-  font-size: 0.82rem;
-  font-weight: 700;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: 0.3rem 0;
+  color: var(--stat-hunger);
 }
 
-.resource-card__icon {
+.stat--hunger {
+  color: var(--stat-hunger);
+}
+
+.stat--energy {
+  color: var(--stat-energy);
+}
+
+.stat--food {
+  color: var(--stat-food);
+}
+
+.stat--shelter {
+  color: var(--stat-shelter);
+}
+
+.stat__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5ch;
+  min-width: 0;
+  color: currentcolor;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.stat__icon {
   display: grid;
   flex: 0 0 auto;
-  width: 2rem;
-  height: 2rem;
   place-items: center;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 50%;
-  color: var(--color-accent);
 }
 
-.resource-card__label,
-.resource-card__value,
-.resource-card__state {
-  overflow-wrap: anywhere;
+/*
+ * Aviso en texto. Es el canal no cromático del estado peligroso: si el color y
+ * el parpadeo no se perciben, el aviso sigue leyéndose. Solo se pinta cuando hay
+ * algo que avisar, y por eso la fila no lleva texto en el resto de la partida.
+ */
+.stat__state {
+  color: currentcolor;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  text-shadow: 0 0 0.6em currentcolor;
 }
 
-.resource-card__value {
-  color: var(--color-text);
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 2.5vw, 2rem);
-  font-weight: 500;
-  line-height: 1.1;
-}
-
-.resource-card__state {
-  color: var(--color-text-subtle);
-  font-size: 0.78rem;
-  line-height: 1.4;
-}
-
-.resolution-panel__live {
-  min-height: 5rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
-  background: var(--color-bg-raised);
-}
-
-.resolution-panel__headline {
-  margin: 0;
-  color: var(--color-text);
+.stat__value {
+  min-width: 3.5ch;
+  color: currentcolor;
+  font-family: var(--font-mono);
   font-size: 1.05rem;
-  font-weight: 750;
-  line-height: 1.45;
-}
-
-.resolution-panel__details,
-.resolution-panel__deltas {
-  display: grid;
-  gap: var(--space-1);
-  margin: var(--space-3) 0 0;
-  padding-left: 1.1rem;
-  color: var(--color-text-muted);
-  line-height: 1.5;
-}
-
-.resolution-panel__deltas {
-  padding-left: 0;
-  list-style: none;
-}
-
-.resource-delta {
-  width: fit-content;
-  border-radius: var(--radius-sm);
-  padding: 0.25rem 0.5rem;
-  background: var(--color-surface-raised);
-  font-size: 0.85rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: right;
+  text-shadow: var(--glow);
 }
 
-.resource-delta--warning {
-  color: var(--color-accent-bright);
+/*
+ * Barra de bloques. Un bloque por unidad, que es lo que la hace legible de un
+ * vistazo: doce squares vacíos dicen "no tienes nada" mejor que un cero. La
+ * pista va en gris neutro para que el único color en la fila sea el del recurso.
+ */
+.stat__bar {
+  display: flex;
+  gap: 3px;
+  min-width: 0;
+  align-items: center;
 }
 
-.resource-delta--positive {
-  color: var(--color-positive);
+.stat__block {
+  width: 0.55rem;
+  height: 0.8rem;
+  border: 1px solid var(--color-track);
+  background: transparent;
 }
 
-.resolution-events {
+.stat__block--filled {
+  border-color: currentcolor;
+  background: currentcolor;
+  box-shadow: 0 0 5px currentcolor;
+}
+
+/*
+ * El estado crítico late en rojo. No es un estrobo: 1.8 s por ciclo son 0.55 Hz,
+ * muy por debajo del umbral de 3 destellos de WCAG 2.3.1. Con movimiento
+ * reducido se queda en rojo fijo, que ya comunica lo mismo sin parpadear.
+ */
+.stat--critical {
+  animation: alarm-breathe 1.8s ease-in-out infinite;
+}
+
+@keyframes alarm-breathe {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stat--critical {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* -------------------------------------------------------------- terminal -- */
+
+.terminal {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--space-5);
+  border: 1px solid rgb(255 255 255 / 11%);
+  border-radius: 2px;
+  background: var(--color-terminal);
+  box-shadow:
+    inset 0 0 4rem rgb(0 0 0 / 60%),
+    0 0 2rem rgb(0 0 0 / 40%);
+}
+
+.terminal__screen {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: var(--space-2);
+  min-height: 9.5rem;
+  align-content: start;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  line-height: 1.65;
 }
 
-.resolution-event {
+.terminal__idle {
+  margin: 0;
+  color: var(--color-hint);
+  text-shadow: 0 0 3px var(--color-terminal);
+}
+
+.terminal__prompt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.75ch;
+  margin: 0;
+  color: var(--color-light);
+  font-size: 1rem;
+  font-weight: 700;
+  /* Halo oscuro: despega el glifo de la calavera sin aclararlo. */
+  text-shadow:
+    0 0 4px var(--color-terminal),
+    var(--glow);
+}
+
+.terminal__turn {
+  color: var(--color-hint);
+  font-weight: 400;
+  text-shadow: 0 0 4px var(--color-terminal);
+}
+
+.terminal__details {
   display: grid;
-  gap: var(--space-1);
-  margin-top: var(--space-4);
-  border-left: 3px solid var(--color-danger);
-  padding: var(--space-2) 0 var(--space-2) var(--space-3);
-}
-
-.resolution-event strong {
-  color: var(--color-danger);
-}
-
-.resolution-event p {
+  gap: 0.15rem;
   margin: 0;
-  color: var(--color-text-muted);
-  line-height: 1.5;
+  padding: 0;
+  list-style: none;
+  color: var(--color-muted);
+  font-size: 0.82rem;
+  text-shadow: 0 0 4px var(--color-terminal);
 }
 
-.empty-state {
-  margin: 0;
-  color: var(--color-text-subtle);
-  line-height: 1.5;
+.terminal__details li::before {
+  content: "· ";
+  color: rgb(255 255 255 / 22%);
 }
+
+.terminal__deltas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 4px var(--color-terminal);
+}
+
+.terminal__deltas li {
+  color: var(--color-text);
+}
+
+.terminal__deltas li[data-tone='positive'] {
+  color: var(--stat-food);
+}
+
+.terminal__deltas li[data-tone='warning'] {
+  color: var(--stat-hunger);
+}
+
+.terminal__events {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid rgb(255 255 255 / 8%);
+}
+
+.terminal__event {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.terminal__event strong {
+  color: var(--color-alarm);
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 4px var(--color-terminal),
+    0 0 0.6em var(--color-blood);
+}
+
+.terminal__event p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.82rem;
+  text-shadow: 0 0 4px var(--color-terminal);
+}
+
+/* -------------------------------------------------------------- calavera -- */
+
+/*
+ * La calavera no se posiciona a sí misma: quien la coloca es el contenedor, que
+ * es quien sabe dónde quiere el fondo. Aquí solo el color y los trazos.
+ */
+.skull {
+  display: block;
+  width: 100%;
+  height: auto;
+  color: #6f7a74;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* En la terminal va centrada detrás del texto y bastante tenue: se percibe sin
+   leerse como una amenaza. Los tonos de cada pieza se multiplican por la
+   opacidad del grupo, así que el resultado ronda el 15-20 por ciento de gris. */
+.terminal .skull {
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  left: 50%;
+  width: min(52%, 15rem);
+  opacity: 0.5;
+  transform: translate(-50%, -50%);
+}
+
+.skull__cranium {
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 7;
+  opacity: 0.55;
+}
+
+.skull__sockets {
+  fill: var(--color-terminal);
+  stroke: currentcolor;
+  stroke-width: 6;
+  opacity: 0.6;
+}
+
+.skull__nose,
+.skull__teeth {
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 5;
+  opacity: 0.45;
+}
+
+.skull__nose {
+  fill: var(--color-terminal);
+}
+
+.skull__horns path {
+  fill: currentcolor;
+  opacity: 0.4;
+}
+
+/* Agonía: cuernos y ojos encendidos. El relleno del hueco es el rojo sangre y
+   el contorno el rojo de alarma, con un drop-shadow que sangra hacia fuera. */
+.skull[data-difficulty='agony'] .skull__sockets {
+  fill: var(--color-blood);
+  stroke: var(--color-alarm);
+  filter: drop-shadow(0 0 0.6rem var(--color-blood));
+}
+
+/* --------------------------------------------------------------- acciones -- */
 
 .action-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
-}
-
-.action-button {
-  min-width: 0;
+  gap: var(--space-2);
 }
 
 .action-button__icon {
   display: grid;
   flex: 0 0 auto;
-  width: 2.5rem;
-  height: 2.5rem;
   place-items: center;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  color: var(--color-accent);
+  color: currentcolor;
+  opacity: 0.6;
 }
 
 .action-button__copy {
   display: grid;
   min-width: 0;
-  gap: var(--space-1);
+  gap: 0.1rem;
 }
 
 .action-button__copy strong {
   overflow-wrap: anywhere;
-  color: var(--color-text);
-  font-size: 0.92rem;
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
-.action-button__copy span {
+.action-button__cost {
   overflow-wrap: anywhere;
-  color: var(--color-text-subtle);
-  font-size: 0.78rem;
-  font-weight: 450;
-  line-height: 1.4;
+  color: var(--color-hint);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
 }
 
-.game-meta,
-.game-over-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
+.button--quiet:hover .action-button__cost {
+  color: var(--color-muted);
+}
+
+.button--quiet:hover .action-button__icon {
+  opacity: 1;
+}
+
+/* ----------------------------------------------------- pantallas de estado -- */
+
+.eyebrow {
   margin: 0;
-}
-
-.game-meta div,
-.game-over-meta div {
-  display: grid;
-  min-width: 5.5rem;
-  gap: var(--space-1);
-  border-left: 2px solid var(--color-border-strong);
-  padding-left: var(--space-3);
-}
-
-.game-meta dt,
-.game-over-meta dt {
-  color: var(--color-text-subtle);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
+  color: var(--color-hint);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.24em;
+  line-height: 1.4;
   text-transform: uppercase;
 }
 
-.game-meta dd,
-.game-over-meta dd {
-  margin: 0;
-  color: var(--color-text);
-  font-size: 1.05rem;
-  font-weight: 750;
-}
-
 .game-over-panel__alert {
+  width: 100%;
   margin: var(--space-5) 0;
-  border-left: 3px solid var(--color-danger);
+  border-left: 2px solid var(--color-blood);
   padding: var(--space-3) var(--space-4);
-  background: rgb(111 48 45 / 22%);
+  background: rgb(139 0 0 / 14%);
 }
 
 .game-over-panel__alert p {
   margin: 0;
   color: var(--color-text);
   font-family: var(--font-display);
-  font-size: clamp(1.15rem, 2.3vw, 1.5rem);
-  line-height: 1.45;
+  font-size: clamp(1.05rem, 2.3vw, 1.35rem);
+  line-height: 1.5;
 }
 
-@media (max-width: 760px) {
-  .resource-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .action-grid {
-    grid-template-columns: 1fr;
-  }
+.game-meta,
+.game-over-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+  margin: 0;
 }
 
-@media (max-width: 420px) {
-  .resource-grid {
-    gap: var(--space-2);
-  }
-
-  .resource-card {
-    padding: var(--space-2);
-  }
-
-  .resource-card__heading {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: var(--space-1);
-  }
+.game-meta div,
+.game-over-meta div {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 5.5rem;
 }
+
+.game-meta dt,
+.game-over-meta dt {
+  color: var(--color-hint);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.game-meta dd,
+.game-over-meta dd {
+  margin: 0;
+  color: var(--color-light);
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------ aviso de escalada -- */
 
 .escalation-overlay {
   position: fixed;
@@ -426,29 +623,29 @@
 
 .escalation-overlay__level {
   margin: 0;
-  font-family: var(--font-body);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
   color: var(--color-hint);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
 }
 
 .escalation-overlay__message {
   margin: 0;
+  color: var(--color-blood);
   font-family: var(--font-display);
   font-size: clamp(1.5rem, 5.5vw, 2.5rem);
   line-height: 1.25;
-  color: var(--color-blood);
   text-wrap: balance;
 }
 
 .escalation-overlay__hint {
   margin: 0;
+  color: var(--color-hint);
   font-family: var(--font-body);
   font-size: 1rem;
   letter-spacing: 0.04em;
-  color: var(--color-hint);
   animation: escalation-pulse 2.4s ease-in-out infinite;
 }
 
@@ -470,7 +667,38 @@
   }
 }
 
-@media (max-width: 420px) {
+/* ------------------------------------------------------------ responsive -- */
+
+@media (max-width: 760px) {
+  .action-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  /* El aviso necesita la fila entera: en cuatro columnas no cabe sin apretar la
+     barra hasta hacerla ilegible, así que baja debajo. */
+  .stat {
+    grid-template-columns: 5rem 3rem minmax(0, 1fr);
+    gap: var(--space-2);
+  }
+
+  .stat__state {
+    grid-column: 1 / -1;
+    margin-top: -0.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stat__block {
+    width: 0.45rem;
+    height: 0.7rem;
+  }
+
+  .terminal__screen {
+    padding: var(--space-3) var(--space-4) var(--space-4);
+  }
+
   .escalation-overlay {
     padding: var(--space-4);
   }

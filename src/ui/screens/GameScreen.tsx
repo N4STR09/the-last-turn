@@ -1,4 +1,4 @@
-import type { Difficulty, GameAction } from '../../game/types';
+import type { GameAction } from '../../game/types';
 import { ActionGrid } from '../components/ActionGrid';
 import { ResolutionPanel } from '../components/ResolutionPanel';
 import { ResourcePanel } from '../components/ResourcePanel';
@@ -9,37 +9,39 @@ export interface GameScreenProps {
   readonly onAction: (action: GameAction) => void;
 }
 
-const difficultyLabels: Record<Difficulty, string> = {
-  normal: 'Normal',
-  agony: 'Agonía',
-};
-
+/**
+ * Pantalla de partida, en el orden que se lee: qué partida es, en qué ronda y
+ * con qué nivel, qué tienes, qué acaba de pasar y qué puedes hacer.
+ *
+ * La dificultad no se escribe aquí a propósito: la calavera de la terminal ya
+ * la dice, con cuernos y ojos rojos en Agonía. Repetirla en el banner sería
+ * decirlo dos veces de dos maneras, y la segunda sería solo texto.
+ */
 export function GameScreen({ model, onAction }: GameScreenProps) {
   return (
     <main className="screen screen--game" aria-labelledby="game-title">
-      <header className="game-header">
-        <div>
-          <p className="eyebrow">Supervivencia por turnos</p>
-          <h1 id="game-title" tabIndex={-1}>
-            La partida
-          </h1>
-        </div>
-        <dl className="game-meta">
-          <div>
-            <dt>Turno</dt>
-            <dd>{model.turn}</dd>
-          </div>
-          <div>
-            <dt>Dificultad</dt>
-            <dd>{difficultyLabels[model.difficulty]}</dd>
-          </div>
-        </dl>
+      <header className="banner">
+        <h1 className="banner__title" id="game-title" tabIndex={-1}>
+          The Last Turn
+        </h1>
+        <p className="banner__readout">
+          <span className="banner__stat">
+            <span className="banner__stat-label">Ronda</span>
+            <span className="banner__stat-value">{model.turn}</span>
+          </span>
+          <span className="banner__stat">
+            <span className="banner__stat-label">Nivel</span>
+            <span className="banner__stat-value">{model.threat}</span>
+          </span>
+        </p>
       </header>
-      <div className="game-layout">
-        <ResourcePanel resources={model.resources} />
-        <ResolutionPanel resolution={model.resolution} />
-        <ActionGrid onAction={onAction} />
-      </div>
+      <ResourcePanel resources={model.resources} />
+      <ResolutionPanel
+        difficulty={model.difficulty}
+        resolution={model.resolution}
+        turn={model.turn}
+      />
+      <ActionGrid actions={model.actions} onAction={onAction} />
     </main>
   );
 }

@@ -1,38 +1,45 @@
+import type { Difficulty } from '../../game/types';
 import type { ResolutionViewModel } from '../view-models/ui-types';
+import { Skull } from './Skull';
 
 export interface ResolutionPanelProps {
   readonly resolution: ResolutionViewModel | null;
+  readonly turn: number;
+  readonly difficulty: Difficulty;
 }
 
-export function ResolutionPanel({ resolution }: ResolutionPanelProps) {
+/**
+ * Terminal del turno. Muestra solo la última resolución, no un historial: la
+ * información que importa es qué acaba de pasar, y acumular turnos aquí solo
+ * empujaría los botones fuera de la pantalla.
+ *
+ * `role="status"` sigue en la capa viva y no en la caja entera, porque un
+ * anuncio de región completa repetiría el rótulo de la calavera en cada turno.
+ */
+export function ResolutionPanel({
+  resolution,
+  turn,
+  difficulty,
+}: ResolutionPanelProps) {
   return (
-    <section
-      className="resolution-panel screen-section"
-      aria-labelledby="resolution-heading"
-    >
-      <div className="section-heading">
-        <p className="eyebrow">Lo que acaba de ocurrir</p>
-        <h2 id="resolution-heading">Última resolución</h2>
-      </div>
+    <section className="terminal" aria-label="Registro del turno">
+      <Skull difficulty={difficulty} />
       <div
-        className="resolution-panel__live"
-        role="status"
-        aria-live="polite"
         aria-atomic="true"
-        aria-labelledby="resolution-heading"
+        aria-live="polite"
+        className="terminal__screen"
+        role="status"
       >
         {resolution === null ? (
-          <p className="empty-state">
-            Todavía no has realizado ninguna acción.
-          </p>
+          <p className="terminal__idle">Sin órdenes todavía.</p>
         ) : (
           <div data-action-id={resolution.actionId}>
-            <p className="resolution-panel__headline">{resolution.headline}</p>
+            <p className="terminal__prompt">
+              <span className="terminal__turn">&gt; ronda {turn}</span>
+              <span className="terminal__verb">{resolution.headline}</span>
+            </p>
             {resolution.details.length > 0 ? (
-              <ul
-                className="resolution-panel__details"
-                aria-label="Detalles de la acción"
-              >
+              <ul className="terminal__details">
                 {resolution.details.map((detail) => (
                   <li key={detail}>{detail}</li>
                 ))}
@@ -40,25 +47,21 @@ export function ResolutionPanel({ resolution }: ResolutionPanelProps) {
             ) : null}
             {resolution.deltas.length > 0 ? (
               <ul
-                className="resolution-panel__deltas"
                 aria-label="Cambios de recursos"
+                className="terminal__deltas"
               >
                 {resolution.deltas.map((delta) => (
-                  <li
-                    className={`resource-delta resource-delta--${delta.tone}`}
-                    data-resource-id={delta.id}
-                    key={delta.id}
-                  >
-                    {delta.label}: {delta.value}
+                  <li data-tone={delta.tone} key={delta.id}>
+                    {delta.label} {delta.value}
                   </li>
                 ))}
               </ul>
             ) : null}
             {resolution.events.length > 0 ? (
-              <div className="resolution-events">
+              <div className="terminal__events">
                 {resolution.events.map((event, index) => (
                   <div
-                    className="resolution-event"
+                    className="terminal__event"
                     data-event-type={event.type}
                     // Con tiradas extra el mismo evento puede repetirse, así
                     // que la clave necesita el índice además del tipo.

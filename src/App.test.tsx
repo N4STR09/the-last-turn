@@ -26,10 +26,14 @@ describe('App', () => {
     ).toHaveFocus();
 
     await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+    // El h1 de la partida es el nombre del juego, igual que en el inicio: solo
+    // hay una pantalla montada a la vez, así que no hay ambigüedad.
     expect(
-      screen.getByRole('heading', { level: 1, name: 'La partida' }),
+      screen.getByRole('heading', { level: 1, name: 'The Last Turn' }),
     ).toHaveFocus();
-    expect(screen.getByRole('region', { name: 'Recursos' })).toBeVisible();
+    expect(
+      screen.getByRole('list', { name: 'Lo que te mantiene en pie' }),
+    ).toBeVisible();
   });
 
   it('muestra los cambios de una acción sin recargar', async () => {
@@ -37,15 +41,15 @@ describe('App', () => {
     render(<App />);
     await startNormalGame(user);
 
-    await user.click(screen.getByRole('button', { name: 'Descansar' }));
+    await user.click(screen.getByRole('button', { name: /^Descansar/ }));
 
-    const header = screen.getByRole('banner');
-    expect(within(header).getByText('2')).toBeInTheDocument();
-    expect(
-      screen.getByRole('status', { name: 'Última resolución' }),
-    ).toHaveTextContent('Intentas descansar, pero no tienes refugio.');
-    expect(screen.getByText('Hambre: +1')).toBeInTheDocument();
-    expect(screen.getByText('Energía: −1')).toBeInTheDocument();
+    const banner = screen.getByRole('banner');
+    expect(within(banner).getByText('2')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Intentas descansar, pero no tienes refugio.',
+    );
+    expect(screen.getByText(/Hambre \+1/)).toBeInTheDocument();
+    expect(screen.getByText(/Energía −1/)).toBeInTheDocument();
   });
 
   it('lleva una muerte en Agonía a la pantalla final y reinicia', async () => {
@@ -56,7 +60,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Comenzar' }));
     await user.click(screen.getByRole('button', { name: 'Jugar en Agonía' }));
     for (let impact = 0; impact < 10; impact += 1) {
-      await user.click(screen.getByRole('button', { name: 'Ayuda' }));
+      await user.click(screen.getByRole('button', { name: /^Ayuda/ }));
     }
 
     expect(
@@ -69,7 +73,9 @@ describe('App', () => {
       'Estoy seguro de que eso no te lo esperabas. La vida es dura.',
     );
 
-    await user.click(screen.getByRole('button', { name: 'Volver a jugar' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Volver a jugar' }),
+    );
     expect(
       screen.getByRole('heading', { level: 1, name: 'Elige dificultad' }),
     ).toHaveFocus();

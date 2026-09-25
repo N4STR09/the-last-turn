@@ -24,36 +24,64 @@ const resourceIcons: Record<ResourceId, LucideIcon> = {
 
 export function ResourcePanel({ resources }: ResourcePanelProps) {
   return (
-    <section
-      className="resource-panel screen-section"
-      aria-labelledby="resources-heading"
-    >
-      <div className="section-heading">
-        <p className="eyebrow">Lo que te mantiene en pie</p>
-        <h2 id="resources-heading">Recursos</h2>
-      </div>
-      <ul className="resource-grid" aria-label="Recursos disponibles">
-        {resources.map((resource) => {
-          const Icon = resourceIcons[resource.id];
+    <ul className="stats" aria-label="Lo que te mantiene en pie">
+      {resources.map((resource) => {
+        const Icon = resourceIcons[resource.id];
+        const lit = Math.min(Math.max(resource.units, 0), resource.capacity);
+        // El estado solo se escribe cuando hay algo que avisar. En el resto de
+        // la partida la fila es etiqueta, cifra y barra, que es toda la
+        // información que hace falta. Y cuando aparece, el aviso ya no depende
+        // del color ni del parpadeo: está en texto.
+        const hasWarning = resource.tone === 'warning';
 
-          return (
-            <li
-              className={`resource-card resource-card--${resource.tone}`}
-              data-resource-id={resource.id}
-              key={resource.id}
+        return (
+          <li
+            className={[
+              'stat',
+              `stat--${resource.id}`,
+              resource.critical ? 'stat--critical' : '',
+            ]
+              .filter((name) => name !== '')
+              .join(' ')}
+            data-critical={resource.critical}
+            data-resource-id={resource.id}
+            key={resource.id}
+          >
+            <span className="stat__label">
+              <span className="stat__icon">
+                <Icon aria-hidden="true" size={12} strokeWidth={2} />
+              </span>
+              {resource.label}
+            </span>
+            <span className="stat__value">{resource.value}</span>
+            {/*
+              * La barra va oculta a lectores de pantalla: la cifra y la
+              * etiqueta ya están en texto a su lado, así que los bloques son
+              * redundancia visual. Un bloque por unidad, que es lo que hace
+              // legible de un vistazo una barra casi vacía.
+              */}
+            <span
+              aria-hidden="true"
+              className="stat__bar"
+              data-units={resource.units}
             >
-              <div className="resource-card__heading">
-                <span className="resource-card__icon" aria-hidden="true">
-                  <Icon size={20} strokeWidth={1.8} />
-                </span>
-                <span className="resource-card__label">{resource.label}</span>
-              </div>
-              <strong className="resource-card__value">{resource.value}</strong>
-              <span className="resource-card__state">{resource.stateLabel}</span>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
+              {Array.from({ length: resource.capacity }, (_, index) => (
+                <span
+                  className={
+                    index < lit
+                      ? 'stat__block stat__block--filled'
+                      : 'stat__block'
+                  }
+                  key={index}
+                />
+              ))}
+            </span>
+            <span className="stat__state">
+              {hasWarning ? resource.stateLabel : ''}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

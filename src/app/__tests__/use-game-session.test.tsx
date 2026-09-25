@@ -65,10 +65,12 @@ describe('useGameSession', () => {
 
     await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
     expect(
-      screen.getByRole('heading', { level: 1, name: 'La partida' }),
+      screen.getByRole('heading', { level: 1, name: 'The Last Turn' }),
     ).toBeInTheDocument();
-    expect(screen.getAllByText('0')).toHaveLength(2);
-    expect(screen.getByText('Ayuda')).toBeInTheDocument();
+    expect(screen.getByText('Sin órdenes todavía.')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /^Ayuda/ }),
+    ).toBeInTheDocument();
   });
 
   it('resuelve una sola vez la acción y conserva el resultado', async () => {
@@ -88,11 +90,11 @@ describe('useGameSession', () => {
 
     await user.click(screen.getByRole('button', { name: 'Comenzar' }));
     await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
-    await user.click(screen.getByRole('button', { name: 'Ayuda' }));
+    await user.click(screen.getByRole('button', { name: /^Ayuda/ }));
 
     expect(resolveTurnMock).toHaveBeenCalledOnce();
     expect(
-      screen.getByRole('status', { name: 'Última resolución' }),
+      screen.getByRole('status'),
     ).toHaveTextContent('Consultas las reglas del refugio.');
   });
 
@@ -109,7 +111,7 @@ describe('useGameSession', () => {
     await user.click(screen.getByRole('button', { name: 'Comenzar' }));
     await user.click(screen.getByRole('button', { name: 'Jugar en Agonía' }));
     for (let impact = 0; impact < 10; impact += 1) {
-      await user.click(screen.getByRole('button', { name: 'Ayuda' }));
+      await user.click(screen.getByRole('button', { name: /^Ayuda/ }));
     }
 
     expect(
@@ -128,7 +130,9 @@ describe('useGameSession', () => {
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
-    expect(screen.getAllByText('0')).toHaveLength(2);
+    // Los tres ceros de una partida recién empezada en Normal: hambre, comida y
+    // nivel de escalada, que la Fase 2 reinicia en cero en cada partida.
+    expect(screen.getAllByText('0')).toHaveLength(3);
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
@@ -178,7 +182,7 @@ describe('useGameSession', () => {
 
     await user.click(screen.getByRole('button', { name: 'Comenzar' }));
     await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
-    await user.click(screen.getByRole('button', { name: 'Ayuda' }));
+    await user.click(screen.getByRole('button', { name: /^Ayuda/ }));
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(resolveTurnMock).toHaveBeenCalledOnce();
@@ -202,7 +206,7 @@ describe('useGameSession', () => {
 
     await user.click(screen.getByRole('button', { name: 'Comenzar' }));
     await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
-    await user.click(screen.getByRole('button', { name: 'Ayuda' }));
+    await user.click(screen.getByRole('button', { name: /^Ayuda/ }));
 
     expect(screen.queryByRole('dialog')).toBeNull();
   });
@@ -215,7 +219,7 @@ describe('useGameSession', () => {
     await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
 
     for (let step = 0; step < 9; step += 1) {
-      await user.click(screen.getByRole('button', { name: 'Ayuda' }));
+      await user.click(screen.getByRole('button', { name: /^Ayuda/ }));
     }
 
     expect(screen.queryByRole('dialog')).toBeNull();
