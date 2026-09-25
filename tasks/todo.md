@@ -403,3 +403,12 @@
 - [x] Instalación limpia y verificación completa.
 - [x] Auditoría y presupuestos revisados.
 - [x] QA de navegador y documentación final completados.
+
+## Activación web en Cloudflare Pages
+
+- [x] Build estático portable generado en `dist/`.
+- [x] Rutas relativas, favicon local y `.node-version` configurados.
+- [x] Guía de integración Git, carga directa, aceptación y rollback documentada.
+- [ ] Crear o autorizar un repositorio remoto para la publicación.
+- [ ] Crear el proyecto de Cloudflare Pages y elegir Git o carga directa.
+- [ ] Desplegar el build y verificar la URL HTTPS pública.
