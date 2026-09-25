@@ -266,15 +266,15 @@
 **Descripción:** Crear unión de pantallas, reducer puro y fuente aleatoria del navegador.
 
 **Criterios de aceptación:**
-- [ ] La unión impide partida nula en playing/dead o resolución nula en dead.
-- [ ] El reducer elige la pantalla según el estado resuelto.
-- [ ] Reiniciar descarta partida y resolución.
-- [ ] El reducer no llama a azar, fecha o motor.
-- [ ] `browserRandomInt` devuelve extremos inclusivos.
+- [x] La unión impide partida nula en playing/dead o resolución nula en dead.
+- [x] El reducer elige la pantalla según el estado resuelto.
+- [x] Reiniciar descarta partida y resolución.
+- [x] El reducer no llama a azar, fecha o motor.
+- [x] `browserRandomInt` devuelve extremos inclusivos.
 
 **Verificación:**
-- [ ] `npm run test -- src/app` pasa.
-- [ ] `npm run typecheck` pasa.
+- [x] `npm run test -- src/app` pasa.
+- [x] `npm run typecheck` pasa.
 
 **Dependencias:** Tarea 6.
 
