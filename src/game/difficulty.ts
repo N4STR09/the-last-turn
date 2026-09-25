@@ -15,16 +15,16 @@ export function applyDifficulty(
     milestone = { type: 'turn-15' };
   }
 
+  if (state.turn === 30) {
+    milestone = { type: 'turn-30' };
+  }
+
   if (state.turn > 15) {
     nextState = {
       ...nextState,
       hunger: nextState.hunger + 1,
       energy: nextState.energy - 1,
     };
-  }
-
-  if (state.turn === 30) {
-    milestone = { type: 'turn-30' };
   }
 
   if (state.turn > 30) {

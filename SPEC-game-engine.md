@@ -127,12 +127,12 @@ Cada acción válida sigue este orden:
 1. Resolver la acción y todos sus costes.
 2. Resolver una única tirada de evento si la dificultad es Agonía.
 3. Mostrar el hito exacto del turno 15, si el turno es exactamente 15.
-4. Aplicar una penalización si `turn > 15`.
-5. Mostrar el hito exacto del turno 30, si el turno es exactamente 30.
+4. Mostrar el hito exacto del turno 30, si el turno es exactamente 30.
+5. Aplicar una penalización si `turn > 15`.
 6. Aplicar una segunda penalización si `turn > 30`.
 7. Evaluar la condición de finalización.
 
-Esta secuencia conserva el orden de `eventos()` seguido de `niveles_dificultad()` en el C. Aunque una acción deje la partida fuera de los límites, el evento y las penalizaciones de dificultad se resuelven antes de comprobar la muerte.
+Esta secuencia conserva el orden de `eventos()` seguido de `niveles_dificultad()` en el C. En `niveles_dificultad()` se comprueban primero los dos hitos exactos y después se aplican las penalizaciones por superar 15 y 30. Aunque una acción deje la partida fuera de los límites, el evento y las penalizaciones de dificultad se resuelven antes de comprobar la muerte.
 
 ## Semántica de acciones
 
@@ -144,7 +144,7 @@ Esta secuencia conserva el orden de `eventos()` seguido de `niveles_dificultad()
 | Explorar | Un turno. 20% establece refugio, 25% añade una comida y 55% no encuentra nada. |
 | Reparar | Dos turnos. 10% falla; 90% establece `hasShelter = true`. |
 | Pescar | Obtiene enteros de 1 a 3 hasta sacar un 1. Suma los intentos al turno, al hambre y al coste de energía, y añade 3 comidas. |
-| Comer | Para todo estado alcanzable se cumple `food >= 0`: muestra que no hay comida, consume un turno y no modifica comida ni hambre. Si se construye artificialmente un estado con `food < 0`, el C aplica primero `hunger -= 4` y después el coste de un turno (`hunger += 1`), limita el resultado a 0 y tampoco modifica la comida. Esta rama es inalcanzable desde `createGame`. |
+| Comer | Para todo estado alcanzable se cumple `food >= 0`: muestra que no hay comida y no consume comida. El coste normal de un turno sí aumenta el hambre en 1 y reduce la energía en 1. Si se construye artificialmente un estado con `food < 0`, el C aplica primero `hunger -= 4` y después el coste de un turno (`hunger += 1`), limita solo ese resultado a 0 y tampoco modifica la comida. Esta rama es inalcanzable desde `createGame`. |
 
 La pesca no tendrá un límite artificial en esta migración. La ausencia de límite es una deficiencia conocida que se preservará y documentará para una mejora posterior.
 
@@ -182,8 +182,8 @@ Los rangos son disjuntos, por lo que una resolución produce como máximo un eve
 En cada resolución, y tanto en Normal como en Agonía:
 
 - Si `turn === 15`, se emite el hito exacto del turno 15.
-- Si `turn > 15`, `hunger` aumenta 1 y `energy` disminuye 1 una sola vez.
 - Si `turn === 30`, se emite el hito exacto del turno 30.
+- Si `turn > 15`, `hunger` aumenta 1 y `energy` disminuye 1 una sola vez.
 - Si `turn > 30`, `hunger` aumenta 1 y `energy` disminuye 1 una sola vez más.
 
 Las penalizaciones no se multiplican por los turnos omitidos. Por ejemplo, una acción que salte del turno 10 al 20 recibe una sola penalización por superar 15, no cinco. Si una acción salta por encima de ambos hitos, no se emite ningún mensaje de hito exacto, pero sí se aplican ambas penalizaciones una vez.
@@ -222,7 +222,7 @@ Al finalizar:
 
 | ID | Comportamiento fiel |
 |---|---|
-| `F-01` | Comer nunca reduce hambre ni modifica comida en estados alcanzables. |
+| `F-01` | Comer nunca reduce el hambre ni modifica la comida en estados alcanzables; solo paga el coste normal del turno, que aumenta el hambre en 1. |
 | `F-02` | La salud solo puede pasar de 10 a 0 mediante un meteorito; no hay recuperación. |
 | `F-03` | No existe victoria. |
 | `F-04` | El bucle permite hambre 10, pero el mensaje de muerte empieza en 10. |

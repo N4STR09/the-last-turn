@@ -93,7 +93,7 @@
 - [x] Cada resultado de acción tiene pruebas y 100% de cobertura para `src/game/actions.ts` y `src/game/random.ts`.
 - [x] Descansar con y sin refugio consume las tiradas correctas.
 - [x] Explorar cubre 1–4, 5–15 y 16–20.
-- [x] Reparar falla únicamente con 1.
+- [x] Reparar falla únicamente con 5.
 - [x] Pescar termina cuando obtiene 1 y mantiene la tirada hasta 3.
 - [x] Comer conserva la rama inalcanzable de `food < 0` sin modificar comida.
 - [x] El estado de entrada no se muta.

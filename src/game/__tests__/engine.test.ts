@@ -46,14 +46,14 @@ describe('resolveTurn', () => {
         energy: 8,
         food: 0,
         health: 0,
-        hasShelter: false,
+        hasShelter: true,
         end: {
           condition: 'health',
           reportedCause: 'health',
           turnsSurvived: 2,
         },
       },
-      actionOutcome: { type: 'repair-failed' },
+      actionOutcome: { type: 'repair-succeeded' },
       randomEvent: { type: 'meteorite' },
       milestone: null,
     });

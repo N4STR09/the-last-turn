@@ -170,7 +170,7 @@ describe('composición del pipeline', () => {
       energy: 6,
       food: 0,
       health: 10,
-      hasShelter: false,
+      hasShelter: true,
       end: {
         condition: 'hunger',
         reportedCause: 'hunger',

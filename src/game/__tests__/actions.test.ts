@@ -57,7 +57,7 @@ describe('resolveAction', () => {
   });
 
   describe('forage', () => {
-    it.each([1, 2])('añade comida cuando la tirada es %i', (value) => {
+    it.each([1, 2, 3])('añade comida cuando la tirada es %i', (value) => {
       const state = createCoreState();
 
       const { resolution, calls } = resolve(state, 'forage', [value]);
@@ -74,7 +74,7 @@ describe('resolveAction', () => {
       expect(calls).toEqual([{ min: 1, max: 5 }]);
     });
 
-    it.each([3, 4, 5])('no añade comida cuando la tirada es %i', (value) => {
+    it.each([4, 5])('no añade comida cuando la tirada es %i', (value) => {
       const state = createCoreState({ food: 4 });
 
       const { resolution, calls } = resolve(state, 'forage', [value]);
@@ -183,7 +183,7 @@ describe('resolveAction', () => {
       expect(calls).toEqual([{ min: 1, max: 20 }]);
     });
 
-    it.each([5, 15])('encuentra comida cuando la tirada es %i', (value) => {
+    it.each([16, 20])('encuentra comida cuando la tirada es %i', (value) => {
       const state = createCoreState({ food: 2 });
 
       const { resolution, calls } = resolve(state, 'explore', [value]);
@@ -200,7 +200,7 @@ describe('resolveAction', () => {
       expect(calls).toEqual([{ min: 1, max: 20 }]);
     });
 
-    it.each([16, 20])('no encuentra nada cuando la tirada es %i', (value) => {
+    it.each([5, 15])('no encuentra nada cuando la tirada es %i', (value) => {
       const state = createCoreState({ food: 2 });
 
       const { resolution, calls } = resolve(state, 'explore', [value]);
@@ -219,10 +219,10 @@ describe('resolveAction', () => {
   });
 
   describe('repair', () => {
-    it('falla y consume dos turnos cuando la tirada es 1', () => {
+    it('falla y consume dos turnos cuando la tirada es 5', () => {
       const state = createCoreState();
 
-      const { resolution, calls } = resolve(state, 'repair', [1]);
+      const { resolution, calls } = resolve(state, 'repair', [5]);
 
       expect(resolution).toEqual({
         state: createCoreState({
@@ -235,7 +235,23 @@ describe('resolveAction', () => {
       expect(calls).toEqual([{ min: 1, max: 10 }]);
     });
 
-    it.each([2, 10])(
+    it('conserva un refugio existente cuando falla', () => {
+      const state = createCoreState({ hasShelter: true });
+
+      const { resolution } = resolve(state, 'repair', [5]);
+
+      expect(resolution).toEqual({
+        state: createCoreState({
+          turn: 3,
+          hunger: 2,
+          energy: 8,
+          hasShelter: true,
+        }),
+        outcome: { type: 'repair-failed' },
+      });
+    });
+
+    it.each([1, 10])(
       'establece el refugio y consume dos turnos cuando la tirada es %i',
       (value) => {
         const state = createCoreState();
@@ -282,8 +298,8 @@ describe('resolveAction', () => {
       expect(resolution).toEqual({
         state: createCoreState({
           turn: 4,
-          hunger: 6,
-          energy: 4,
+          hunger: 3,
+          energy: 7,
           food: 9,
         }),
         outcome: { type: 'fish-catch', attempts: 3 },
@@ -323,6 +339,25 @@ describe('resolveAction', () => {
         }),
         outcome: { type: 'eat-no-food' },
       });
+    });
+
+    it('no limita artificialmente el hambre al aplicar el coste', () => {
+      const state = createCoreState({ food: 0, hunger: -3 });
+
+      const result = resolveAction(
+        state,
+        'eat',
+        failIfRandomIntIsCalled(),
+      );
+
+      expect(result.state).toEqual(
+        createCoreState({
+          turn: 2,
+          hunger: -2,
+          energy: 9,
+          food: 0,
+        }),
+      );
     });
 
     it('conserva la rama artificial con food menor que cero', () => {

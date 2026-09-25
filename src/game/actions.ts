@@ -20,7 +20,7 @@ function applyTurnCost(state: GameCoreState, turns: number): GameCoreState {
   return {
     ...state,
     turn: state.turn + turns,
-    hunger: Math.max(0, state.hunger + turns),
+    hunger: state.hunger + turns,
     energy: state.energy - turns,
   };
 }
@@ -37,7 +37,7 @@ function resolveForage(
   randomInt: RandomInt,
 ): ActionResolution {
   const value = drawRandomInt(randomInt, 1, 5);
-  const foundFood = value <= 2;
+  const foundFood = value <= 3;
   const nextState = applyTurnCost(
     {
       ...state,
@@ -92,7 +92,7 @@ function resolveExplore(
     };
   }
 
-  if (value <= 15) {
+  if (value >= 16) {
     return {
       state: applyTurnCost({ ...state, food: state.food + 1 }, 1),
       outcome: { type: 'explore-food' },
@@ -110,7 +110,7 @@ function resolveRepair(
   randomInt: RandomInt,
 ): ActionResolution {
   const value = drawRandomInt(randomInt, 1, 10);
-  const succeeded = value !== 1;
+  const succeeded = value !== 5;
   const nextState = applyTurnCost(
     {
       ...state,
@@ -137,14 +137,12 @@ function resolveFish(
     value = drawRandomInt(randomInt, 1, 3);
   } while (value !== 1);
 
-  const totalCost = (attempts * (attempts + 1)) / 2;
-
   return {
     state: {
       ...state,
       turn: state.turn + attempts,
-      hunger: state.hunger + totalCost,
-      energy: state.energy - totalCost,
+      hunger: state.hunger + attempts,
+      energy: state.energy - attempts,
       food: state.food + attempts * 3,
     },
     outcome: { type: 'fish-catch', attempts },
@@ -152,16 +150,21 @@ function resolveFish(
 }
 
 function resolveEat(state: GameCoreState): ActionResolution {
-  const nextState =
+  const nextState = applyTurnCost(
     state.food >= 0
       ? state
       : {
           ...state,
           hunger: state.hunger - 4,
-        };
+        },
+    1,
+  );
 
   return {
-    state: applyTurnCost(nextState, 1),
+    state:
+      state.food < 0
+        ? { ...nextState, hunger: Math.max(0, nextState.hunger) }
+        : nextState,
     outcome: { type: 'eat-no-food' },
   };
 }

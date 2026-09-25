@@ -16,7 +16,7 @@ El ejecutable existente solo sirve como referencia visual. No demuestra que su l
 
 | ID | Comportamiento fiel |
 |---|---|
-| `F-01` | Comer nunca reduce hambre ni modifica comida en estados alcanzables. |
+| `F-01` | Comer nunca reduce el hambre ni modifica la comida en estados alcanzables; solo paga el coste normal del turno, que aumenta el hambre en 1. |
 | `F-02` | La salud solo puede pasar de 10 a 0 mediante un meteorito; no hay recuperación. |
 | `F-03` | No existe victoria. |
 | `F-04` | El bucle permite hambre 10, pero el mensaje de muerte empieza en 10. |
@@ -27,6 +27,17 @@ El ejecutable existente solo sirve como referencia visual. No demuestra que su l
 | `F-09` | Ayuda no consume turno, pero sí puede producir un evento en Agonía. |
 | `F-10` | Energía y comida no tienen límite superior. |
 | `F-11` | Los hitos y penalizaciones se aplican también en Normal. |
+
+## Auditoría de fuente
+
+La revisión de solo lectura de los fuentes C detectó y corrigió cuatro desviaciones de la primera implementación, sin cambiar la intención de la migración:
+
+- Buscar comida obtiene comida con `1..3` y falla con `4..5`.
+- Explorar obtiene comida con `16..20`; `5..15` no encuentra nada.
+- Reparar falla únicamente con `5` y consume dos turnos en ambos casos.
+- Pescar aplica `stat_modifier(attempts)`: turno, hambre y energía suman exactamente el número de intentos, no una suma triangular. Comer no reduce el hambre, pero sí paga el coste normal de un turno.
+
+El C comprueba los hitos exactos 15 y 30 antes de aplicar las penalizaciones por superarlos. Esta secuencia queda documentada en la especificación del motor.
 
 ## Diferencias inevitables de la web
 
