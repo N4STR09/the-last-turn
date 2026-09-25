@@ -47,14 +47,25 @@ describe('DifficultyScreen', () => {
       screen.getByRole('button', { name: 'Jugar en Agonía' }),
     ).toBeVisible();
     expect(
-      screen.getByText(/Una partida sin eventos aleatorios/i),
+      screen.getByText(
+        /Eventos aleatorios pueden destruir el refugio, robar comida o quitarte salud\./,
+      ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Eventos aleatorios pueden/i),
+      screen.getByText(/Una partida sin eventos aleatorios/i),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/hambre.*energía.*15.*30/i),
     ).toBeInTheDocument();
+  });
+
+  it('no presenta el meteorito como muerte inmediata en Agonía', () => {
+    render(<DifficultyScreen onSelect={vi.fn()} />);
+
+    // El meteorito quita un punto de salud (Fase 1, I-03): el copy no puede
+    // prometer una muerte, porque desde salud inicial no mata.
+    expect(screen.queryByText(/provocar una muerte|matar al jugador/i)).toBeNull();
+    expect(screen.queryByText(/quitarte toda la salud/i)).toBeNull();
   });
 
   it('permite seleccionar con teclado', async () => {

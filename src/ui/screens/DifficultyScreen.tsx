@@ -1,4 +1,4 @@
-import type { Difficulty } from '../../game';
+﻿import type { Difficulty } from '../../game';
 import { DifficultyCard } from '../components/DifficultyCard';
 
 export interface DifficultyScreenProps {
@@ -28,7 +28,7 @@ export function DifficultyScreen({ onSelect }: DifficultyScreenProps) {
         <DifficultyCard
           difficulty="agony"
           title="Agonía"
-          description="Eventos aleatorios pueden destruir el refugio, robar comida o provocar una muerte."
+          description="Eventos aleatorios pueden destruir el refugio, robar comida o quitarte salud."
           onSelect={onSelect}
         />
       </div>
