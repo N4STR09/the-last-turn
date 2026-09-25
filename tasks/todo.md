@@ -427,12 +427,12 @@ estática.
 - [x] La pesca termina tras seis intentos como máximo y tiene un resultado de fallo explícito.
 - [x] El meteorito quita un punto de salud y solo mata cuando la salud llega a cero.
 - [x] Los hitos 15 y 30 aplican presión solo al cruzarse, incluso con acciones multiturno.
-- [x] Una estrategia determinista supera el turno 100 en Normal y Agonía.
+- [x] Una estrategia determinista supera el turno 100 en Normal y Agonía. **Restaurado tras el reequilibrio de `D-01`:** la ruta ingenua moría en el 37 y el techo absoluto era el 50; con el alivio de la ración escalado la partida llega al turno 103.
 - [x] La UI mantiene la salud oculta y comunica las nuevas resoluciones.
 - [x] La línea base del C y las desviaciones de Fase 1 están separadas en la documentación.
 
 **Verificación de esta fase:**
-- [x] Ejecutar `npm test`, `npm run verify` y `npm run build` con el árbol final: 159 pruebas, cobertura global 91.32% statements / 84.42% branches / 100% functions / 91.25% lines, bundle de 74.58 KiB JS gzip y 2.77 KiB CSS gzip.
+- [x] Ejecutar `npm test`, `npm run verify` y `npm run build` con el árbol de Fase 1: 159 pruebas, cobertura global 91.32% statements / 84.42% branches / 100% functions / 91.25% lines, bundle de 74.58 KiB JS gzip y 2.77 KiB CSS gzip.
 - [x] Comprobar el artefacto servido: documento y los tres recursos responden 200 y el bundle no contiene URLs de terceros.
 - [ ] Repetir QA manual del flujo, teclado, foco, red y anchos con el build de Fase 1; está bloqueado porque no hay navegador de escritorio conectado a la sesión.
 - [ ] Obtener autorización explícita antes de hacer push o desplegar la Fase 1.
@@ -443,10 +443,61 @@ Los resultados y los puntos pendientes de esta fase están en
 **Archivos probables:**
 - `src/game/actions.ts`
 - `src/game/events.ts`
-- `src/game/difficulty.ts`
+- `src/game/difficulty.ts` (eliminado en la Fase 2)
 - `src/game/engine.ts`
 - `src/game/__tests__/`
 - `src/app/game-view-model.ts`
 - `SPEC-infinite-survival.md`
 - `SPEC-game-engine.md`
+- `docs/fidelity.md`
+
+## Fase 2: escalada progresiva de dificultad
+
+**Descripción:** Sustituir los hitos 15 y 30 por un nivel de amenaza que sube solo
+con el avance de la partida, y avisar con una pantalla a negro. El juego debe
+volverse más difícil de forma continua sin hacerse aritméticamente imposible.
+
+**Criterios de aceptación:**
+- [x] El nivel `n` se alcanza en el turno `n² + 9n`; una acción multiturno salta al nivel más alto cruzado.
+- [x] Con carga 0 el comportamiento es idéntico a la Fase 1, incluida la reparación que solo falla con la tirada 5.
+- [x] Los seis modificadores de Fase 2 escalan con `load = min(threat, 10)` y `threat` sigue contando y avisando para siempre. El séptimo, el alivio de la ración, se añadió con el reequilibrio de `D-01`.
+- [x] Agonía hace tiradas de evento extra y la resolución expone una lista.
+- [x] La severidad de tormenta y mapache sube con la carga sin cambiar la tabla 1..100.
+- [x] La salud sigue oculta y no sufre decaimiento pasivo.
+- [x] El aviso congela la partida y solo se descarta con click, `Enter` o `Espacio`.
+- [x] Los atajos de teclado no actúan mientras el aviso está abierto.
+- [x] `src/game` y `src/ui` siguen al 100 % en las cuatro métricas.
+- [x] Se puede sobrevivir más de 100 turnos. Turno 103 con juego ordenado en las dos dificultades, tras el reequilibrio de `D-01`.
+- [x] La rampa de niveles es alcanzable entera. Techo absoluto de 191 tras agotar 400 962 estados alcanzables con el mejor azar posible.
+- [x] La ración escala con la carga para que comer siga tapando el gasto del turno.
+
+**Verificación de esta fase:**
+- [x] `npm run verify` pasa: 256 pruebas, cobertura global 94.04% statements / 87.15% branches / 100% functions / 93.96% lines, `src/game` y `src/ui` al 100 %, bundle de 75.44 KiB JS gzip y 3.01 KiB CSS gzip.
+- [x] `D-01` detectado, medido y resuelto. Antes: techo absoluto 50, ruta ingenua muerta en el 37, niveles 4 a 10 inalcanzables. Después: techo absoluto 191 y turno 103 con juego ordenado.
+- [x] Los tests que afirmaban el defecto se invirtieron: ahora exigen superar el turno 100 y alcanzar el nivel 6 con juego ordenado.
+- [x] Comprobar el artefacto servido: documento y los tres recursos responden 200 y el bundle no contiene URLs de terceros.
+- [ ] Repetir QA manual del aviso, teclado, foco, red y anchos con el build de Fase 2; está bloqueado porque no hay navegador de escritorio conectado a la sesión.
+- [x] Decidir y aplicar el reequilibrio que resuelve `D-01`. Aprobada la opción 1: escalar el alivio de la ración.
+- [x] Confirmado con la persona usuaria el ritmo 10, 22, 36, 52… frente a "cada 10 turnos fijos". Se mantiene `n² + 9n`.
+- [ ] Obtener autorización explícita antes de hacer push o desplegar la Fase 2.
+
+Los resultados y los puntos pendientes de esta fase están en
+[`docs/qa.md`](../docs/qa.md). El defecto abierto está detallado en
+[`SPEC-threat.md`](../SPEC-threat.md).
+
+**Archivos probables:**
+- `src/game/threat.ts`
+- `src/game/actions.ts`
+- `src/game/events.ts`
+- `src/game/engine.ts`
+- `src/game/types.ts`
+- `src/app/app-state.ts`
+- `src/app/app-reducer.ts`
+- `src/app/use-game-session.ts`
+- `src/app/threat-copy.ts`
+- `src/app/game-view-model.ts`
+- `src/ui/components/EscalationOverlay.tsx`
+- `src/ui/components/ResolutionPanel.tsx`
+- `src/ui/styles/tokens.css`
+- `SPEC-threat.md`
 - `docs/fidelity.md`

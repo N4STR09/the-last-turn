@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { DifficultyScreen } from '../../ui/screens/DifficultyScreen';
+import { EscalationOverlay } from '../../ui/components/EscalationOverlay';
 import { GameOverScreen } from '../../ui/screens/GameOverScreen';
 import { GameScreen } from '../../ui/screens/GameScreen';
 import { StartScreen } from '../../ui/screens/StartScreen';
@@ -37,10 +38,18 @@ function SessionHarness({
   }
 
   return (
-    <GameScreen
-      model={session.gameModel!}
-      onAction={session.performAction}
-    />
+    <>
+      <GameScreen
+        model={session.gameModel!}
+        onAction={session.performAction}
+      />
+      {session.threatNoticeModel !== null ? (
+        <EscalationOverlay
+          model={session.threatNoticeModel}
+          onContinue={session.dismissThreatNotice}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -128,8 +137,8 @@ describe('useGameSession', () => {
     const resolveTurnMock = vi.fn((state) => ({
       state: { ...state, turn: state.turn + 1 },
       actionOutcome: { type: 'help' } as const,
-      randomEvent: null,
-      milestone: null,
+      randomEvents: [],
+      threatNotice: null,
     }));
     render(
       <SessionHarness
@@ -148,5 +157,67 @@ describe('useGameSession', () => {
     await user.keyboard('?');
 
     expect(resolveTurnMock).toHaveBeenCalledOnce();
+  });
+
+  it('abre el aviso de escalada y bloquea la partida hasta continuar', async () => {
+    const user = userEvent.setup();
+    const resolveTurnMock = vi.fn((state) => ({
+      state: { ...state, turn: state.turn + 1, threat: 1 },
+      actionOutcome: { type: 'help' } as const,
+      randomEvents: [],
+      threatNotice: { threat: 1, load: 1 },
+    }));
+    render(
+      <SessionHarness
+        options={{
+          resolveTurn: resolveTurnMock,
+          randomInt: () => 1,
+        }}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Comenzar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+    await user.click(screen.getByRole('button', { name: 'Ayuda' }));
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(resolveTurnMock).toHaveBeenCalledOnce();
+
+    // Con el aviso abierto, ni los botones ni los atajos deben actuar.
+    await user.keyboard('bdrpec?');
+    expect(resolveTurnMock).toHaveBeenCalledOnce();
+
+    await user.click(screen.getByText('Haz click para continuar...'));
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(resolveTurnMock).toHaveBeenCalledOnce();
+
+    await user.keyboard('b');
+    expect(resolveTurnMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('no abre aviso cuando la resolución no lo trae', async () => {
+    const user = userEvent.setup();
+    render(<SessionHarness options={{ randomInt: () => 1 }} />);
+
+    await user.click(screen.getByRole('button', { name: 'Comenzar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+    await user.click(screen.getByRole('button', { name: 'Ayuda' }));
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('descarta el aviso sin mover la partida', async () => {
+    const user = userEvent.setup();
+    render(<SessionHarness options={{ randomInt: () => 1 }} />);
+
+    await user.click(screen.getByRole('button', { name: 'Comenzar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+
+    for (let step = 0; step < 9; step += 1) {
+      await user.click(screen.getByRole('button', { name: 'Ayuda' }));
+    }
+
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

@@ -8,6 +8,7 @@ export const baseCoreState: GameCoreState = {
   food: 0,
   health: 10,
   hasShelter: false,
+  threat: 0,
 };
 
 export function createCoreState(

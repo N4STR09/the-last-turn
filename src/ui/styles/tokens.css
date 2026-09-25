@@ -17,6 +17,11 @@
   --color-danger-deep: #6f302d;
   --color-positive: #9ac397;
   --color-focus: #f6d58b;
+  /* W-05: rojo sangre sobre negro puro. Contraste 2.10:1, no cumple AA.
+     Desviación consciente, documentada en docs/fidelity.md. */
+  --color-blood: #8b0000;
+  /* Gris apagado con contraste suficiente (4.89:1 sobre negro puro). */
+  --color-hint: #7a7a7a;
   --shadow-deep: 0 1.5rem 4rem rgb(0 0 0 / 38%);
   --shadow-soft: 0 0.75rem 2rem rgb(0 0 0 / 22%);
   --radius-sm: 0.375rem;

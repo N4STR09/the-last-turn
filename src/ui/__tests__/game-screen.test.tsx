@@ -50,12 +50,13 @@ const model: GameViewModel = {
         tone: 'warning',
       },
     ],
-    event: {
-      type: 'storm',
-      headline: 'Tormenta',
-      description: 'El refugio ha quedado expuesto.',
-    },
-    milestone: 'Hito del turno 15',
+    events: [
+      {
+        type: 'storm',
+        headline: 'Tormenta',
+        description: 'El refugio ha quedado expuesto.',
+      },
+    ],
   },
 };
 
@@ -82,7 +83,7 @@ describe('GameScreen', () => {
     expect(within(header).getByText('Agonía')).toBeInTheDocument();
   });
 
-  it('anuncia la resolución en orden: acción, evento e hito', () => {
+  it('anuncia la resolución en orden: acción, detalles y evento', () => {
     render(<GameScreen model={model} onAction={vi.fn()} />);
 
     const resolution = screen.getByRole('status', { name: 'Última resolución' });
@@ -94,9 +95,6 @@ describe('GameScreen', () => {
       text.indexOf('El attempt'),
     );
     expect(text.indexOf('El attempt')).toBeLessThan(text.indexOf('Tormenta'));
-    expect(text.indexOf('Tormenta')).toBeLessThan(
-      text.indexOf('Hito del turno 15'),
-    );
     expect(within(resolution).getByText('Energía: −2')).toBeInTheDocument();
   });
 
@@ -123,8 +121,7 @@ describe('GameScreen', () => {
             headline: 'Consultas las reglas del refugio.',
             details: [],
             deltas: [],
-            event: null,
-            milestone: null,
+            events: [],
           },
         }}
         onAction={vi.fn()}

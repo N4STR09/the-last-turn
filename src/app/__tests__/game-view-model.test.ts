@@ -16,6 +16,7 @@ function createCoreState(overrides: Partial<GameCoreState> = {}): GameCoreState 
     food: 0,
     health: 10,
     hasShelter: false,
+    threat: 0,
     ...overrides,
   };
 }
@@ -43,7 +44,7 @@ describe('createGameViewModel', () => {
     );
   });
 
-  it('traduce la acción, sus cambios, el evento y el hito en orden', () => {
+  it('traduce la acción y sus cambios, y no expone hitos', () => {
     const previous = createCoreState({
       difficulty: 'agony',
       turn: 14,
@@ -69,14 +70,32 @@ describe('createGameViewModel', () => {
       'La búsqueda añade 1 comida.',
     ]);
     expect(model.resolution?.deltas).toEqual([
-      { id: 'hunger', label: 'Hambre', value: '+2', tone: 'warning' },
-      { id: 'energy', label: 'Energía', value: '−2', tone: 'warning' },
+      { id: 'hunger', label: 'Hambre', value: '+1', tone: 'warning' },
+      { id: 'energy', label: 'Energía', value: '−1', tone: 'warning' },
       { id: 'food', label: 'Comida', value: '+1', tone: 'positive' },
     ]);
-    expect(model.resolution?.event).toBeNull();
-    expect(model.resolution?.milestone).toBe(
-      'El ambiente empieza a desprender un aura rara. Una presión inicial castiga tu cuerpo...',
+    expect(model.resolution?.events).toEqual([]);
+  });
+
+  it('recoge todos los eventos de la resolución', () => {
+    const previous = createCoreState({
+      difficulty: 'agony',
+      turn: 4,
+      threat: 4,
+      hasShelter: true,
+    });
+    const resolution = resolveTurn(
+      { ...previous, status: 'playing' },
+      'help',
+      () => 5,
     );
+
+    const model = createGameViewModel(resolution.state, resolution, previous);
+
+    expect(model.resolution?.events.map((event) => event.type)).toEqual([
+      'storm',
+      'storm',
+    ]);
   });
 
   it('traduce comer una ración y sus cambios', () => {
@@ -143,12 +162,14 @@ describe('createGameViewModel', () => {
 
       expect(
         createGameViewModel(resolution.state, resolution, state).resolution
-          ?.event,
-      ).toEqual({
-        type: value === 1 ? 'storm' : value === 51 ? 'raccoon' : 'meteorite',
-        headline,
-        description,
-      });
+          ?.events,
+      ).toEqual([
+        {
+          type: value === 1 ? 'storm' : value === 51 ? 'raccoon' : 'meteorite',
+          headline,
+          description,
+        },
+      ]);
     }
   });
 });

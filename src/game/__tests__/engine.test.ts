@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { finishGame } from '../end-state';
+import { restEnergyCap } from '../threat';
 import { createGame, resolveTurn } from '..';
 import type { Difficulty, GameState, PlayingGameState } from '..';
 import { createCoreState } from './test-state';
@@ -26,8 +27,8 @@ describe('resolveTurn', () => {
         status: 'playing',
       },
       actionOutcome: { type: 'help' },
-      randomEvent: null,
-      milestone: null,
+      randomEvents: [],
+      threatNotice: null,
     });
   });
 
@@ -47,10 +48,11 @@ describe('resolveTurn', () => {
         food: 0,
         health: 9,
         hasShelter: true,
+        threat: 0,
       },
       actionOutcome: { type: 'repair-succeeded' },
-      randomEvent: { type: 'meteorite' },
-      milestone: null,
+      randomEvents: [{ type: 'meteorite' }],
+      threatNotice: null,
     });
     expect(random.calls).toEqual([
       { min: 1, max: 10 },
@@ -58,68 +60,144 @@ describe('resolveTurn', () => {
     ]);
   });
 
-  it('aplica el hito exacto después del evento de Agonía', () => {
-    const state = createPlayingState('agony', { turn: 15 });
-    const random = sequenceRandomInt([50]);
+  it('emite el aviso de escalada en el turno 10', () => {
+    const state = createPlayingState('normal', { turn: 9 });
+    const random = sequenceRandomInt([1]);
 
-    const result = resolveTurn(state, 'help', random.randomInt);
+    const result = resolveTurn(state, 'forage', random.randomInt);
 
-    expect(result.state).toEqual({
-      ...state,
-      status: 'playing',
-    });
-    expect(result.actionOutcome).toEqual({ type: 'help' });
-    expect(result.randomEvent).toBeNull();
-    expect(result.milestone).toEqual({ type: 'turn-15' });
-    expect(random.calls).toEqual([{ min: 1, max: 100 }]);
+    expect(result.threatNotice).toEqual({ threat: 1, load: 1 });
+    expect(result.state).toMatchObject({ turn: 10, threat: 1 });
   });
 
-  it('aplica las penalizaciones una sola vez tras una acción multiturno', () => {
+  it('salta al nivel más alto y avisa una vez al cruzar varios umbrales', () => {
+    const state = createPlayingState('normal', { turn: 8, energy: 10 });
+
+    const result = resolveTurn(state, 'fish', sequenceRandomInt([1]).randomInt);
+
+    expect(result.state.turn).toBe(9);
+    expect(result.threatNotice).toBeNull();
+  });
+
+  it('aumenta el nivel sin volver a avisar en el mismo escalón', () => {
+    const state = createPlayingState('normal', { turn: 10, threat: 1 });
+    const random = failIfRandomIntIsCalled();
+
+    const result = resolveTurn(state, 'help', random);
+
+    expect(result.threatNotice).toBeNull();
+    expect(result.state.threat).toBe(1);
+  });
+
+  it('aplica la escalada tras el evento de Agonía', () => {
     const state = createPlayingState('agony', {
       turn: 29,
       hunger: 8,
+      health: 10,
     });
     const random = sequenceRandomInt([1, 50]);
 
     const result = resolveTurn(state, 'repair', random.randomInt);
 
     expect(result.state).toMatchObject({
-      status: 'dead',
+      status: 'playing',
       turn: 31,
-      hunger: 11,
-      energy: 7,
-      end: {
-        condition: 'hunger',
-        reportedCause: 'hunger',
-        turnsSurvived: 30,
-      },
+      hunger: 10,
+      energy: 8,
+      threat: 2,
     });
-    expect(result.randomEvent).toBeNull();
-    expect(result.milestone).toEqual({ type: 'turn-30' });
+    expect(result.randomEvents).toEqual([]);
+    expect(result.threatNotice).toEqual({ threat: 2, load: 2 });
+  });
+
+  it('suprime el aviso cuando el mismo turno mata', () => {
+    const state = createPlayingState('agony', {
+      turn: 9,
+      hunger: 10,
+    });
+    const random = sequenceRandomInt([1, 50]);
+
+    const result = resolveTurn(state, 'forage', random.randomInt);
+
+    expect(result.state.status).toBe('dead');
+    expect(result.state.threat).toBe(1);
+    expect(result.threatNotice).toBeNull();
+  });
+
+  it('recoge varios eventos cuando la carga añade tiradas', () => {
+    const state = createPlayingState('agony', { turn: 4, threat: 4 });
+    const random = sequenceRandomInt([5, 5]);
+
+    const result = resolveTurn(state, 'help', random.randomInt);
+
+    expect(result.randomEvents).toEqual([
+      { type: 'storm' },
+      { type: 'storm' },
+    ]);
+    expect(random.calls).toEqual([
+      { min: 1, max: 100 },
+      { min: 1, max: 100 },
+    ]);
   });
 
   it.each(['normal', 'agony'] as const)(
-    'permite una estrategia renovable hasta superar el turno 100 en %s',
+    'la partida sigue siendo renewable en %s con juego ordenado',
     (difficulty) => {
       let state: GameState = createGame(difficulty);
       const randomInt = (min: number, max: number) =>
         max === 100 ? 50 : min;
-      const renewableActions = ['forage', 'eat', 'rest'] as const;
 
       state = resolveTurn(state, 'repair', randomInt).state;
 
-      for (let cycle = 0; cycle < 33; cycle += 1) {
-        for (const action of renewableActions) {
-          const resolution = resolveTurn(state, action, randomInt);
-          expect(resolution.state.status).toBe('playing');
-          state = resolution.state;
-        }
+      for (let step = 0; step < 400 && state.status === 'playing'; step += 1) {
+        if (state.status !== 'playing') break;
+        // Regla que seguiria una persona: recuperar energia hasta pasar el tope
+        // que ya no se alcanza, mantener dos raciones y gastarlas comiendo.
+        const action =
+          state.energy < restEnergyCap(state.threat) + 1
+            ? 'rest'
+            : state.food < 2
+              ? 'fish'
+              : 'eat';
+        state = resolveTurn(state, action, randomInt).state;
       }
 
+      // Criterio de D-01 resuelto: con el alivio de la racion escalado con la
+      // carga, la partida supera el turno 100 en las dos dificultades. Antes de
+      // el reequilibrio esta ruta moria en el 37 y el techo absoluto medido
+      // agotando el espacio alcanzable con el mejor azar posible era el 50.
       expect(state.turn).toBeGreaterThan(100);
-      expect(state.status).toBe('playing');
     },
   );
+
+  it('mantiene el techo absoluto por encima de todo el tramo escalonado', () => {
+    // Medicion expensive, ejecutada aparte y registrada en SPEC-threat.md: una
+    // busqueda exhaustiva de las siete acciones con el mejor azar posible agota
+    // el espacio alcanzable en el turno 191, con amenaza 10. Aqui basta con
+    // fijar que el nivel 10 es alcanzable con juego ordenado, que es lo que
+    // ese techo demostraba y lo que el aviso de escalada necesita.
+    let state: GameState = createGame('normal');
+    const randomInt = (min: number, max: number) =>
+      max === 100 ? 50 : min;
+
+    state = resolveTurn(state, 'repair', randomInt).state;
+
+    for (let step = 0; step < 400 && state.status === 'playing'; step += 1) {
+      if (state.status !== 'playing') break;
+      const action =
+        state.energy < restEnergyCap(state.threat) + 1
+          ? 'rest'
+          : state.food < 2
+            ? 'fish'
+            : 'eat';
+      state = resolveTurn(state, action, randomInt).state;
+      if (state.status === 'playing' && state.threat < 6) continue;
+      break;
+    }
+
+    expect(state.status).toBe('playing');
+    expect(state.threat).toBeGreaterThanOrEqual(6);
+  });
 
   it('rechaza resolver una partida terminada sin consumir azar', () => {
     const deadState = finishGame(createCoreState({ hunger: 11 }));

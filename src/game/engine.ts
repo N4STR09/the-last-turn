@@ -1,7 +1,7 @@
 import { resolveAction } from './actions';
-import { applyDifficulty } from './difficulty';
 import { finishGame } from './end-state';
-import { resolveRandomEvent } from './events';
+import { resolveRandomEvents } from './events';
+import { applyThreat } from './threat';
 import type {
   GameAction,
   GameResolution,
@@ -19,20 +19,19 @@ export function resolveTurn(
   }
 
   const actionResolution = resolveAction(state, action, randomInt);
-  const eventResolution = resolveRandomEvent(
+  const eventResolution = resolveRandomEvents(
     actionResolution.state,
     randomInt,
   );
-  const difficultyResolution = applyDifficulty(
-    eventResolution.state,
-    state.turn,
-  );
-  const finalState = finishGame(difficultyResolution.state);
+  const threatResolution = applyThreat(eventResolution.state);
+  const finalState = finishGame(threatResolution.state);
 
   return {
     state: finalState,
     actionOutcome: actionResolution.outcome,
-    randomEvent: eventResolution.event,
-    milestone: difficultyResolution.milestone,
+    randomEvents: eventResolution.events,
+    // Si el turno mata, la pantalla de muerte gana y el aviso se suprime. El
+    // nivel de amenaza ya está aplicado en el estado de todos modos.
+    threatNotice: finalState.status === 'dead' ? null : threatResolution.notice,
   };
 }

@@ -1,6 +1,8 @@
 # The Last Turn
 
-Versión web de *The Last Turn* construida con React + Vite + TypeScript. La aplicación parte del prototipo C auditado y aplica explícitamente la Fase 1 de supervivencia: no hay victoria, la salud permanece oculta, comer consume una ración y reduce el hambre, la pesca tiene un máximo de seis intentos y los hitos solo presionan una vez.
+Versión web de *The Last Turn* construida con React + Vite + TypeScript. La aplicación parte del prototipo C auditado y aplica explícitamente dos fases: la **supervivencia** (no hay victoria, la salud permanece oculta, comer consume una ración y reduce el hambre, la pesca tiene un máximo de seis intentos) y la **escalada progresiva de dificultad** (un nivel de amenaza que sube solo con el avance de la partida y que endurece las reglas de forma continua).
+
+No hay victoria. La partida siempre termina; la única forma de durar más es aguantar más turnos frente a una escalada que no se detiene.
 
 La aplicación es una web 100 % estática preparada para publicarse en Cloudflare Pages. No tiene backend, cuentas, multijugador, telemetría, persistencia, Web Storage, endpoints ni recursos de terceros en runtime. Una persona jugará abriendo una URL HTTPS, sin instalar ni configurar nada.
 
@@ -68,9 +70,31 @@ La guía completa para integración Git, carga directa, aceptación, rollback y 
 2. **Normal** no añade eventos aleatorios; **Agonía** sí.
 3. La partida muestra hambre, energía, comida y refugio. La salud permanece oculta.
 4. Cada acción actualiza la resolución y, cuando corresponde, el turno y los recursos.
-5. La pantalla final muestra la causa comunicada, la dificultad y los turnos aguantados. **Volver a jugar** regresa a la selección de dificultad.
+5. Al subir la dificultad, la partida se congela a negro con un aviso de escalada. Un click, `Enter` o `Espacio` lo descarta y la partida continúa desde el turno en que estaba, ya con el incremento aplicado.
+6. La pantalla final muestra la causa comunicada, la dificultad y los turnos aguantados. **Volver a jugar** regresa a la selección de dificultad.
 
-Durante la partida también funcionan los atajos `B` (buscar), `D` (descansar), `E` (explorar), `R` (fabricar o reparar), `P` (pescar), `C` (comer) y `?` (ayuda). Los atajos se desactivan fuera de la partida y no interfieren con controles interactivos.
+Durante la partida también funcionan los atajos `B` (buscar), `D` (descansar), `E` (explorar), `R` (fabricar o reparar), `P` (pescar), `C` (comer) y `?` (ayuda). Los atajos se desactivan fuera de la partida, no interfieren con controles interactivos y quedan inactivos mientras el aviso de escalada está abierto.
+
+## Escalada de dificultad
+
+El nivel de amenaza se deriva del turno y sube solo: el nivel `n` se alcanza en el turno `n² + 9n`, es decir 10, 22, 36, 52, 70, 90, 112, 136, 162, 190… Una acción de varios turnos salta directamente al nivel más alto que ha cruzado y avisa una sola vez.
+
+Los modificadores usan la carga `load = min(threat, 10)`, así que el nivel sigue contando y sigue avisando para siempre, pero la presión mecánica se estabiliza. Con carga 0 el comportamiento es idéntico al de la fase anterior, línea base del prototipo C incluida. Con carga máxima, cada turno cuesta 6 de hambre, el descanso topa en 2 de energía, buscar comida se reduce a una tirada de acierto, reparar falla en nueve de cada diez intentos y Agonía hace tres tiradas de evento por turno.
+
+**La ración también escala:** comer quita `4 + hambreExtra`, de modo que sigue tapando el gasto del turno en toda la rampa. Esa palanca no es decorativa: sin ella, cada ración costaría más hambre de la que devuelve a partir de la carga 4 y la partida dejaría de ser superable por construcción. El juego no se abarata al subir el nivel, se estrecha: la holgura del bucle tiende a cero y cualquier evento o fallo de búsqueda te hunde.
+
+Las fórmulas exactas, la tabla de modificadores y el orden de resolución están en [`SPEC-threat.md`](SPEC-threat.md).
+
+## Qué tan lejos llega una partida
+
+Medido con el motor real, no estimado:
+
+| Medida | Turno |
+|---|---:|
+| Techo práctico con juego ordenado (regla de dos umbrales) | 103 |
+| Techo absoluto con el mejor azar posible en cada tirada | 191 |
+
+El primer nivel salta en el turno 10 y el décimo en el 190, así que **la rampa de niveles es alcanzable entera**. El tramo final no tiene ciclo sostenible: se sostiene con las reservas iniciales. Llegar hasta 191 exige acumular energía y comida a la vez durante muchos turnos y gastarlas después en ráfaga, y ninguna regla de umbral fijo lo consigue. Un techo de 191 con el mejor azar posible no significa que 191 sea una partida de verdad, significa que la presión mecánica está repartida a lo largo de toda la rampa en vez de concentrarse en un muro al final.
 
 ## Estructura
 
@@ -86,11 +110,13 @@ El azar se inyecta en el motor. El adaptador de producción (`browserRandomInt`)
 
 ## Fidelidad
 
-Las reglas actuales, la línea base histórica del C y los cambios deliberados de la Fase 1 están registrados en [`docs/fidelity.md`](docs/fidelity.md) y [`SPEC-game-engine.md`](SPEC-game-engine.md). La web no intenta reproducir bit a bit el `rand()` de MinGW: usa enteros nominalmente uniformes con extremos inclusivos y documenta esa diferencia.
+Las reglas actuales, la línea base histórica del C y los cambios deliberados de cada fase están registrados en [`docs/fidelity.md`](docs/fidelity.md) y [`SPEC-game-engine.md`](SPEC-game-engine.md). La web no intenta reproducir bit a bit el `rand()` de MinGW: usa enteros nominalmente uniformes con extremos inclusivos y documenta esa diferencia.
+
+La pantalla de escalada usa rojo sangre `#8b0000` sobre negro puro, con 2.10:1 de contraste. Es una desviación consciente y registrada: el tono pedido y un fondo negro puro son incompatibles con el 4.5:1 que exige WCAG AA, y se eligió la estética. La pista «Haz click para continuar...» usa `#7a7a7a` (4.89:1) y sí cumple, porque ahí no había conflicto estético.
 
 ## Build web estático
 
-El build se genera en `dist/` y se publica directamente como contenido estático, sin backend ni Pages Functions. La puerta `npm run check:budget` vuelve a comprimir cada archivo de `dist/assets/` con gzip nivel 9 y confirma que el total está dentro de los presupuestos: **74.58 KiB de JavaScript** (37,3 % de 200 KiB) y **2.77 KiB de CSS** (5,5 % de 50 KiB). Vite imprime cifras propias (**77.30 kB** y **2.83 kB** gzip) que difieren en unos pocos KiB porque ajusta gzip de forma distinta; la puerta aplica siempre su propia medición. El favicon y todos los recursos visuales se incluyen en el artefacto.
+El build se genera en `dist/` y se publica directamente como contenido estático, sin backend ni Pages Functions. La puerta `npm run check:budget` vuelve a comprimir cada archivo de `dist/assets/` con gzip nivel 9 y confirma que el total está dentro de los presupuestos: **75.44 KiB de JavaScript** (37,7 % de 200 KiB) y **3.01 KiB de CSS** (6 % de 50 KiB). Vite imprime cifras propias que difieren en unos pocos KiB porque ajusta gzip de forma distinta; la puerta aplica siempre su propia medición. El favicon y todos los recursos visuales se incluyen en el artefacto.
 
 ## Alcance de QA
 

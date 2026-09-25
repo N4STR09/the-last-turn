@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 
+import { EscalationOverlay } from '../ui/components/EscalationOverlay';
 import { DifficultyScreen } from '../ui/screens/DifficultyScreen';
 import { GameOverScreen } from '../ui/screens/GameOverScreen';
 import { GameScreen } from '../ui/screens/GameScreen';
@@ -30,6 +31,12 @@ export function App() {
         <GameOverScreen
           model={session.gameOverModel!}
           onRestart={session.restart}
+        />
+      ) : null}
+      {session.threatNoticeModel !== null ? (
+        <EscalationOverlay
+          model={session.threatNoticeModel}
+          onContinue={session.dismissThreatNotice}
         />
       ) : null}
     </div>

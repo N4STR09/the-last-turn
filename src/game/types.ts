@@ -22,6 +22,7 @@ export interface GameCoreState {
   readonly food: number;
   readonly health: number;
   readonly hasShelter: boolean;
+  readonly threat: number;
 }
 
 export interface GameEnd {
@@ -41,6 +42,12 @@ export interface FinishedGameState extends GameCoreState {
 
 export type GameState = PlayingGameState | FinishedGameState;
 
+/** Aviso de escalada que la interfaz debe mostrar antes de dejar seguir. */
+export interface ThreatNotice {
+  readonly threat: number;
+  readonly load: number;
+}
+
 export type ActionOutcome =
   | { readonly type: 'help' }
   | { readonly type: 'forage-found' }
@@ -49,7 +56,7 @@ export type ActionOutcome =
   | { readonly type: 'rest-shelter-miss' }
   | {
       readonly type: 'rest-shelter-success';
-      readonly energyRecovered: 3 | 5;
+      readonly energyRecovered: number;
     }
   | { readonly type: 'explore-shelter' }
   | { readonly type: 'explore-food' }
@@ -71,13 +78,13 @@ export type GameEvent =
   | { readonly type: 'raccoon' }
   | { readonly type: 'meteorite' };
 
-export type Milestone =
-  | { readonly type: 'turn-15' }
-  | { readonly type: 'turn-30' };
-
 export interface GameResolution {
   readonly state: GameState;
   readonly actionOutcome: ActionOutcome;
-  readonly randomEvent: GameEvent | null;
-  readonly milestone: Milestone | null;
+  /**
+   * Lista de eventos de la resolución. Con tiradas extra una acción puede
+   * provocar más de uno, y cada tirada se aplica sobre el estado anterior.
+   */
+  readonly randomEvents: readonly GameEvent[];
+  readonly threatNotice: ThreatNotice | null;
 }

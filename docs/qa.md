@@ -1,11 +1,11 @@
 # Registro de QA final
 
 **Fecha:** 25 de septiembre de 2026
-**Alcance:** entrega web estática de *The Last Turn Web* con las reglas de la Fase 1 de supervivencia
+**Alcance:** entrega web estática de *The Last Turn Web* con las reglas de la Fase 1 de supervivencia y la Fase 2 de escalada progresiva
 
 ## Estado de este registro
 
-Las tablas de la sección «Comandos automáticos» reflejan el árbol con Fase 1. Las secciones de navegador real y de aceptación pública se realizaron sobre el build `0.1.0`, publicado antes de la Fase 1, y están etiquetadas como tales; la repetición en navegador con el build actual queda registrada como pendiente.
+Las tablas de la sección «Comandos automáticos» reflejan el árbol con Fase 2. Las secciones de navegador real y de aceptación pública se realizaron sobre el build `0.1.0`, publicado antes de la Fase 1, y están etiquetadas como tales; la repetición en navegador con el build actual queda registrada como pendiente porque no hay navegador de escritorio conectado a esta sesión.
 
 ## Comandos automáticos
 
@@ -14,17 +14,17 @@ Las tablas de la sección «Comandos automáticos» reflejan el árbol con Fase 
 | `npm ci` | Pasa; instalación reproducible sin vulnerabilidades reportadas |
 | `npm run typecheck` | Pasa |
 | `npm run lint` | Pasa sin warnings |
-| `npm run test:coverage` | Pasa; 15 archivos y 159 pruebas; cobertura global 91.32% statements, 84.42% branches, 100% functions, 91.25% lines |
+| `npm run test:coverage` | Pasa; 18 archivos y 256 pruebas; cobertura global 94.04% statements, 87.15% branches, 100% functions, 93.96% lines |
 | `npm run test:coverage:scoped` | Pasa; aplica los umbrales de `src/app`, `src/ui` y `src/game` dentro de `verify` |
-| `npm run test:coverage -- src\app` | Pasa; cobertura de `src/app` 84.96% statements, 76.10% branches, 100% functions, 84.86% lines |
-| `npm run test:coverage -- src\game` | Pasa; cobertura de `src/game` 100% en las cuatro métricas (85 pruebas) |
-| `npm run test:coverage -- src\ui` | Pasa; cobertura de `src/ui` 100% en las cuatro métricas (18 pruebas) |
+| `npm run test:coverage -- src\app` | Pasa; cobertura de `src/app` 88.62% statements, 81.03% branches, 100% functions, 88.55% lines (61 pruebas) |
+| `npm run test:coverage -- src\game` | Pasa; cobertura de `src/game` 100% en las cuatro métricas (151 pruebas) |
+| `npm run test:coverage -- src\ui` | Pasa; cobertura de `src/ui` 100% en las cuatro métricas (28 pruebas) |
 | `npm run verify` | Pasa; typecheck, lint, cobertura global, cobertura por capacidad, build y presupuestos |
 | `npm run build` | Pasa; bundle estático dentro de presupuesto |
-| `npm run check:budget` | Pasa; 74.58 KiB JS gzip (37,3 % de 200 KiB) y 2.77 KiB CSS gzip (5,5 % de 50 KiB) |
+| `npm run check:budget` | Pasa; 75.44 KiB JS gzip (37,7 % de 200 KiB) y 3.01 KiB CSS gzip (6 % de 50 KiB) |
 | `npm audit` | 0 vulnerabilidades |
 
-La puerta mide con gzip nivel 9 sobre `dist/assets/` e informa de 74.58 KiB, mientras que Vite imprime 77.30 kB para el mismo archivo. La diferencia es esperable y está explicada en `scripts/check-budget.mjs`: ambos ajustan gzip de forma distinta y la puerta aplica siempre su propia medición.
+La puerta mide con gzip nivel 9 sobre `dist/assets/` e informa de 75.44 KiB, mientras que Vite imprime su propia cifra para el mismo archivo. La diferencia es esperable y está explicada en `scripts/check-budget.mjs`: ambos ajustan gzip de forma distinta y la puerta aplica siempre su propia medición.
 
 Las puertas se comprobaron además en su sentido de fallo, porque una comprobación que solo pasa no demuestra que bloquee:
 
@@ -37,6 +37,58 @@ Las puertas se comprobaron además en su sentido de fallo, porque una comprobaci
 | `check:budget` | `dist/assets/` sin `.js` ni `.css` | Falla con `exit=1` en vez de aprobar un presupuesto de 0 bytes |
 
 En todos los casos se restauró el estado y se volvió a comprobar que la puerta pasa con el árbol real.
+
+## Defecto detectado en QA: `D-01`, ya resuelto
+
+La verificación de la Fase 2 encontró un defecto de diseño, no de implementación. Se documenta entero porque alteró el criterio de aceptación de supervivencia indefinida y porque el arreglo cambió números que ya estaban aprobados.
+
+### Lo que se encontró
+
+| Medición | Resultado antes del arreglo |
+|---|---|
+| Ruta renewable ingenua (reparar, luego `buscar`, `comer`, `descansar` en bucle, con azar determinista favorable) | Muere por hambre en el **turno 37**, en el nivel 3. Idéntico en Normal y Agonía. |
+| Búsqueda exhaustiva sobre las 7 acciones con el **mejor azar posible** en cada tirada, deduplicando estados hasta agotar el espacio alcanzable | **8016 estados distintos**, espacio agotado en la iteración 49. Techo absoluto: **turno 50**, en el nivel 3, con hambre 9, energía 3, comida 0 y refugio. |
+
+La segunda cifra es un **máximo**, no un promedio: no es que la estrategia fuera mala, es que no existía ninguna. La medición se hizo con el mejor resultado posible en cada tirada (buscar y explorar acertan, la pesca acierta al primer intento, el descanso devuelve el tope, los eventos sacan meteorito). Un jugador real moría mucho antes.
+
+### Causa
+
+Pescar da 3 raciones en 2 turnos si acierta a la primera, es decir 1,5 por turno, la mejor tasa del juego; buscar da 1 por turno. Esa ventaja es lo único que sostenía el bucle. En cuanto el hambre por turno llegaba a 3 (carga 4, turno 52) se consumía y el balance pasaba a ser negativo para siempre. Con 3 de hambre por turno, un ciclo completo de pesca más las tres comidas consumía 5 turnos y 5 de energía y dejaba +3 de hambre; reponer la energía exigía 2 descansos, que suman 2 turnos y +4 de hambre. Siete turnos y +7 de hambre, y ninguna cantidad extra de comida cerraba el círculo.
+
+El agravante era que la ración quitaba **4 fijos** mientras el hambre del turno subía hasta 6. Cada ración era cada vez una peor inversión.
+
+### Consecuencia que se habría publicado
+
+El calendario sube en los turnos 10, 22, 36, 52, 70, 90, 112, 136, 162 y 190. Con techo en 50, **los niveles 4 a 10 eran inalcanzables por construcción**: el aviso a negro se habría visto en los turnos 10, 22 y 36 y después nunca más. Quedaban sin usar el tramo de la rampa a partir del 40 %, cuatro de los seis modificadores en su rango alto y la mayor parte del copy de escalada.
+
+### Decisión tomada
+
+Se preguntó a la persona usuaria y se aplicó la **opción 1**, la recomendada: escalar también el alivio de la ración a `4 + hambreExtraPorTurno`. Con carga 0 y 1 no cambia nada, así que la Fase 1 queda intacta.
+
+Se descartaron las otras dos: que la comida no empeorara con la carga contradecía la palanca elegida de que buscar se vuelva más difícil, y bajar el tope de hambre extra a 1 dejaba el eje de hambre casi plano.
+
+### Mediciones después del arreglo
+
+| Medición | Resultado |
+|---|---|
+| Partida con juego ordenado (recuperar energía hasta pasar el tope del nivel, mantener 2 raciones, gastarlas comiendo) | **Turno 103** en Normal y en Agonía, muriendo de hambre en el nivel 6 con el hambre en 0 justo en cada cambio de nivel. |
+| Búsqueda exhaustiva sobre las 7 acciones con el mejor azar posible | Techo absoluto: **turno 191**, con amenaza 10, **400 962 estados** alcanzables y el espacio agotado en la iteración 190. |
+
+El techo absoluto pasa de 50 a 191 y el nivel 10 arranca en el turno 190, así que la rampa completa queda dentro del alcance. El techo práctico con juego ordenado es 103, no 191: llegar hasta 191 exige acumular energía y comida a la vez durante muchos turnos y gastarlas después en ráfaga, algo que ninguna regla de umbral fijo reproduce. El reequilibrio hizo que el tramo escalonado sea alcanzable, no fácil.
+
+### Cobertura de la regresión
+
+Los dos tests que afirmaban el defecto se invirtieron. Ahora `src/game/__tests__/engine.test.ts` exige superar el turno 100 en las dos dificultades y alcanzar el nivel 6, y `src/game/__tests__/threat.test.ts` fija el invariante aritmético que estaba detrás del defecto:
+
+```text
+foodRelief(threat) > 1 + extraHungerPerTurn(threat)   para todo threat >= 0
+```
+
+Volver a tapar el alivio de la ración rompe ese test antes de que alguien vuelva a morir en el 37.
+
+### Pendiente tras el arreglo
+
+Ninguno en diseño: el defecto está cerrado y medido. Queda pendiente la verificación en navegador real y la autorización de publicación, ambas en la sección final de este registro.
 
 ## Navegador real (build 0.1.0, anterior a la Fase 1)
 
@@ -109,13 +161,18 @@ Aun así se verificó sobre el despliegue:
 
 Las capturas de pantalla de 360, 768 y 1440 px se generaron temporalmente para la inspección y no forman parte del repositorio. La primera versión no incluye E2E automatizado; la comprobación de navegador se mantiene como QA manual reproducible.
 
-## Pendiente para el build de Fase 1
+## Pendiente para los builds de Fase 1 y Fase 2
 
-El build actual se verificó con los comandos automáticos de arriba y con una comprobación del artefacto servido: `npm run preview` devuelve 200 para el documento y para los tres recursos (`assets/index-D3tQLqmK.js` 245206 bytes, `assets/index-DutSG5GR.css` 11416 bytes y `favicon.svg` 319 bytes). Un barrido de URLs sobre el bundle solo encuentra `http://www.w3.org` (espacio de nombres SVG inerte) y `https://react.dev` (cadena de un mensaje de error de React); no hay peticiones a terceros en runtime. Se confirmó además que el copy corregido está dentro del bundle servido: aparecen `quitarte salud`, `recuperar un poco de salud`, `te deja herido` y `aura rara`, y no aparecen ni `provocar una muerte` ni el copy de hito sin acentos que se había descartado.
+Los builds actuales se verificaron con los comandos automáticos de arriba y con una comprobación del artefacto servido: `npm run preview` devuelve 200 para el documento y para los tres recursos. Un barrido de URLs sobre el bundle solo encuentra `http://www.w3.org` (espacio de nombres SVG inerte) y `https://react.dev` (cadena de un mensaje de error de React); no hay peticiones a terceros en runtime.
 
 Queda pendiente, y no se afirma aquí ningún resultado hasta ejecutarlo:
 
-- Recorrido en navegador real del build de Fase 1: comer con y sin comida, pesca con seis intentos, meteorito no mortal desde salud inicial, teclado, foco y ausencia de la salud en pantalla.
-- Repetición de anchos 320, 360, 768 y 1440 px, objetivos táctiles, movimiento reducido, consola y red sobre el build actual.
+- Recorrido en navegador real de la Fase 1: comer con y sin comida, pesca con seis intentos, meteorito no mortal desde salud inicial, teclado, foco y ausencia de la salud en pantalla.
+- Recorrido en navegador real de la Fase 2: aviso de escalada a negro, mensaje en rojo sangre, foco en el diálogo, cierre con click, `Enter` y `Espacio`, atajos inactivos mientras el aviso está abierto, comportamiento en anchos estrechos y con `prefers-reduced-motion`.
+- Comprobación de la tabla de modificadores en partida real, no solo en pruebas: que en la carga 10 un turno cueste 6 de hambre, el descanso topa en 2 de energía y la ración quite 9.
+- Recorrido largo en partida real: llegar al menos al nivel 3 y ver el aviso tres veces seguidas, para confirmar que el copy cicla y que la escalada se nota.
+- Repetición de anchos 320, 360, 768 y 1440 px, objetivos táctiles, movimiento reducido, consola y red sobre los builds actuales.
 - Confirmación de infraestructura en el dashboard de Cloudflare: si el proyecto es Pages clásico o Workers con Static Assets, y qué rama produce despliegues.
 - Empuje a `origin/main` y redespliegue, que requieren autorización explícita.
+
+`D-01` ya no bloquea la publicación: está resuelto, medido y cubierto por tests.

@@ -33,8 +33,7 @@ export interface ResolutionViewModel {
   readonly headline: string;
   readonly details: readonly string[];
   readonly deltas: ReadonlyArray<ResourceDeltaViewModel>;
-  readonly event: EventViewModel | null;
-  readonly milestone: string | null;
+  readonly events: readonly EventViewModel[];
 }
 
 export interface GameViewModel {
@@ -42,6 +41,15 @@ export interface GameViewModel {
   readonly turn: number;
   readonly resources: ReadonlyArray<ResourceViewModel>;
   readonly resolution: ResolutionViewModel | null;
+}
+
+/** Pantalla de escalada: congela la partida hasta que se continúa. */
+export interface ThreatNoticeViewModel {
+  readonly threat: number;
+  readonly load: number;
+  readonly level: string;
+  readonly message: string;
+  readonly hint: string;
 }
 
 export interface GameOverViewModel {

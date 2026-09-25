@@ -2,23 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { resolveAction } from '../actions';
 import type { GameAction, GameCoreState } from '..';
+import { createCoreState } from './test-state';
 import { failIfRandomIntIsCalled, sequenceRandomInt } from './test-random';
-
-const initialCoreState: GameCoreState = {
-  difficulty: 'normal',
-  turn: 1,
-  hunger: 0,
-  energy: 10,
-  food: 0,
-  health: 10,
-  hasShelter: false,
-};
-
-function createCoreState(
-  overrides: Partial<GameCoreState> = {},
-): GameCoreState {
-  return { ...initialCoreState, ...overrides };
-}
 
 function resolve(
   state: GameCoreState,
@@ -454,5 +439,207 @@ describe('resolveAction', () => {
 
     expect(state).toEqual(originalState);
     expect(resolution.state).not.toBe(state);
+  });
+});
+
+describe('con escalada de amenaza', () => {
+  it('cobra un punto de hambre extra por turno al forrajear', () => {
+    const state = createCoreState({ threat: 4 });
+
+    const { resolution } = resolve(state, 'forage', [1]);
+
+    expect(resolution.state).toMatchObject({ turn: 2, hunger: 3, energy: 9 });
+  });
+
+  it('escala el hambre hasta el tope de carga sin pasarse', () => {
+    const atTen = resolve(createCoreState({ threat: 10 }), 'forage', [1]);
+    const aboveCap = resolve(createCoreState({ threat: 40 }), 'forage', [1]);
+
+    expect(atTen.resolution.state.hunger).toBe(6);
+    expect(aboveCap.resolution.state.hunger).toBe(6);
+  });
+
+  it('topa la recuperación al descansar con carga alta', () => {
+    const state = createCoreState({
+      energy: 1,
+      hasShelter: true,
+      threat: 9,
+    });
+
+    const { resolution } = resolve(state, 'rest', [10]);
+
+    expect(resolution.outcome).toEqual({
+      type: 'rest-shelter-success',
+      energyRecovered: 2,
+    });
+    expect(resolution.state.energy).toBe(2);
+  });
+
+  it('respeta la tirada baja aunque la amenaza ponga un tope mas alto', () => {
+    const state = createCoreState({
+      energy: 1,
+      hasShelter: true,
+      threat: 3,
+    });
+
+    const { resolution } = resolve(state, 'rest', [1]);
+
+    expect(resolution.outcome).toEqual({
+      type: 'rest-shelter-success',
+      energyRecovered: 3,
+    });
+  });
+
+  it('estrecha la ventana de éxito al forrajear', () => {
+    const state = createCoreState({ threat: 6 });
+
+    const { resolution } = resolve(state, 'forage', [2]);
+
+    expect(resolution.outcome).toEqual({ type: 'forage-empty' });
+  });
+
+  it('deja al menos una tirada ganadora al forrajear en carga máxima', () => {
+    const state = createCoreState({ threat: 10 });
+
+    const { resolution } = resolve(state, 'forage', [1]);
+
+    expect(resolution.outcome).toEqual({ type: 'forage-found' });
+  });
+
+  it('hace fallar reparaciones que antes nunca fallaban', () => {
+    const state = createCoreState({ threat: 4 });
+
+    const { resolution } = resolve(state, 'repair', [3]);
+
+    expect(resolution.outcome).toEqual({ type: 'repair-failed' });
+  });
+
+  it('deja pasar la tirada 10 al reparar en carga máxima', () => {
+    const state = createCoreState({ threat: 10 });
+
+    const { resolution } = resolve(state, 'repair', [10]);
+
+    expect(resolution.outcome).toEqual({ type: 'repair-succeeded' });
+  });
+
+  it('mantiene la tirada 5 como la única fallona con carga 0', () => {
+    const fails = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter(
+      (value) =>
+        resolve(createCoreState(), 'repair', [value]).resolution.outcome.type ===
+        'repair-failed',
+    );
+
+    expect(fails).toEqual([5]);
+  });
+
+  it('encarece la reparación en turnos', () => {
+    const state = createCoreState({ threat: 7 });
+
+    const { resolution } = resolve(state, 'repair', [1]);
+
+    expect(resolution.state).toMatchObject({ turn: 4, hunger: 12, energy: 7 });
+  });
+
+  it('aplica el hambre extra a los intentos de pesca', () => {
+    const state = createCoreState({ threat: 4 });
+
+    const { resolution } = resolve(state, 'fish', [2, 3, 1]);
+
+    expect(resolution.state).toMatchObject({
+      turn: 4,
+      hunger: 9,
+      energy: 7,
+      food: 3,
+    });
+  });
+
+  it('aplica el hambre extra al fracaso de pesca completo', () => {
+    const state = createCoreState({ threat: 2, food: 2 });
+
+    const { resolution } = resolve(
+      state,
+      'fish',
+      [2, 3, 2, 3, 2, 3],
+    );
+
+    expect(resolution.state).toMatchObject({
+      turn: 7,
+      hunger: 12,
+      energy: 4,
+    });
+  });
+
+  it('escala el alivio de la ración con la carga para que comer siga tapando el gasto', () => {
+    // Con carga 4 la ración quita 6 en lugar de 4, y el turno cuesta 3: comer deja
+    // el hambre 3 por debajo, frente a las 3 por debajo de la Fase 1 con un turno
+    // de coste 1. La holgura no desaparece, la ración se vuelve más decisiva.
+    const state = createCoreState({ threat: 4, food: 2, hunger: 5, health: 10 });
+
+    const result = resolveAction(
+      state,
+      'eat',
+      failIfRandomIntIsCalled(),
+    );
+
+    expect(result.outcome).toEqual({
+      type: 'eat-consumed',
+      foodConsumed: 1,
+      hungerReduced: 3,
+      healthRecovered: 0,
+    });
+    expect(result.state.hunger).toBe(2);
+  });
+
+  it('mantiene el relief base con carga 0', () => {
+    const state = createCoreState({ threat: 0, food: 2, hunger: 8, health: 10 });
+
+    const result = resolveAction(
+      state,
+      'eat',
+      failIfRandomIntIsCalled(),
+    );
+
+    expect(result.outcome).toMatchObject({ hungerReduced: 3 });
+    expect(result.state.hunger).toBe(5);
+  });
+
+  it('informa de la reducción real aunque el suelo en cero la recorte', () => {
+    // Carga 10: la ración quita 9 y el turno cuesta 6, así que el balance neto es
+    // de 3 puntos, pero si el hambre inicial es menor el suelo en cero manda.
+    const state = createCoreState({ threat: 10, food: 2, hunger: 2, health: 10 });
+
+    const result = resolveAction(
+      state,
+      'eat',
+      failIfRandomIntIsCalled(),
+    );
+
+    expect(result.outcome).toMatchObject({ hungerReduced: 2 });
+    expect(result.state.hunger).toBe(0);
+  });
+
+  it('no puede dejar el resultado de comer por debajo de cero', () => {
+    const state = createCoreState({ food: 1, hunger: 0 });
+
+    const result = resolveAction(
+      state,
+      'eat',
+      failIfRandomIntIsCalled(),
+    );
+
+    expect(result.state.hunger).toBe(0);
+    expect(result.outcome).toMatchObject({ hungerReduced: 0 });
+  });
+
+  it('mantiene Ayuda indiferente a la escalada', () => {
+    const state = createCoreState({ threat: 8, hunger: 3, energy: 2 });
+
+    const result = resolveAction(
+      state,
+      'help',
+      failIfRandomIntIsCalled(),
+    );
+
+    expect(result).toEqual({ state, outcome: { type: 'help' } });
   });
 });

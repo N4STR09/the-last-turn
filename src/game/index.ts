@@ -1,5 +1,12 @@
 export { createGame } from './initial-state';
 export { resolveTurn } from './engine';
+export {
+  applyThreat,
+  MAX_THREAT_LOAD,
+  threatForTurn,
+  threatLoad,
+  threatThreshold,
+} from './threat';
 export type {
   ActionOutcome,
   DeathCause,
@@ -13,7 +20,7 @@ export type {
   GameResolution,
   GameState,
   GameStatus,
-  Milestone,
   PlayingGameState,
   RandomInt,
+  ThreatNotice,
 } from './types';

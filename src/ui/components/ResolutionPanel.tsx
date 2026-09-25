@@ -54,18 +54,22 @@ export function ResolutionPanel({ resolution }: ResolutionPanelProps) {
                 ))}
               </ul>
             ) : null}
-            {resolution.event === null ? null : (
-              <div
-                className="resolution-event"
-                data-event-type={resolution.event.type}
-              >
-                <strong>{resolution.event.headline}</strong>
-                <p>{resolution.event.description}</p>
+            {resolution.events.length > 0 ? (
+              <div className="resolution-events">
+                {resolution.events.map((event, index) => (
+                  <div
+                    className="resolution-event"
+                    data-event-type={event.type}
+                    // Con tiradas extra el mismo evento puede repetirse, así
+                    // que la clave necesita el índice además del tipo.
+                    key={`${event.type}-${index}`}
+                  >
+                    <strong>{event.headline}</strong>
+                    <p>{event.description}</p>
+                  </div>
+                ))}
               </div>
-            )}
-            {resolution.milestone === null ? null : (
-              <p className="resolution-milestone">{resolution.milestone}</p>
-            )}
+            ) : null}
           </div>
         )}
       </div>

@@ -6,7 +6,6 @@ import type {
   GameEvent,
   GameResolution,
   GameState,
-  Milestone,
 } from '../game';
 import type {
   EventViewModel,
@@ -298,7 +297,7 @@ function outcomeCopy(outcome: ActionOutcome): OutcomeCopy {
       return {
         headline: 'No tienes nada que comer.',
         details: [
-          'Comer no consume comida; el turno aumenta el hambre en 1 y reduce la energía en 1.',
+          'Comer no consume comida; el turno solo aumenta el hambre y reduce la energía en 1.',
         ],
       };
   }
@@ -327,15 +326,6 @@ function eventCopy(event: GameEvent): EventViewModel {
   }
 }
 
-function milestoneCopy(milestone: Milestone): string {
-  switch (milestone.type) {
-    case 'turn-15':
-      return 'El ambiente empieza a desprender un aura rara. Una presión inicial castiga tu cuerpo...';
-    case 'turn-30':
-      return 'Has cruzado otro umbral. Esto cada vez resulta más difícil, pero todavía puedes sobrevivir...';
-  }
-}
-
 export function createResolutionViewModel(
   resolution: GameResolution,
   previousState?: GameCoreState,
@@ -344,14 +334,7 @@ export function createResolutionViewModel(
     actionId: actionIdForOutcome(resolution.actionOutcome),
     ...outcomeCopy(resolution.actionOutcome),
     deltas: createDeltas(previousState, resolution.state),
-    event:
-      resolution.randomEvent === null
-        ? null
-        : eventCopy(resolution.randomEvent),
-    milestone:
-      resolution.milestone === null
-        ? null
-        : milestoneCopy(resolution.milestone),
+    events: resolution.randomEvents.map((event) => eventCopy(event)),
   };
 }
 
