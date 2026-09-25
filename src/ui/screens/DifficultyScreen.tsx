@@ -22,7 +22,7 @@ export function DifficultyScreen({ onSelect }: DifficultyScreenProps) {
         <DifficultyCard
           difficulty="normal"
           title="Normal"
-          description="Una partida sin eventos aleatorios. Las acciones y los hitos siguen activos."
+          description="Una partida sin eventos aleatorios. Las acciones y la escalada siguen activas."
           onSelect={onSelect}
         />
         <DifficultyCard
@@ -33,9 +33,9 @@ export function DifficultyScreen({ onSelect }: DifficultyScreenProps) {
         />
       </div>
       <p className="rules-note">
-        Solo Agonía añade eventos aleatorios. Ambas dificultades comparten el
-        aumento del hambre, la pérdida de energía y una presión de una sola vez
-        al cruzar los hitos de los turnos 15 y 30.
+        Solo Agonía añade eventos aleatorios. En las dos dificultades el hambre
+        sube, la energía baja, y la escalada sube el nivel cada pocos turnos
+        hasta que todo se vuelve más caro.
       </p>
     </main>
   );

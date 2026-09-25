@@ -36,7 +36,7 @@ describe('StartScreen', () => {
 });
 
 describe('DifficultyScreen', () => {
-  it('explica las dos dificultades y los hitos compartidos', () => {
+  it('explica las dos dificultades y la escalada que comparten', () => {
     render(<DifficultyScreen onSelect={vi.fn()} />);
 
     expect(
@@ -55,8 +55,33 @@ describe('DifficultyScreen', () => {
       screen.getByText(/Una partida sin eventos aleatorios/i),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/hambre.*energía.*15.*30/i),
+      screen.getByText(/hambre sube, la energía baja.*escalada/i),
     ).toBeInTheDocument();
+  });
+
+  it('no menciona los hitos de turnos 15 y 30, que la escalada sustituyo', () => {
+    render(<DifficultyScreen onSelect={vi.fn()} />);
+
+    // La Fase 2 sustituyo los hitos por escalada progresiva. El copy los
+    // describia todavia, en su forma abreviada, y por eso hace falta una
+    // comprobacion explicita y no solo la del bundle.
+    expect(screen.queryByText(/hito/i)).toBeNull();
+    expect(screen.queryByText(/15 y 30/)).toBeNull();
+  });
+
+  it('enseña la calavera con cuernos en Agonía y sin ella en Normal', () => {
+    const { container } = render(<DifficultyScreen onSelect={vi.fn()} />);
+
+    const agony = container.querySelector(
+      '.difficulty-card--agony .skull',
+    );
+    const normal = container.querySelector(
+      '.difficulty-card--normal .skull',
+    );
+
+    expect(agony).not.toBeNull();
+    expect(agony?.querySelector('.skull__horns')).not.toBeNull();
+    expect(normal).toBeNull();
   });
 
   it('no presenta el meteorito como muerte inmediata en Agonía', () => {
