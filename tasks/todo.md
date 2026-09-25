@@ -179,15 +179,15 @@
 **Descripción:** Construir las dos primeras pantallas con componentes semánticos y callbacks.
 
 **Criterios de aceptación:**
-- [ ] Inicio explica que la partida no se guarda.
-- [ ] Normal y Agonía explican que solo Agonía añade eventos aleatorios.
-- [ ] Ambas dificultades mencionan los hitos compartidos 15/30.
-- [ ] La selección funciona con teclado y puntero.
-- [ ] Cada pantalla tiene un único `h1` enfocable.
+- [x] Inicio explica que la partida no se guarda.
+- [x] Normal y Agonía explican que solo Agonía añade eventos aleatorios.
+- [x] Ambas dificultades mencionan los hitos compartidos 15/30.
+- [x] La selección funciona con teclado y puntero.
+- [x] Cada pantalla tiene un único `h1` enfocable.
 
 **Verificación:**
-- [ ] `npm run test -- src/ui` pasa.
-- [ ] `npm run typecheck` pasa.
+- [x] `npm run test -- src/ui` pasa.
+- [x] `npm run typecheck` pasa.
 
 **Dependencias:** Tarea 6.
 
