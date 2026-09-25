@@ -57,6 +57,17 @@ describe('GameOverScreen', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(message);
   });
 
+  it('usa el singular para una partida de un turno', () => {
+    render(
+      <GameOverScreen
+        model={{ ...model, turnsSurvived: 1 }}
+        onRestart={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('1 turno aguantado')).toBeInTheDocument();
+  });
+
   it('reinicia mediante un único callback', async () => {
     const user = userEvent.setup();
     const onRestart = vi.fn();

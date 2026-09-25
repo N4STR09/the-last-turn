@@ -113,6 +113,34 @@ describe('GameScreen', () => {
     ).toBeInTheDocument();
   });
 
+  it('omite listas y avisos cuando la resolución no tiene detalles opcionales', () => {
+    render(
+      <GameScreen
+        model={{
+          ...model,
+          resolution: {
+            actionId: 'help',
+            headline: 'Consultas las reglas del refugio.',
+            details: [],
+            deltas: [],
+            event: null,
+            milestone: null,
+          },
+        }}
+        onAction={vi.fn()}
+      />,
+    );
+
+    const resolution = screen.getByRole('status', { name: 'Última resolución' });
+    expect(resolution).toHaveTextContent('Consultas las reglas del refugio.');
+    expect(
+      within(resolution).queryByRole('list', { name: 'Detalles de la acción' }),
+    ).toBeNull();
+    expect(
+      within(resolution).queryByRole('list', { name: 'Cambios de recursos' }),
+    ).toBeNull();
+  });
+
   it('emite las siete acciones con sus identificadores', async () => {
     const user = userEvent.setup();
     const onAction = vi.fn();
