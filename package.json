@@ -15,7 +15,7 @@
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "node scripts/run-coverage.mjs",
     "verify": "npm run typecheck && npm run lint && npm run test:coverage && npm run build"
   },
   "dependencies": {
