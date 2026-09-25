@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
@@ -66,12 +67,14 @@ describe('useGameSession', () => {
     const actualResolveTurn = await import('../../game/engine');
     const resolveTurnMock = vi.fn(actualResolveTurn.resolveTurn);
     render(
-      <SessionHarness
-        options={{
-          randomInt: () => 4,
-          resolveTurn: resolveTurnMock,
-        }}
-      />,
+      <StrictMode>
+        <SessionHarness
+          options={{
+            randomInt: () => 4,
+            resolveTurn: resolveTurnMock,
+          }}
+        />
+      </StrictMode>,
     );
 
     await user.click(screen.getByRole('button', { name: 'Comenzar' }));
@@ -120,18 +123,12 @@ describe('useGameSession', () => {
 
   it('usa los atajos solo mientras la partida está activa', async () => {
     const user = userEvent.setup();
-    const resolveTurnMock = vi.fn(
-      (state, action, randomInt) => {
-        void randomInt;
-        return {
-          state: { ...state, turn: state.turn + 1 },
-          actionOutcome:
-            action === 'help' ? ({ type: 'help' } as const) : ({ type: 'help' } as const),
-          randomEvent: null,
-          milestone: null,
-        };
-      },
-    );
+    const resolveTurnMock = vi.fn((state) => ({
+      state: { ...state, turn: state.turn + 1 },
+      actionOutcome: { type: 'help' } as const,
+      randomEvent: null,
+      milestone: null,
+    }));
     render(
       <SessionHarness
         options={{

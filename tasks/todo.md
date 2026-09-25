@@ -339,17 +339,17 @@
 **Descripción:** Reemplazar la plantilla inicial por la aplicación final y verificar todos los estados principales.
 
 **Criterios de aceptación:**
-- [ ] Inicio navega a dificultad.
-- [ ] Elegir dificultad crea partida.
-- [ ] Una acción actualiza recursos y resolución.
-- [ ] Una muerte cambia a pantalla final.
-- [ ] Reiniciar vuelve a dificultad.
-- [ ] Recargar vuelve a Inicio.
-- [ ] No hay llamadas a Web Storage, red o endpoints.
+- [x] Inicio navega a dificultad.
+- [x] Elegir dificultad crea partida.
+- [x] Una acción actualiza recursos y resolución.
+- [x] Una muerte cambia a pantalla final.
+- [x] Reiniciar vuelve a dificultad.
+- [x] Recargar vuelve a Inicio.
+- [x] No hay llamadas a Web Storage, red o endpoints.
 
 **Verificación:**
-- [ ] `npm run test -- src/app` pasa.
-- [ ] `npm run verify` pasa.
+- [x] `npm run test -- src/app` pasa.
+- [x] `npm run verify` pasa.
 - [ ] Flujo completo verificado en navegador real.
 
 **Dependencias:** Tareas 9 y 12.
@@ -363,9 +363,9 @@
 
 ## Checkpoint D: Aplicación completa
 
-- [ ] Flujo completo funcional.
-- [ ] Modo estricto de React sin azar duplicado.
-- [ ] Build de producción limpio.
+- [x] Flujo completo funcional.
+- [x] Modo estricto de React sin azar duplicado.
+- [x] Build de producción limpio.
 - [ ] Cero errores de consola.
 
 ## Tarea 14: Ejecutar QA final y documentar
