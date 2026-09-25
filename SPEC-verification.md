@@ -139,7 +139,6 @@ El script `test:coverage` usa `scripts/run-coverage.mjs` para conservar la cober
 - `npm run build` termina con código 0.
 - El resultado es una aplicación web estática que puede publicarse directamente en Cloudflare Pages.
 - No se generan Pages Functions, Workers, endpoints ni secretos.
-- No hay endpoints, secretos ni variables sensibles.
 - El runtime de producción no realiza peticiones a terceros.
 
 ## Verificación manual en navegador
