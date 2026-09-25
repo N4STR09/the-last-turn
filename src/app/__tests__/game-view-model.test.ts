@@ -93,7 +93,7 @@ describe('createGameViewModel', () => {
     expect(model.resolution?.headline).toBe('Comes una ración.');
     expect(model.resolution?.details).toEqual([
       'Consumes 1 comida y reduces el hambre en 2.',
-      'La comida te ayuda a recuperar 1 de salud.',
+      'La comida te ayuda a recuperar un poco de salud.',
     ]);
     expect(model.resolution?.deltas).toEqual([
       { id: 'hunger', label: 'Hambre', value: '−2', tone: 'positive' },

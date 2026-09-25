@@ -290,7 +290,7 @@ function outcomeCopy(outcome: ActionOutcome): OutcomeCopy {
         details: [
           `Consumes 1 comida y reduces el hambre en ${outcome.hungerReduced}.`,
           outcome.healthRecovered === 1
-            ? 'La comida te ayuda a recuperar 1 de salud.'
+            ? 'La comida te ayuda a recuperar un poco de salud.'
             : 'Tu salud ya estaba al máximo.',
         ],
       };
