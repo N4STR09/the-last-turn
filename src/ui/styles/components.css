@@ -204,6 +204,10 @@
   color: var(--stat-shelter);
 }
 
+.stat--health {
+  color: var(--stat-health);
+}
+
 .stat__label {
   display: inline-flex;
   align-items: center;
@@ -299,6 +303,66 @@
     animation: none;
     opacity: 1;
   }
+}
+
+/*
+ * El refugio no es una fila más de la rejilla: es una línea aparte, debajo de
+ * las cifras. Comparte el lenguaje de las barras con un único bloque, y
+ * dice su estado con una palabra entera porque no hay un punto en el que quedarse
+ * sin techo sea una muerte. Por eso no late: es una posición, no un aviso.
+ *
+ * Usa la misma rejilla de cuatro columnas que `.stat` y en el mismo orden, a
+ * propósito. Con un `flex` y el bloque empujado al extremo, la palabra se
+ * quedaba pegada a la etiqueta y a la derecha quedaba un hueco vacío que
+ * descolgaba la línea de las tres de arriba. Con la rejilla, la etiqueta cae
+ * bajo las etiquetas, la palabra bajo donde empiezan las barras y el bloque
+ * donde está el aviso de las cifras, y la columna entera queda cuadrada a
+ * cualquier ancho sin medir nada a mano.
+ */
+.shelter {
+  display: grid;
+  grid-template-columns: 5.5rem 3.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  margin: calc(-1 * var(--space-2)) 0 var(--space-5);
+  color: var(--stat-shelter);
+}
+
+.shelter[data-tone='warning'] {
+  color: var(--color-alarm);
+}
+
+.shelter__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5ch;
+  min-width: 0;
+  color: currentcolor;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.shelter__icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+}
+
+.shelter__status {
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: var(--glow);
+}
+
+.shelter__block {
+  display: flex;
+  justify-content: flex-end;
 }
 
 /* -------------------------------------------------------------- terminal -- */
@@ -500,6 +564,26 @@
   gap: var(--space-2);
 }
 
+/*
+ * Rendirse ocupa la fila entera debajo de las cinco acciones. Comparte su forma
+ * para que se lea como una más, y no como un enlace olvidado en el margen, pero
+ * es la única que tira la partida: por eso lleva la sangre en vez de blanco, y
+ * por eso su halo es rojo y no el brillo general de la pantalla.
+ */
+.action-button--surrender {
+  grid-column: 1 / -1;
+  color: var(--stat-hunger);
+  border-color: rgb(139 0 0 / 55%);
+  background: rgb(139 0 0 / 10%);
+}
+
+.action-button--surrender:hover {
+  color: var(--color-light);
+  border-color: var(--color-alarm);
+  background: rgb(139 0 0 / 22%);
+  box-shadow: 0 0 1.1rem rgb(139 0 0 / 45%);
+}
+
 .action-button__icon {
   display: grid;
   flex: 0 0 auto;
@@ -598,6 +682,65 @@
   font-weight: 700;
 }
 
+/* ------------------------------------------------------- rendirse o no -- */
+
+.button--danger {
+  color: var(--color-light);
+  border-color: var(--color-alarm);
+  background: rgb(139 0 0 / 35%);
+  box-shadow: 0 0 1.2rem rgb(139 0 0 / 35%);
+}
+
+.button--danger:hover {
+  background: rgb(139 0 0 / 55%);
+  box-shadow: 0 0 1.8rem rgb(139 0 0 / 55%);
+}
+
+.surrender-overlay {
+  position: fixed;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  inset: 0;
+  padding: var(--space-5);
+  background: #000;
+}
+
+.surrender-dialog {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: center;
+  max-width: 40rem;
+  padding: var(--space-6) var(--space-5);
+  text-align: center;
+}
+
+.surrender-dialog__title {
+  margin: 0;
+  color: var(--color-light);
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 5.5vw, 2.5rem);
+  line-height: 1.25;
+  text-wrap: balance;
+  text-shadow: var(--glow-title);
+}
+
+.surrender-dialog__body {
+  max-width: 40ch;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.surrender-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
 /* ------------------------------------------------------ aviso de escalada -- */
 
 .escalation-overlay {
@@ -686,6 +829,32 @@
   .stat__state {
     grid-column: 1 / -1;
     margin-top: -0.2rem;
+  }
+
+  /*
+   * El refugio se estrecha con ellas y baja su palabra a fila propia, igual que
+   * el aviso de las cifras. Sin esto sus cuatro columnas dejarían de coincidir
+   * con las tres de arriba y volvería a descuadrar justo en los anchos donde
+   * cualquier descuadre se nota más.
+   */
+  .shelter {
+    grid-template-columns: 5rem 3rem minmax(0, 1fr);
+    gap: var(--space-2);
+  }
+
+  .shelter__block {
+    grid-row: 1;
+    grid-column: 3;
+  }
+
+  .shelter__status {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    margin-top: -0.2rem;
+  }
+
+  .surrender-dialog {
+    padding: var(--space-5) var(--space-3);
   }
 }
 

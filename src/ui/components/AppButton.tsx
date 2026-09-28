@@ -1,12 +1,15 @@
-import type { ButtonHTMLAttributes } from 'react';
+import type { ComponentPropsWithRef } from 'react';
 
-export type AppButtonVariant = 'primary' | 'secondary' | 'quiet';
+export type AppButtonVariant = 'primary' | 'secondary' | 'quiet' | 'danger';
 
-export interface AppButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface AppButtonProps extends ComponentPropsWithRef<'button'> {
   readonly variant?: AppButtonVariant;
 }
 
+/**
+ * Botón base. En React 19 `ref` es una prop más, así que llega por el mismo
+ * `...buttonProps` que el resto y no hace falta envolverlo en nada.
+ */
 export function AppButton({
   variant = 'primary',
   className,

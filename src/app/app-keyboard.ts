@@ -2,14 +2,20 @@ import { useEffect } from 'react';
 
 import type { GameAction } from '../game';
 
+/**
+ * Atajos de las cinco acciones que gastan turnos.
+ *
+ * Cada tecla es la inicial de su verbo, y así se leen sin mirar: explorar, comer,
+ * curar, descansar, reparar. Rendirse no tiene tecla: una decisión que borra la
+ * partida no debería salir de una pulsación suelta que el jugador ni ha mirado.
+ * Se confirma con un botón.
+ */
 const shortcutActions: Readonly<Record<string, GameAction>> = {
-  b: 'forage',
-  d: 'rest',
   e: 'explore',
-  r: 'repair',
-  p: 'fish',
   c: 'eat',
-  '?': 'help',
+  s: 'cure',
+  d: 'rest',
+  r: 'repair',
 };
 
 const interactiveSelector =

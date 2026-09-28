@@ -33,7 +33,6 @@ export function DifficultyCard({
         </span>
       ) : null}
       <div className="difficulty-card__content">
-        <p className="difficulty-card__label">Modo de supervivencia</p>
         <h2 id={titleId}>{title}</h2>
         <p>{description}</p>
       </div>

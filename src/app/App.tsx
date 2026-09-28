@@ -25,6 +25,7 @@ export function App() {
         <GameScreen
           model={session.gameModel!}
           onAction={session.performAction}
+          surrender={session.surrender}
         />
       ) : null}
       {session.state.screen === 'dead' ? (

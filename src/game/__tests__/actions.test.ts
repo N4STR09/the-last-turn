@@ -17,161 +17,89 @@ function resolve(
 }
 
 describe('resolveAction', () => {
-  describe('help', () => {
-    it('no consume turno ni azar', () => {
-      const state = createCoreState({
-        turn: 14,
-        hunger: 9,
-        energy: 4,
-        food: 7,
-        health: 6,
-        hasShelter: true,
-      });
-
-      const result = resolveAction(
-        state,
-        'help',
-        failIfRandomIntIsCalled(),
-      );
-
-      expect(result).toEqual({
-        state,
-        outcome: { type: 'help' },
-      });
-    });
-  });
-
-  describe('forage', () => {
-    it.each([1, 2, 3])('añade comida cuando la tirada es %i', (value) => {
-      const state = createCoreState();
-
-      const { resolution, calls } = resolve(state, 'forage', [value]);
-
-      expect(resolution).toEqual({
-        state: createCoreState({
-          turn: 2,
-          hunger: 1,
-          energy: 9,
-          food: 1,
-        }),
-        outcome: { type: 'forage-found' },
-      });
-      expect(calls).toEqual([{ min: 1, max: 5 }]);
-    });
-
-    it.each([4, 5])('no añade comida cuando la tirada es %i', (value) => {
-      const state = createCoreState({ food: 4 });
-
-      const { resolution, calls } = resolve(state, 'forage', [value]);
-
-      expect(resolution).toEqual({
-        state: createCoreState({
-          turn: 2,
-          hunger: 1,
-          energy: 9,
-          food: 4,
-        }),
-        outcome: { type: 'forage-empty' },
-      });
-      expect(calls).toEqual([{ min: 1, max: 5 }]);
-    });
-  });
-
-  describe('rest', () => {
-    it('consume un turno sin recuperar energía cuando no hay refugio', () => {
-      const state = createCoreState({ energy: 7 });
-
-      const result = resolveAction(
-        state,
-        'rest',
-        failIfRandomIntIsCalled(),
-      );
-
-      expect(result).toEqual({
-        state: createCoreState({
-          turn: 2,
-          hunger: 1,
-          energy: 6,
-        }),
-        outcome: { type: 'rest-without-shelter' },
-      });
-    });
-
-    it.each([1, 2])(
-      'recupera 3 de energía con refugio cuando la tirada es %i',
+  describe('explore', () => {
+    it.each([1, 6])(
+      'vuelve con 4 comidas y 2 de salud menos cuando la tirada es %i',
       (value) => {
-        const state = createCoreState({
-          energy: 7,
-          hasShelter: true,
-        });
+        const state = createCoreState({ health: 10 });
 
-        const { resolution, calls } = resolve(state, 'rest', [value]);
+        const { resolution, calls } = resolve(state, 'explore', [value]);
 
         expect(resolution).toEqual({
           state: createCoreState({
             turn: 2,
             hunger: 1,
             energy: 9,
-            hasShelter: true,
+            food: 4,
+            health: 8,
           }),
-          outcome: {
-            type: 'rest-shelter-success',
-            energyRecovered: 3,
-          },
+          outcome: { type: 'explore-rich', foodGained: 4, healthLost: 2 },
         });
-        expect(calls).toEqual([{ min: 1, max: 10 }]);
+        expect(calls).toEqual([{ min: 1, max: 20 }]);
       },
     );
 
-    it.each([3, 10])(
-      'recupera 5 de energía con refugio cuando la tirada es %i',
+    it.each([7, 16])(
+      'vuelve con 2 comidas y 1 de salud menos cuando la tirada es %i',
       (value) => {
-        const state = createCoreState({
-          energy: 7,
-          hasShelter: true,
-        });
+        const state = createCoreState({ health: 10 });
 
-        const { resolution, calls } = resolve(state, 'rest', [value]);
+        const { resolution, calls } = resolve(state, 'explore', [value]);
 
         expect(resolution).toEqual({
           state: createCoreState({
             turn: 2,
             hunger: 1,
-            energy: 11,
-            hasShelter: true,
+            energy: 9,
+            food: 2,
+            health: 9,
           }),
-          outcome: {
-            type: 'rest-shelter-success',
-            energyRecovered: 5,
-          },
+          outcome: { type: 'explore-find', foodGained: 2, healthLost: 1 },
         });
-        expect(calls).toEqual([{ min: 1, max: 10 }]);
+        expect(calls).toEqual([{ min: 1, max: 20 }]);
       },
     );
+
+    it.each([17, 20])(
+      'vuelve sin nada y sin heridas cuando la tirada es %i',
+      (value) => {
+        const state = createCoreState({ food: 2, health: 10 });
+
+        const { resolution, calls } = resolve(state, 'explore', [value]);
+
+        expect(resolution).toEqual({
+          state: createCoreState({
+            turn: 2,
+            hunger: 1,
+            energy: 9,
+            food: 2,
+            health: 10,
+          }),
+          outcome: { type: 'explore-empty' },
+        });
+        expect(calls).toEqual([{ min: 1, max: 20 }]);
+      },
+    );
+
+    it('deja la salud en negativo antes de que la mate el cierre, sin recortarla', () => {
+      // El motor no decide la muerte: la decide `finishGame` con la salud en cero
+      // o menos. Si explorar recortase aquí, el jugador vería 1 y la partida
+      // seguiría, y eso sería mentir sobre lo que ha costado la exploración.
+      const state = createCoreState({ health: 1 });
+
+      const { resolution } = resolve(state, 'explore', [1]);
+
+      expect(resolution.state.health).toBe(-1);
+    });
   });
 
-  describe('explore', () => {
-    it.each([1, 4])('encuentra refugio cuando la tirada es %i', (value) => {
-      const state = createCoreState();
+  describe('cure', () => {
+    it('gasta 2 comidas y devuelve lo que abrió el hallazgo grande', () => {
+      // Con carga 0 el hallazgo grande abre 2, así que cerrar sale a 2. Es el
+      // suelo: sin salud que recuperar, cerrar las heridas no cura.
+      const state = createCoreState({ food: 5, health: 3 });
 
-      const { resolution, calls } = resolve(state, 'explore', [value]);
-
-      expect(resolution).toEqual({
-        state: createCoreState({
-          turn: 2,
-          hunger: 1,
-          energy: 9,
-          hasShelter: true,
-        }),
-        outcome: { type: 'explore-shelter' },
-      });
-      expect(calls).toEqual([{ min: 1, max: 20 }]);
-    });
-
-    it.each([16, 20])('encuentra comida cuando la tirada es %i', (value) => {
-      const state = createCoreState({ food: 2 });
-
-      const { resolution, calls } = resolve(state, 'explore', [value]);
+      const { resolution, calls } = resolve(state, 'cure');
 
       expect(resolution).toEqual({
         state: createCoreState({
@@ -179,27 +107,138 @@ describe('resolveAction', () => {
           hunger: 1,
           energy: 9,
           food: 3,
+          health: 5,
         }),
-        outcome: { type: 'explore-food' },
+        outcome: { type: 'cure-done', foodSpent: 2, healthRecovered: 2 },
       });
-      expect(calls).toEqual([{ min: 1, max: 20 }]);
+      // No tira dado: el precio y el efecto son fijos, así que no hay nada que
+      // sortear y la interfaz no tiene nada que adivinar.
+      expect(calls).toEqual([]);
     });
 
-    it.each([5, 15])('no encuentra nada cuando la tirada es %i', (value) => {
-      const state = createCoreState({ food: 2 });
+    it('no sube del techo del cuerpo aunque le sobre recuperación', () => {
+      const state = createCoreState({ food: 5, health: 8 });
 
-      const { resolution, calls } = resolve(state, 'explore', [value]);
+      const { resolution } = resolve(state, 'cure');
+
+      expect(resolution.outcome).toEqual({
+        type: 'cure-done',
+        foodSpent: 2,
+        healthRecovered: 2,
+      });
+      expect(resolution.state.health).toBe(10);
+    });
+
+    it('gasta la comida aunque esté a la tope, y lo dice en cero recuperado', () => {
+      const state = createCoreState({ food: 5, health: 10 });
+
+      const { resolution } = resolve(state, 'cure');
+
+      expect(resolution.outcome).toEqual({
+        type: 'cure-done',
+        foodSpent: 2,
+        healthRecovered: 0,
+      });
+      expect(resolution.state).toMatchObject({ food: 3, health: 10 });
+    });
+
+    it('mantiene el coste cruel cuando no hay comida para las vendas', () => {
+      const state = createCoreState({ food: 1, health: 3 });
+
+      const { resolution, calls } = resolve(state, 'cure');
 
       expect(resolution).toEqual({
         state: createCoreState({
           turn: 2,
           hunger: 1,
           energy: 9,
-          food: 2,
+          food: 1,
+          health: 3,
         }),
-        outcome: { type: 'explore-empty' },
+        outcome: { type: 'cure-no-food' },
       });
-      expect(calls).toEqual([{ min: 1, max: 20 }]);
+      expect(calls).toEqual([]);
+    });
+
+    it('trata la comida negativa como ausencia de comida', () => {
+      const state = createCoreState({ food: -1, health: 3 });
+
+      const { resolution } = resolve(state, 'cure');
+
+      expect(resolution.outcome).toEqual({ type: 'cure-no-food' });
+      expect(resolution.state).toMatchObject({ food: -1, health: 3 });
+    });
+  });
+
+  describe('rest', () => {
+    it('sin refugio devuelve exactamente lo que cuesta el turno, y sin tirar dado', () => {
+      // El refugio multiplica, no habilita: perderlo duele pero no es una
+      // sentencia. Antes devolvía 0, y en Agonía eso era una fractura.
+      const state = createCoreState({ energy: 7 });
+
+      const result = resolveAction(state, 'rest', failIfRandomIntIsCalled());
+
+      expect(result).toEqual({
+        state: createCoreState({
+          turn: 2,
+          hunger: 1,
+          energy: 7,
+        }),
+        outcome: {
+          type: 'rest-without-shelter',
+          energyRecovered: 1,
+        },
+      });
+    });
+
+    it.each([1, 2])(
+      'recupera 2 de energía con refugio cuando la tirada es %i',
+      (value) => {
+        const state = createCoreState({ energy: 7, hasShelter: true });
+
+        const { resolution, calls } = resolve(state, 'rest', [value]);
+
+        expect(resolution).toEqual({
+          state: createCoreState({
+            turn: 2,
+            hunger: 1,
+            energy: 8,
+            hasShelter: true,
+          }),
+          outcome: { type: 'rest-shelter-success', energyRecovered: 2 },
+        });
+        expect(calls).toEqual([{ min: 1, max: 10 }]);
+      },
+    );
+
+    it.each([3, 10])(
+      'recupera 4 de energía con refugio cuando la tirada es %i',
+      (value) => {
+        const state = createCoreState({ energy: 7, hasShelter: true });
+
+        const { resolution, calls } = resolve(state, 'rest', [value]);
+
+        expect(resolution).toEqual({
+          state: createCoreState({
+            turn: 2,
+            hunger: 1,
+            energy: 10,
+            hasShelter: true,
+          }),
+          outcome: { type: 'rest-shelter-success', energyRecovered: 4 },
+        });
+        expect(calls).toEqual([{ min: 1, max: 10 }]);
+      },
+    );
+
+    it('no cura salud, porque esa es la función de curar las heridas', () => {
+      // Si descansar curara, la barra de salud dejaría de ser un presupuesto: se
+      // rellenaría solo en los turnos muertos en los que no compite por la comida.
+      const state = createCoreState({ energy: 7, health: 2, hasShelter: true });
+
+      const { resolution } = resolve(state, 'rest', [10]);
+
+      expect(resolution.state.health).toBe(2);
     });
   });
 
@@ -257,95 +296,13 @@ describe('resolveAction', () => {
     );
   });
 
-  describe('fish', () => {
-    it('termina después de un único intento', () => {
-      const state = createCoreState();
-
-      const { resolution, calls } = resolve(state, 'fish', [1]);
-
-      expect(resolution).toEqual({
-        state: createCoreState({
-          turn: 2,
-          hunger: 1,
-          energy: 9,
-          food: 3,
-        }),
-        outcome: { type: 'fish-catch', attempts: 1 },
-      });
-      expect(calls).toEqual([{ min: 1, max: 3 }]);
-    });
-
-    it('acumula los intentos en turno, hambre y energía, pero añade una sola vez la comida', () => {
-      const state = createCoreState();
-
-      const { resolution, calls } = resolve(state, 'fish', [2, 3, 1]);
-
-      expect(resolution).toEqual({
-        state: createCoreState({
-          turn: 4,
-          hunger: 3,
-          energy: 7,
-          food: 3,
-        }),
-        outcome: { type: 'fish-catch', attempts: 3 },
-      });
-      expect(calls).toEqual([
-        { min: 1, max: 3 },
-        { min: 1, max: 3 },
-        { min: 1, max: 3 },
-      ]);
-    });
-
-    it('falla tras seis intentos sin éxito', () => {
-      const state = createCoreState({ food: 2 });
-
-      const { resolution, calls } = resolve(state, 'fish', [2, 3, 2, 3, 2, 3]);
-
-      expect(resolution).toEqual({
-        state: createCoreState({
-          turn: 7,
-          hunger: 6,
-          energy: 4,
-          food: 2,
-        }),
-        outcome: { type: 'fish-failed', attempts: 6 },
-      });
-      expect(calls).toEqual([
-        { min: 1, max: 3 },
-        { min: 1, max: 3 },
-        { min: 1, max: 3 },
-        { min: 1, max: 3 },
-        { min: 1, max: 3 },
-        { min: 1, max: 3 },
-      ]);
-    });
-
-    it('permite capturar en el sexto intento', () => {
-      const state = createCoreState();
-
-      const { resolution } = resolve(state, 'fish', [2, 3, 2, 3, 2, 1]);
-
-      expect(resolution).toEqual({
-        state: createCoreState({
-          turn: 7,
-          hunger: 6,
-          energy: 4,
-          food: 3,
-        }),
-        outcome: { type: 'fish-catch', attempts: 6 },
-      });
-    });
-  });
-
   describe('eat', () => {
-    it('consume una comida, reduce el hambre y recupera salud', () => {
+    it('consume una comida y reduce el hambre, sin tocar la salud', () => {
+      // Comer no cura. Si curara, curar las heridas sería siempre la opción
+      // dominante y la barra de salud dejaría de ser una decisión.
       const state = createCoreState({ food: 5, hunger: 2, health: 6 });
 
-      const result = resolveAction(
-        state,
-        'eat',
-        failIfRandomIntIsCalled(),
-      );
+      const result = resolveAction(state, 'eat', failIfRandomIntIsCalled());
 
       expect(result).toEqual({
         state: createCoreState({
@@ -353,13 +310,12 @@ describe('resolveAction', () => {
           hunger: 0,
           energy: 9,
           food: 4,
-          health: 7,
+          health: 6,
         }),
         outcome: {
           type: 'eat-consumed',
           foodConsumed: 1,
           hungerReduced: 2,
-          healthRecovered: 1,
         },
       });
     });
@@ -367,11 +323,7 @@ describe('resolveAction', () => {
     it('mantiene el coste cruel cuando no hay comida', () => {
       const state = createCoreState({ food: 0, hunger: 2 });
 
-      const result = resolveAction(
-        state,
-        'eat',
-        failIfRandomIntIsCalled(),
-      );
+      const result = resolveAction(state, 'eat', failIfRandomIntIsCalled());
 
       expect(result).toEqual({
         state: createCoreState({
@@ -387,11 +339,7 @@ describe('resolveAction', () => {
     it('no baja el hambre de cero al comer con el estómago vacío', () => {
       const state = createCoreState({ food: 1, hunger: 0, health: 10 });
 
-      const result = resolveAction(
-        state,
-        'eat',
-        failIfRandomIntIsCalled(),
-      );
+      const result = resolveAction(state, 'eat', failIfRandomIntIsCalled());
 
       expect(result).toEqual({
         state: createCoreState({
@@ -405,7 +353,6 @@ describe('resolveAction', () => {
           type: 'eat-consumed',
           foodConsumed: 1,
           hungerReduced: 0,
-          healthRecovered: 0,
         },
       });
     });
@@ -413,11 +360,7 @@ describe('resolveAction', () => {
     it('trata la comida negativa como ausencia de comida', () => {
       const state = createCoreState({ food: -1, hunger: 3 });
 
-      const result = resolveAction(
-        state,
-        'eat',
-        failIfRandomIntIsCalled(),
-      );
+      const result = resolveAction(state, 'eat', failIfRandomIntIsCalled());
 
       expect(result).toEqual({
         state: createCoreState({
@@ -443,20 +386,20 @@ describe('resolveAction', () => {
 });
 
 describe('con escalada de amenaza', () => {
-  it('cobra un punto de hambre extra por turno al forrajear', () => {
+  it('cobra un punto de hambre extra por turno al explorar', () => {
     const state = createCoreState({ threat: 4 });
 
-    const { resolution } = resolve(state, 'forage', [1]);
+    const { resolution } = resolve(state, 'explore', [7]);
 
-    expect(resolution.state).toMatchObject({ turn: 2, hunger: 3, energy: 9 });
+    expect(resolution.state).toMatchObject({ turn: 2, hunger: 2, energy: 9 });
   });
 
   it('escala el hambre hasta el tope de carga sin pasarse', () => {
-    const atTen = resolve(createCoreState({ threat: 10 }), 'forage', [1]);
-    const aboveCap = resolve(createCoreState({ threat: 40 }), 'forage', [1]);
+    const atTen = resolve(createCoreState({ threat: 10 }), 'explore', [7]);
+    const aboveCap = resolve(createCoreState({ threat: 40 }), 'explore', [7]);
 
-    expect(atTen.resolution.state.hunger).toBe(6);
-    expect(aboveCap.resolution.state.hunger).toBe(6);
+    expect(atTen.resolution.state.hunger).toBe(4);
+    expect(aboveCap.resolution.state.hunger).toBe(4);
   });
 
   it('topa la recuperación al descansar con carga alta', () => {
@@ -470,9 +413,10 @@ describe('con escalada de amenaza', () => {
 
     expect(resolution.outcome).toEqual({
       type: 'rest-shelter-success',
-      energyRecovered: 2,
+      energyRecovered: 3,
     });
-    expect(resolution.state.energy).toBe(2);
+    // Recupera 3 y gasta 1: sigue ganando algo, porque el suelo del tope es 3.
+    expect(resolution.state.energy).toBe(3);
   });
 
   it('respeta la tirada baja aunque la amenaza ponga un tope mas alto', () => {
@@ -486,24 +430,63 @@ describe('con escalada de amenaza', () => {
 
     expect(resolution.outcome).toEqual({
       type: 'rest-shelter-success',
-      energyRecovered: 3,
+      energyRecovered: 2,
     });
   });
 
-  it('estrecha la ventana de éxito al forrajear', () => {
-    const state = createCoreState({ threat: 6 });
+  it('devuelve con las heridas lo que abrió el hallazgo grande, también en carga alta', () => {
+    // Carga 8: el hallazgo grande abre 4, y cerrar devuelve 4. Antes devolvía 2
+    // con escalera propia, así que el hallazgo grande costaba el doble de comida
+    // por punto de salud que el pequeño y explorar tenía una opción peor.
+    const state = createCoreState({ food: 5, health: 2, threat: 8 });
 
-    const { resolution } = resolve(state, 'forage', [2]);
+    const { resolution } = resolve(state, 'cure');
 
-    expect(resolution.outcome).toEqual({ type: 'forage-empty' });
+    expect(resolution.outcome).toEqual({
+      type: 'cure-done',
+      foodSpent: 2,
+      healthRecovered: 4,
+    });
+    expect(resolution.state.health).toBe(6);
   });
 
-  it('deja al menos una tirada ganadora al forrajear en carga máxima', () => {
-    const state = createCoreState({ threat: 10 });
+  it('estrecha las dos ventanas de explorar con la carga', () => {
+    // Carga 6: el hallazgo grande cae a 3 de 20 y el normal sube a 13, así que una
+    // tirada de 4, que a carga 0 era el hallazgo grande, pasa a ser el normal.
+    const state = createCoreState({ threat: 6, health: 10 });
 
-    const { resolution } = resolve(state, 'forage', [1]);
+    const { resolution } = resolve(state, 'explore', [4]);
 
-    expect(resolution.outcome).toEqual({ type: 'forage-found' });
+    expect(resolution.outcome).toEqual({
+      type: 'explore-find',
+      foodGained: 2,
+      healthLost: 1,
+    });
+  });
+
+  it('deja pasar el hallazgo grande incluso en carga máxima', () => {
+    // A carga 10 el hallazgo grande es solo la tirada 1, pero no desaparece: si
+    // cerrara del todo, explorar sería solo un castigo y no habría nada que decidir.
+    const state = createCoreState({ threat: 10, health: 10 });
+
+    const { resolution } = resolve(state, 'explore', [1]);
+
+    expect(resolution.outcome).toEqual({
+      type: 'explore-rich',
+      foodGained: 4,
+      healthLost: 5,
+    });
+  });
+
+  it('agranda la herida del hallazgo grande con la carga', () => {
+    const state = createCoreState({ threat: 10, health: 10 });
+
+    const { resolution } = resolve(state, 'explore', [1]);
+
+    // A carga 10 el hallazgo grande arranca 5 de salud: al final del juego la
+    // comida vale más que la piel, y esa es la cuenta que hay que hacer.
+    expect(resolution.outcome).toMatchObject({ healthLost: 5 });
+    expect(resolution.state.health).toBe(5);
   });
 
   it('hace fallar reparaciones que antes nunca fallaban', () => {
@@ -532,87 +515,48 @@ describe('con escalada de amenaza', () => {
     expect(fails).toEqual([5]);
   });
 
-  it('encarece la reparación en turnos', () => {
+  it('mantiene el coste de dos turnos al reparar en carga alta', () => {
+    // Antes costaba hasta 5 y la interfaz tenía que prometer el peor caso. Fijado
+    // en 2, el precio se ve entero antes de pulsar.
     const state = createCoreState({ threat: 7 });
 
     const { resolution } = resolve(state, 'repair', [1]);
 
-    expect(resolution.state).toMatchObject({ turn: 4, hunger: 12, energy: 7 });
-  });
-
-  it('aplica el hambre extra a los intentos de pesca', () => {
-    const state = createCoreState({ threat: 4 });
-
-    const { resolution } = resolve(state, 'fish', [2, 3, 1]);
-
-    expect(resolution.state).toMatchObject({
-      turn: 4,
-      hunger: 9,
-      energy: 7,
-      food: 3,
-    });
-  });
-
-  it('aplica el hambre extra al fracaso de pesca completo', () => {
-    const state = createCoreState({ threat: 2, food: 2 });
-
-    const { resolution } = resolve(
-      state,
-      'fish',
-      [2, 3, 2, 3, 2, 3],
-    );
-
-    expect(resolution.state).toMatchObject({
-      turn: 7,
-      hunger: 12,
-      energy: 4,
-    });
+    // Carga 7: 2 turnos a 3 de hambre cada uno. Solo el hambre se endurece.
+    expect(resolution.state).toMatchObject({ turn: 3, hunger: 6, energy: 8 });
   });
 
   it('escala el alivio de la ración con la carga para que comer siga tapando el gasto', () => {
-    // Con carga 4 la ración quita 6 en lugar de 4, y el turno cuesta 3: comer deja
-    // el hambre 3 por debajo, frente a las 3 por debajo de la Fase 1 con un turno
-    // de coste 1. La holgura no desaparece, la ración se vuelve más decisiva.
-    const state = createCoreState({ threat: 4, food: 2, hunger: 5, health: 10 });
+    // Carga 4 la ración quita 6 en lugar de 4, y el turno cuesta 2: comer deja
+    // el hambre 4 por debajo. La holgura crece con la escalada, que es lo que
+    // mantiene el sumidero de calorías dentro del presupuesto de turnos.
+    const state = createCoreState({ threat: 4, food: 2, hunger: 5 });
 
-    const result = resolveAction(
-      state,
-      'eat',
-      failIfRandomIntIsCalled(),
-    );
+    const result = resolveAction(state, 'eat', failIfRandomIntIsCalled());
 
     expect(result.outcome).toEqual({
       type: 'eat-consumed',
       foodConsumed: 1,
-      hungerReduced: 3,
-      healthRecovered: 0,
+      hungerReduced: 4,
     });
-    expect(result.state.hunger).toBe(2);
+    expect(result.state.hunger).toBe(1);
   });
 
   it('mantiene el relief base con carga 0', () => {
-    const state = createCoreState({ threat: 0, food: 2, hunger: 8, health: 10 });
+    const state = createCoreState({ threat: 0, food: 2, hunger: 8 });
 
-    const result = resolveAction(
-      state,
-      'eat',
-      failIfRandomIntIsCalled(),
-    );
+    const result = resolveAction(state, 'eat', failIfRandomIntIsCalled());
 
     expect(result.outcome).toMatchObject({ hungerReduced: 3 });
     expect(result.state.hunger).toBe(5);
   });
 
   it('informa de la reducción real aunque el suelo en cero la recorte', () => {
-    // Carga 10: la ración quita 9 y el turno cuesta 6, así que el balance neto es
-    // de 3 puntos, pero si el hambre inicial es menor el suelo en cero manda.
-    const state = createCoreState({ threat: 10, food: 2, hunger: 2, health: 10 });
+    // Carga 10: la ración quita 10 y el turno cuesta 4, así que el balance neto
+    // es de 6 puntos, pero si el hambre inicial es menor el suelo en cero manda.
+    const state = createCoreState({ threat: 10, food: 2, hunger: 2 });
 
-    const result = resolveAction(
-      state,
-      'eat',
-      failIfRandomIntIsCalled(),
-    );
+    const result = resolveAction(state, 'eat', failIfRandomIntIsCalled());
 
     expect(result.outcome).toMatchObject({ hungerReduced: 2 });
     expect(result.state.hunger).toBe(0);
@@ -621,25 +565,9 @@ describe('con escalada de amenaza', () => {
   it('no puede dejar el resultado de comer por debajo de cero', () => {
     const state = createCoreState({ food: 1, hunger: 0 });
 
-    const result = resolveAction(
-      state,
-      'eat',
-      failIfRandomIntIsCalled(),
-    );
+    const result = resolveAction(state, 'eat', failIfRandomIntIsCalled());
 
     expect(result.state.hunger).toBe(0);
     expect(result.outcome).toMatchObject({ hungerReduced: 0 });
-  });
-
-  it('mantiene Ayuda indiferente a la escalada', () => {
-    const state = createCoreState({ threat: 8, hunger: 3, energy: 2 });
-
-    const result = resolveAction(
-      state,
-      'help',
-      failIfRandomIntIsCalled(),
-    );
-
-    expect(result).toEqual({ state, outcome: { type: 'help' } });
   });
 });

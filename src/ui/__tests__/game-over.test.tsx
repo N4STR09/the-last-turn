@@ -46,6 +46,10 @@ describe('GameOverScreen', () => {
       'health',
       'Estoy seguro de que eso no te lo esperabas. La vida es dura.',
     ],
+    [
+      'surrender',
+      'Te has autoeliminado con un botón. El refugio queda intacto y tú, desinstalado.',
+    ],
   ] as const)('traduce la causa comunicada %s', (reportedCause, message) => {
     render(
       <GameOverScreen
@@ -55,6 +59,26 @@ describe('GameOverScreen', () => {
     );
 
     expect(screen.getByRole('alert')).toHaveTextContent(message);
+  });
+
+  it('cambia el rótulo cuando nadie murió, solo se fue', () => {
+    const { rerender } = render(
+      <GameOverScreen model={model} onRestart={vi.fn()} />,
+    );
+
+    expect(screen.getByText('El último aliento')).toBeInTheDocument();
+
+    rerender(
+      <GameOverScreen
+        model={{ ...model, reportedCause: 'surrender' }}
+        onRestart={vi.fn()}
+      />,
+    );
+
+    // «El último aliento» describe una muerte. Rendirse no lo es, y el rótulo
+    // de arriba es lo primero que se lee.
+    expect(screen.getByText('Fin voluntario')).toBeInTheDocument();
+    expect(screen.queryByText('El último aliento')).toBeNull();
   });
 
   it('usa el singular para una partida de un turno', () => {

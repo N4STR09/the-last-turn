@@ -41,31 +41,42 @@ function FocusHarness({ screen }: { readonly screen: 'start' | 'playing' }) {
 
 describe('useActionShortcuts', () => {
   it.each([
-    ['b', 'forage'],
-    ['d', 'rest'],
     ['e', 'explore'],
-    ['r', 'repair'],
-    ['p', 'fish'],
     ['c', 'eat'],
-    ['?', 'help'],
+    ['s', 'cure'],
+    ['d', 'rest'],
+    ['r', 'repair'],
   ] as const)('mapea la tecla %s a %s', (key, action) => {
     expect(shortcutActionForKey(key)).toBe(action);
+  });
+
+  it('no deja ningún atajo para rendirse ni para la ayuda que ya no existe', () => {
+    // Rendirse termina la partida, así que va con confirmación y con el ratón:
+    // un atajo de una sola tecla sería una derrota por accidente. Y la ayuda no
+    // queda mapeada: '?' ya no significa nada y no puede quedar con mapeo.
+    // 'b' y 'p' son las teclas que sobraron al quitar forraje y pesca, y tienen
+    // que seguir libres para que no sean una pulsación a la nada.
+    expect(shortcutActionForKey('?')).toBeNull();
+    expect(shortcutActionForKey('h')).toBeNull();
+    expect(shortcutActionForKey('b')).toBeNull();
+    expect(shortcutActionForKey('p')).toBeNull();
+    expect(shortcutActionForKey('Enter')).toBeNull();
   });
 
   it('activa la acción para una tecla sin modificadores', () => {
     const onAction = vi.fn();
     render(<ShortcutHarness enabled onAction={onAction} />);
 
-    fireEvent.keyDown(document, { key: 'b' });
+    fireEvent.keyDown(document, { key: 'e' });
 
-    expect(onAction).toHaveBeenCalledWith('forage');
+    expect(onAction).toHaveBeenCalledWith('explore');
   });
 
   it.each([
-    [{ key: 'b', repeat: true }],
-    [{ key: 'b', ctrlKey: true }],
-    [{ key: 'b', altKey: true }],
-    [{ key: 'b', metaKey: true }],
+    [{ key: 'e', repeat: true }],
+    [{ key: 'e', ctrlKey: true }],
+    [{ key: 'e', altKey: true }],
+    [{ key: 'e', metaKey: true }],
   ])('ignora repetición o modificadores: %o', (eventInit) => {
     const onAction = vi.fn();
     render(<ShortcutHarness enabled onAction={onAction} />);
@@ -87,7 +98,7 @@ describe('useActionShortcuts', () => {
             ? screen.getByRole('textbox')
             : screen.getByRole('link');
 
-      fireEvent.keyDown(element, { key: 'b' });
+      fireEvent.keyDown(element, { key: 'e' });
 
       expect(onAction).not.toHaveBeenCalled();
     },
@@ -97,7 +108,7 @@ describe('useActionShortcuts', () => {
     const onAction = vi.fn();
     render(<ShortcutHarness enabled={false} onAction={onAction} />);
 
-    fireEvent.keyDown(document, { key: 'b' });
+    fireEvent.keyDown(document, { key: 'e' });
 
     expect(onAction).not.toHaveBeenCalled();
   });

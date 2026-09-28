@@ -62,11 +62,20 @@
   line-height: 1.05;
 }
 
+/*
+ * El título de la pantalla de inicio es lo más grande de la aplicación, y
+ * también lo más oscuro en forma: la gótica del sistema, con un halo rojo
+ * abierto detrás. El relleno sigue siendo blanco puro, así que el contraste no
+ * depende del rojo.
+ */
 .hero-panel h1 {
   max-width: 10ch;
   color: var(--color-light);
-  font-size: clamp(2.75rem, 9vw, 4.5rem);
-  text-shadow: var(--glow-far);
+  font-family: var(--font-title);
+  font-size: clamp(3.5rem, 13vw, 7rem);
+  line-height: 0.95;
+  text-wrap: balance;
+  text-shadow: var(--glow-title);
 }
 
 .hero-panel__lead,
@@ -76,6 +85,25 @@
   color: var(--color-muted);
   font-size: clamp(0.98rem, 1.8vw, 1.1rem);
   line-height: 1.7;
+}
+
+/*
+ * `justify-self: center` y no solo `text-align`: los hijos de un grid se
+ * estiran al ancho de su columna, así que un bloque de 52ch alineado a la
+ * izquierda dentro de una columna de 40rem centra sus líneas pero no su caja, y
+ * el párrafo queda visiblemente descentrado respecto al título. La nota de
+ * reglas se limita además a una medida legible, porque estirada a todo el ancho
+ * de la pantalla sus líneas casi no se mueven y el centrado deja de verse.
+ */
+.screen-header > p:not(.eyebrow) {
+  justify-self: center;
+  text-align: center;
+}
+
+.rules-note {
+  max-width: 58ch;
+  justify-self: center;
+  text-align: center;
 }
 
 .screen-note,
@@ -146,17 +174,8 @@
   box-shadow: 0 0 1.5rem rgb(255 255 255 / 6%);
 }
 
-.difficulty-card__label {
-  margin: 0;
-  color: var(--color-hint);
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
-
 .difficulty-card h2 {
-  margin: var(--space-2) 0 0;
+  margin: 0;
   color: var(--color-light);
   font-family: var(--font-display);
   font-size: clamp(1.5rem, 3.5vw, 2rem);
@@ -173,10 +192,6 @@
 
 .difficulty-card--agony h2 {
   text-shadow: 0 0 0.5em var(--color-blood);
-}
-
-.difficulty-card--agony .difficulty-card__label {
-  color: var(--color-alarm);
 }
 
 /* La calavera de la tarjeta de Agonía es la misma del juego, en pequeño. */

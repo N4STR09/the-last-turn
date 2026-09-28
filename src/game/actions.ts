@@ -1,18 +1,23 @@
-import { MAX_FISHING_ATTEMPTS } from './action-cost';
 import { drawRandomInt } from './random';
 import {
+  CURE_FOOD_COST,
+  cureAmount,
+  exploreFindLimit,
+  exploreRichLimit,
+  exploreWound,
   foodRelief,
-  forageSuccessLimit,
   hungerPerTurn,
   repairFailureRadius,
-  repairTurnCost,
+  REPAIR_TURNS,
   restEnergyCap,
+  REST_ENERGY_WITHOUT_SHELTER,
 } from './threat';
-import type {
-  ActionOutcome,
-  GameAction,
-  GameCoreState,
-  RandomInt,
+import {
+  MAX_HEALTH,
+  type ActionOutcome,
+  type GameAction,
+  type GameCoreState,
+  type RandomInt,
 } from './types';
 
 export interface ActionResolution {
@@ -34,30 +39,57 @@ function applyTurnCost(state: GameCoreState, turns: number): GameCoreState {
   };
 }
 
-function resolveHelp(state: GameCoreState): ActionResolution {
-  return {
-    state,
-    outcome: { type: 'help' },
-  };
-}
-
-function resolveForage(
+function resolveExplore(
   state: GameCoreState,
   randomInt: RandomInt,
 ): ActionResolution {
-  const value = drawRandomInt(randomInt, 1, 5);
-  const foundFood = value <= forageSuccessLimit(state.threat);
+  const value = drawRandomInt(randomInt, 1, 20);
+
+  if (value <= exploreRichLimit(state.threat)) {
+    const healthLost = exploreWound(state.threat);
+    return {
+      state: applyTurnCost(
+        { ...state, food: state.food + 4, health: state.health - healthLost },
+        1,
+      ),
+      outcome: { type: 'explore-rich', foodGained: 4, healthLost },
+    };
+  }
+
+  if (value <= exploreFindLimit(state.threat)) {
+    return {
+      state: applyTurnCost({ ...state, food: state.food + 2, health: state.health - 1 }, 1),
+      outcome: { type: 'explore-find', foodGained: 2, healthLost: 1 },
+    };
+  }
+
+  return {
+    state: applyTurnCost(state, 1),
+    outcome: { type: 'explore-empty' },
+  };
+}
+
+function resolveCure(state: GameCoreState): ActionResolution {
+  if (state.food < CURE_FOOD_COST) {
+    return {
+      state: applyTurnCost(state, 1),
+      outcome: { type: 'cure-no-food' },
+    };
+  }
+
+  const healthRecovered = Math.min(cureAmount(state.threat), MAX_HEALTH - state.health);
   const nextState = applyTurnCost(
     {
       ...state,
-      food: state.food + (foundFood ? 1 : 0),
+      food: state.food - CURE_FOOD_COST,
+      health: state.health + healthRecovered,
     },
     1,
   );
 
   return {
     state: nextState,
-    outcome: { type: foundFood ? 'forage-found' : 'forage-empty' },
+    outcome: { type: 'cure-done', foodSpent: CURE_FOOD_COST, healthRecovered },
   };
 }
 
@@ -67,16 +99,22 @@ function resolveRest(
 ): ActionResolution {
   if (!state.hasShelter) {
     return {
-      state: applyTurnCost(state, 1),
-      outcome: { type: 'rest-without-shelter' },
+      state: applyTurnCost(
+        { ...state, energy: state.energy + REST_ENERGY_WITHOUT_SHELTER },
+        1,
+      ),
+      outcome: {
+        type: 'rest-without-shelter',
+        energyRecovered: REST_ENERGY_WITHOUT_SHELTER,
+      },
     };
   }
 
   const value = drawRandomInt(randomInt, 1, 10);
-  // La tirada sigue decidiendo entre 3 y 5, pero la amenaza pone un techo: con
+  // La tirada sigue decidiendo entre 2 y 4, pero la amenaza pone un techo: con
   // carga alta descansar nunca devuelve la energía completa.
   const energyRecovered = Math.min(
-    value <= 2 ? 3 : 5,
+    value <= 2 ? 2 : 4,
     restEnergyCap(state.threat),
   );
   const nextState = applyTurnCost(
@@ -86,36 +124,7 @@ function resolveRest(
 
   return {
     state: nextState,
-    outcome: {
-      type: 'rest-shelter-success',
-      energyRecovered,
-    },
-  };
-}
-
-function resolveExplore(
-  state: GameCoreState,
-  randomInt: RandomInt,
-): ActionResolution {
-  const value = drawRandomInt(randomInt, 1, 20);
-
-  if (value <= 4) {
-    return {
-      state: applyTurnCost({ ...state, hasShelter: true }, 1),
-      outcome: { type: 'explore-shelter' },
-    };
-  }
-
-  if (value >= 16) {
-    return {
-      state: applyTurnCost({ ...state, food: state.food + 1 }, 1),
-      outcome: { type: 'explore-food' },
-    };
-  }
-
-  return {
-    state: applyTurnCost(state, 1),
-    outcome: { type: 'explore-empty' },
+    outcome: { type: 'rest-shelter-success', energyRecovered },
   };
 }
 
@@ -132,46 +141,12 @@ function resolveRepair(
       ...state,
       hasShelter: succeeded ? true : state.hasShelter,
     },
-    repairTurnCost(state.threat),
+    REPAIR_TURNS,
   );
 
   return {
     state: nextState,
     outcome: { type: succeeded ? 'repair-succeeded' : 'repair-failed' },
-  };
-}
-
-function resolveFish(
-  state: GameCoreState,
-  randomInt: RandomInt,
-): ActionResolution {
-  for (let attempts = 1; attempts <= MAX_FISHING_ATTEMPTS; attempts += 1) {
-    const value = drawRandomInt(randomInt, 1, 3);
-
-    if (value === 1) {
-      return {
-        state: {
-          ...state,
-          turn: state.turn + attempts,
-          hunger: state.hunger + attempts * hungerPerTurn(state.threat),
-          energy: state.energy - attempts,
-          food: state.food + 3,
-        },
-        outcome: { type: 'fish-catch', attempts },
-      };
-    }
-  }
-
-  return {
-    state: {
-      ...state,
-      turn: state.turn + MAX_FISHING_ATTEMPTS,
-      hunger:
-        state.hunger +
-        MAX_FISHING_ATTEMPTS * hungerPerTurn(state.threat),
-      energy: state.energy - MAX_FISHING_ATTEMPTS,
-    },
-    outcome: { type: 'fish-failed', attempts: MAX_FISHING_ATTEMPTS },
   };
 }
 
@@ -183,16 +158,15 @@ function resolveEat(state: GameCoreState): ActionResolution {
     };
   }
 
-  const healthRecovered = state.health < 10 ? 1 : 0;
   const hungerBefore = state.hunger;
   // La ración quita el relieve base más el extra de amenaza, para que comer siga
-  // tapando el gasto del turno cuando la escalada endurece el hambre.
+  // tapando el gasto del turno cuando la escalada endurece el hambre. No cura:
+  // esa es la función de `cure`, y si las dos hicieran lo mismo bastaría una.
   const nextState = applyTurnCost(
     {
       ...state,
       food: state.food - 1,
       hunger: state.hunger - foodRelief(state.threat),
-      health: Math.min(10, state.health + healthRecovered),
     },
     1,
   );
@@ -206,23 +180,16 @@ function resolveEat(state: GameCoreState): ActionResolution {
 
   return {
     state: withFloor,
-    outcome: {
-      type: 'eat-consumed',
-      foodConsumed: 1,
-      hungerReduced,
-      healthRecovered,
-    },
+    outcome: { type: 'eat-consumed', foodConsumed: 1, hungerReduced },
   };
 }
 
 const actionResolvers: Record<GameAction, ActionResolver> = {
-  help: resolveHelp,
-  forage: resolveForage,
-  rest: resolveRest,
   explore: resolveExplore,
-  repair: resolveRepair,
-  fish: resolveFish,
   eat: resolveEat,
+  cure: resolveCure,
+  rest: resolveRest,
+  repair: resolveRepair,
 };
 
 export function resolveAction(

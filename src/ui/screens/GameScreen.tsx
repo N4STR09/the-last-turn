@@ -2,11 +2,13 @@ import type { GameAction } from '../../game/types';
 import { ActionGrid } from '../components/ActionGrid';
 import { ResolutionPanel } from '../components/ResolutionPanel';
 import { ResourcePanel } from '../components/ResourcePanel';
+import type { SurrenderControl as Surrender } from '../components/SurrenderControl';
 import type { GameViewModel } from '../view-models/ui-types';
 
 export interface GameScreenProps {
   readonly model: GameViewModel;
   readonly onAction: (action: GameAction) => void;
+  readonly surrender: Surrender;
 }
 
 /**
@@ -17,7 +19,7 @@ export interface GameScreenProps {
  * la dice, con cuernos y ojos rojos en Agonía. Repetirla en el banner sería
  * decirlo dos veces de dos maneras, y la segunda sería solo texto.
  */
-export function GameScreen({ model, onAction }: GameScreenProps) {
+export function GameScreen({ model, onAction, surrender }: GameScreenProps) {
   return (
     <main className="screen screen--game" aria-labelledby="game-title">
       <header className="banner">
@@ -35,13 +37,17 @@ export function GameScreen({ model, onAction }: GameScreenProps) {
           </span>
         </p>
       </header>
-      <ResourcePanel resources={model.resources} />
+      <ResourcePanel stats={model.stats} shelter={model.shelter} />
       <ResolutionPanel
         difficulty={model.difficulty}
         resolution={model.resolution}
         turn={model.turn}
       />
-      <ActionGrid actions={model.actions} onAction={onAction} />
+      <ActionGrid
+        actions={model.actions}
+        onAction={onAction}
+        surrender={surrender}
+      />
     </main>
   );
 }

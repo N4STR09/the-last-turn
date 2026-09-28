@@ -4,25 +4,39 @@ import type {
   GameAction,
 } from '../../game/types';
 
-export type ResourceId = 'hunger' | 'energy' | 'food' | 'shelter';
+/** Los tres recursos con cifra. El refugio no es un stat: es un interruptor. */
+export type StatId = 'hunger' | 'energy' | 'food' | 'health';
+export type ResourceId = StatId | 'shelter';
 export type Tone = 'neutral' | 'warning' | 'positive';
 
 export interface ResourceViewModel {
-  readonly id: ResourceId;
+  readonly id: StatId;
   readonly label: string;
   readonly value: string;
   readonly stateLabel: string;
+  /**
+   * `warning` avisa y late a la vez: es el mismo peligro escrito en texto y
+   * dibujado en luz. Hasta que el refugio salió de esta lista era el único
+   * sitio donde las dos señales se separaban, así que no hace falta un campo
+   * aparte para el parpadeo.
+   */
   readonly tone: Tone;
   /** Unidades actuales. La barra dibuja un bloque por unidad. */
   readonly units: number;
   /** Bloques que caben en la barra. El valor numérico siempre se imprime. */
   readonly capacity: number;
-  /**
-   * Punto sin retorno o al borde de él. Es distinto de `tone === 'warning'` a
-   * propósito: quedarse sin refugio es una advertencia, no una muerte, y no
-   * debe parpadear.
-   */
-  readonly critical: boolean;
+}
+
+/**
+ * Estado del refugio, en su propia línea debajo de las cifras. Se dice con una
+ * palabra y no con un aviso porque no hay ningún punto en el que quedarse sin
+ * techo sea una muerte: es una posición, no un peligro.
+ */
+export interface ShelterViewModel {
+  readonly label: string;
+  readonly hasShelter: boolean;
+  readonly status: 'Construido' | 'Destruido';
+  readonly tone: Tone;
 }
 
 export interface ResourceDeltaViewModel {
@@ -51,7 +65,8 @@ export interface ActionViewModel {
   readonly label: string;
   /**
    * Gasto de la acción en hambre y energía, entre paréntesis. Se calcula contra
-   * la amenaza actual, así que en reparación y pesca refleja el coste real.
+   * la amenaza actual, así que sube con la escalada, y en reparar refleja que
+   * dura dos turnos. Es el gasto exacto: ninguna acción tiene coste azar.
    */
   readonly cost: string;
 }
@@ -61,7 +76,10 @@ export interface GameViewModel {
   readonly turn: number;
   /** Nivel de escalada vigente. La dificultad la comunica la calavera. */
   readonly threat: number;
-  readonly resources: ReadonlyArray<ResourceViewModel>;
+  /** Hambre, energía, comida y salud, en ese orden. */
+  readonly stats: ReadonlyArray<ResourceViewModel>;
+  /** El refugio, en su propia línea debajo de las cifras. */
+  readonly shelter: ShelterViewModel;
   readonly resolution: ResolutionViewModel | null;
   readonly actions: ReadonlyArray<ActionViewModel>;
 }

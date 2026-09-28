@@ -17,6 +17,8 @@ const causeMessages: Record<DeathCause, string> = {
     'El estómago vacío marcó tu final. Cada bocado perdido se cobró su precio.',
   energy: 'El cuerpo cedió al agotamiento. Cada paso fue el último.',
   health: 'Estoy seguro de que eso no te lo esperabas. La vida es dura.',
+  surrender:
+    'Te has autoeliminado con un botón. El refugio queda intacto y tú, desinstalado.',
 };
 
 function formatTurns(turns: number): string {
@@ -26,13 +28,18 @@ function formatTurns(turns: number): string {
 }
 
 export function GameOverScreen({ model, onRestart }: GameOverScreenProps) {
+  // «El último aliento» describe una muerte, y rendirse no lo es: el jugador
+  // se fue por su cuenta. El rótulo de arriba dice lo que pasó de verdad.
+  const eyebrow =
+    model.reportedCause === 'surrender' ? 'Fin voluntario' : 'El último aliento';
+
   return (
     <main
       className="screen screen--game-over"
       aria-labelledby="game-over-title"
     >
       <section className="game-over-panel">
-        <p className="eyebrow">El último aliento</p>
+        <p className="eyebrow">{eyebrow}</p>
         <h1 id="game-over-title" tabIndex={-1}>
           La partida ha terminado
         </h1>

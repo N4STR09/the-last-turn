@@ -1,19 +1,25 @@
 export { createGame } from './initial-state';
 export { resolveTurn } from './engine';
-export {
-  actionCost,
-  actionTurnSpan,
-  MAX_FISHING_ATTEMPTS,
-} from './action-cost';
+export { surrenderGame } from './end-state';
+export { actionCost, actionTurns } from './action-cost';
 export {
   applyThreat,
+  CURE_FOOD_COST,
+  cureAmount,
+  exploreFindLimit,
+  exploreRichLimit,
+  exploreWound,
+  foodRaid,
   hungerPerTurn,
   MAX_THREAT_LOAD,
+  REPAIR_TURNS,
+  REST_ENERGY_WITHOUT_SHELTER,
   threatForTurn,
   threatLoad,
   threatThreshold,
 } from './threat';
-export type { ActionCost, ActionTurnSpan } from './action-cost';
+export type { ActionCost } from './action-cost';
+export { MAX_HEALTH } from './types';
 export type {
   ActionOutcome,
   DeathCause,

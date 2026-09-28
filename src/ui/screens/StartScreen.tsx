@@ -13,7 +13,7 @@ export function StartScreen({ onBegin }: StartScreenProps) {
           The Last Turn
         </h1>
         <p className="hero-panel__lead">
-          Cada decisión cuenta. Overvive todo lo que puedas antes de que el
+          Cada decisión cuenta. Sobrevive todo lo que puedas antes de que el
           refugio, la energía o la comida te abandonen.
         </p>
         <AppButton onClick={onBegin}>Comenzar</AppButton>

@@ -1,9 +1,7 @@
 import {
-  BookOpen,
-  Fish,
+  Bandage,
   Map,
   Moon,
-  Search,
   Utensils,
   Wrench,
   type LucideIcon,
@@ -12,23 +10,31 @@ import {
 import type { GameAction } from '../../game/types';
 import type { ActionViewModel } from '../view-models/ui-types';
 import { AppButton } from './AppButton';
+import {
+  SurrenderControl,
+  type SurrenderControl as Surrender,
+} from './SurrenderControl';
 
 export interface ActionGridProps {
   readonly actions: ReadonlyArray<ActionViewModel>;
   readonly onAction: (action: GameAction) => void;
+  readonly surrender: Surrender;
 }
 
 const actionIcons: Record<GameAction, LucideIcon> = {
-  forage: Search,
-  rest: Moon,
   explore: Map,
-  repair: Wrench,
-  fish: Fish,
   eat: Utensils,
-  help: BookOpen,
+  cure: Bandage,
+  rest: Moon,
+  repair: Wrench,
 };
 
-export function ActionGrid({ actions, onAction }: ActionGridProps) {
+/**
+ * Las cinco acciones y, al final, rendirse. Comparte rejilla con ellas para que
+ * quede claro que es una más y no un enlace perdido en el margen, pero ocupa la
+ * fila entera y lleva otro color: es la única que tira la partida.
+ */
+export function ActionGrid({ actions, onAction, surrender }: ActionGridProps) {
   return (
     <div
       aria-label="Acciones"
@@ -56,6 +62,7 @@ export function ActionGrid({ actions, onAction }: ActionGridProps) {
           </AppButton>
         );
       })}
+      <SurrenderControl surrender={surrender} />
     </div>
   );
 }

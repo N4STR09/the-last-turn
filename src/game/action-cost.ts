@@ -1,74 +1,47 @@
-import { hungerPerTurn, repairTurnCost } from './threat';
+import { hungerPerTurn, REPAIR_TURNS } from './threat';
 import type { GameAction } from './types';
 
-/** Tope de intentos de pesca, y por tanto de turnos que puede costar. */
-export const MAX_FISHING_ATTEMPTS = 6;
-
 /**
- * Rango de turnos que consume una acción.
+ * Turnos que consume una acción.
  *
- * Casi todas gastan un turno fijo. Reparar gasta entre 2 y 5 según la carga de
- * amenaza, y pescar entre 1 y 6 según el azar, así que el rango es la única
- * forma honesta de describir el coste: un número único mentiría en uno de los
- * dos casos y la interfaz no puede prometer lo que el motor no garantiza.
+ * Todas gastan un número fijo y conocido: explorar, comer, curar y descansar
+ * gastan uno, reparar gasta dos. No hay ninguna acción cuyo coste dependa del
+ * azar, y esa es la razón de que esta función devuelva un número y no un
+ * intervalo.
+ *
+ * Existió un rango porque pescar podía costar de uno a seis turnos según la
+ * tirada, y la interfaz solo podía ser honesta mostrando el peor caso. Al quitar
+ * la pesca ese rango desapareció, y con él la necesidad de que el jugador
+ * descubriera su coste después de pulsarla: el precio se ve antes de elegir, que
+ * es lo único que lo convierte en una decisión y no en una trampa.
  */
-export interface ActionTurnSpan {
-  readonly min: number;
-  readonly max: number;
+export function actionTurns(action: GameAction): number {
+  return action === 'repair' ? REPAIR_TURNS : 1;
 }
 
 /**
  * Coste de una acción en hambre y energía, resuelto contra la amenaza actual.
  *
- * Hambre y energía se gastan por turno, no por acción, así que el coste sale
- * de multiplicar los turnos por el gasto unitario. La energía siempre cuesta
- * una unidad por turno; el hambre sube con la escalada.
+ * Hambre y energía se gastan por turno, no por acción, así que el coste sale de
+ * multiplicar los turnos por el gasto unitario. La energía siempre cuesta una
+ * unidad por turno; el hambre sube con la escalada.
  */
 export interface ActionCost {
-  readonly span: ActionTurnSpan;
+  readonly turns: number;
   /** Hambre por turno, ya con el extra de amenaza aplicado. */
   readonly hungerPerTurn: number;
-  readonly minHunger: number;
-  readonly maxHunger: number;
-  readonly minEnergy: number;
-  readonly maxEnergy: number;
-}
-
-function turnSpanFor(action: GameAction, threat: number): ActionTurnSpan {
-  switch (action) {
-    case 'help':
-      return { min: 0, max: 0 };
-    case 'forage':
-    case 'rest':
-    case 'explore':
-    case 'eat':
-      return { min: 1, max: 1 };
-    case 'repair': {
-      const turns = repairTurnCost(threat);
-      return { min: turns, max: turns };
-    }
-    case 'fish':
-      return { min: 1, max: MAX_FISHING_ATTEMPTS };
-  }
-}
-
-export function actionTurnSpan(
-  action: GameAction,
-  threat: number,
-): ActionTurnSpan {
-  return turnSpanFor(action, threat);
+  readonly hunger: number;
+  readonly energy: number;
 }
 
 export function actionCost(action: GameAction, threat: number): ActionCost {
-  const span = turnSpanFor(action, threat);
+  const turns = actionTurns(action);
   const perTurn = hungerPerTurn(threat);
 
   return {
-    span,
+    turns,
     hungerPerTurn: perTurn,
-    minHunger: span.min * perTurn,
-    maxHunger: span.max * perTurn,
-    minEnergy: span.min,
-    maxEnergy: span.max,
+    hunger: turns * perTurn,
+    energy: turns,
   };
 }

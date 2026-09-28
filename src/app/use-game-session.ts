@@ -8,6 +8,7 @@ import type {
   PlayingGameState,
   RandomInt,
 } from '../game';
+import type { SurrenderControl as Surrender } from '../ui/components/SurrenderControl';
 import type {
   GameOverViewModel,
   GameViewModel,
@@ -41,6 +42,7 @@ export interface GameSession {
   readonly selectDifficulty: (difficulty: GameState['difficulty']) => void;
   readonly performAction: (action: GameAction) => void;
   readonly dismissThreatNotice: () => void;
+  readonly surrender: Surrender;
   readonly restart: () => void;
 }
 
@@ -73,9 +75,14 @@ export function useGameSession(
 
   const performAction = useCallback(
     (action: GameAction) => {
-      // Con el aviso de escalada abierto la partida está congelada: el click
-      // solo descarta el aviso, nunca ejecuta una acción.
-      if (state.screen !== 'playing' || state.threatNotice !== null) {
+      // Con el aviso de escalada abierto o con la confirmación de rendirse
+      // puesta, la partida está congelada: el click solo descarta el aviso,
+      // nunca ejecuta una acción.
+      if (
+        state.screen !== 'playing' ||
+        state.threatNotice !== null ||
+        state.surrenderPending
+      ) {
         return;
       }
 
@@ -84,6 +91,22 @@ export function useGameSession(
       dispatch({ type: 'resolve-action', resolution });
     },
     [randomInt, resolve, state],
+  );
+
+  const surrender = useMemo<Surrender>(
+    () => ({
+      pending: state.screen === 'playing' && state.surrenderPending,
+      ask: () => {
+        dispatch({ type: 'ask-surrender' });
+      },
+      cancel: () => {
+        dispatch({ type: 'cancel-surrender' });
+      },
+      confirm: () => {
+        dispatch({ type: 'surrender' });
+      },
+    }),
+    [state],
   );
 
   const restart = useCallback(() => {
@@ -119,10 +142,14 @@ export function useGameSession(
     return createThreatNoticeViewModel(state.threatNotice);
   }, [state]);
 
-  // Los atajos se desactivan también con el aviso abierto, para que una tecla
-  // no ejecute acciones sobre una partida congelada.
+  // Los atajos se desactivan con el aviso abierto y con la confirmación de
+  // rendirse puesta, para que una tecla no ejecute acciones sobre una partida
+  // congelada. Es la misma condición que protege el click, escrita donde el
+  // teclado entra.
   useActionShortcuts(
-    state.screen === 'playing' && state.threatNotice === null,
+    state.screen === 'playing' &&
+      state.threatNotice === null &&
+      !state.surrenderPending,
     performAction,
   );
 
@@ -135,6 +162,7 @@ export function useGameSession(
     selectDifficulty,
     performAction,
     dismissThreatNotice,
+    surrender,
     restart,
   };
 }

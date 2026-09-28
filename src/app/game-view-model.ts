@@ -1,4 +1,5 @@
 import { actionCost } from '../game/action-cost';
+import { MAX_HEALTH } from '../game';
 import type {
   ActionOutcome,
   FinishedGameState,
@@ -17,30 +18,31 @@ import type {
   ResourceId,
   ResourceViewModel,
   ResolutionViewModel,
+  ShelterViewModel,
+  StatId,
   Tone,
 } from '../ui/view-models/ui-types';
 
-const resourceIds: ReadonlyArray<ResourceId> = [
-  'hunger',
-  'energy',
-  'food',
-  'shelter',
-];
+const statIds: ReadonlyArray<StatId> = ['hunger', 'energy', 'food', 'health'];
 
 /**
- * Bloques de cada barra. Los tres recursos numéricos comparten escala para que
- * las filas queden alineadas; el refugio es un interruptor de un solo bloque.
- * Un valor por encima de la capacidad satura la barra, y la cifra sigue siendo
- * la verdad: la barra es una pista visual, no el dato.
+ * Bloques de cada barra. Las cifras comparten escala para que las filas queden
+ * alineadas. Un valor por encima de la capacidad satura la barra, y la cifra
+ * sigue siendo la verdad: la barra es una pista visual, no el dato.
+ *
+ * La salud usa su propio techo, que es el del cuerpo, y no 12 como las demás. No
+ * es una excepción: es lo que la distingue de un recurso. Las otras tres son
+ * contadores que suben y bajan; la salud es una reserva que solo baja si alguien
+ * te hiere, y por eso tiene un final y las otras no.
  */
-const barCapacity: Record<ResourceId, number> = {
+const barCapacity: Record<StatId, number> = {
   hunger: 12,
   energy: 12,
   food: 12,
-  shelter: 1,
+  health: MAX_HEALTH,
 };
 
-function resourceValue(id: ResourceId, state: GameCoreState): string {
+function resourceValue(id: StatId, state: GameCoreState): string {
   switch (id) {
     case 'hunger':
       return `${state.hunger}`;
@@ -48,12 +50,12 @@ function resourceValue(id: ResourceId, state: GameCoreState): string {
       return `${state.energy}`;
     case 'food':
       return `${state.food}`;
-    case 'shelter':
-      return state.hasShelter ? 'Presente' : 'Ausente';
+    case 'health':
+      return `${state.health}`;
   }
 }
 
-function resourceUnits(id: ResourceId, state: GameCoreState): number {
+function resourceUnits(id: StatId, state: GameCoreState): number {
   switch (id) {
     case 'hunger':
       return state.hunger;
@@ -61,12 +63,12 @@ function resourceUnits(id: ResourceId, state: GameCoreState): number {
       return state.energy;
     case 'food':
       return state.food;
-    case 'shelter':
-      return state.hasShelter ? 1 : 0;
+    case 'health':
+      return state.health;
   }
 }
 
-function resourceStateLabel(id: ResourceId, state: GameCoreState): string {
+function resourceStateLabel(id: StatId, state: GameCoreState): string {
   switch (id) {
     case 'hunger':
       if (state.hunger === 0) {
@@ -86,12 +88,18 @@ function resourceStateLabel(id: ResourceId, state: GameCoreState): string {
       return 'Energía disponible';
     case 'food':
       return state.food > 0 ? 'Provisiones disponibles' : 'Sin provisiones';
-    case 'shelter':
-      return state.hasShelter ? 'Bajo techo' : 'Expuesto';
+    case 'health':
+      if (state.health <= 2) {
+        return 'A un paso de la muerte';
+      }
+      if (state.health <= 5) {
+        return 'Sangrando';
+      }
+      return 'Sin heridas';
   }
 }
 
-function resourceTone(id: ResourceId, state: GameCoreState): Tone {
+function resourceTone(id: StatId, state: GameCoreState): Tone {
   switch (id) {
     case 'hunger':
       return state.hunger >= 10
@@ -103,31 +111,13 @@ function resourceTone(id: ResourceId, state: GameCoreState): Tone {
       return state.energy <= 3 ? 'warning' : 'positive';
     case 'food':
       return state.food > 0 ? 'positive' : 'warning';
-    case 'shelter':
-      return state.hasShelter ? 'positive' : 'warning';
-  }
-}
-
-/**
- * Punto en el que un recurso mata o deja al borde. Solo los tres recursos
- * numéricos: quedarse sin refugio es una advertencia, no una muerte, y una
- * fila que parpadea desde el primer turno sería ruido.
- */
-function resourceIsCritical(id: ResourceId, state: GameCoreState): boolean {
-  switch (id) {
-    case 'hunger':
-      return state.hunger >= 10;
-    case 'energy':
-      return state.energy <= 3;
-    case 'food':
-      return state.food === 0;
-    case 'shelter':
-      return false;
+    case 'health':
+      return state.health <= 3 ? 'warning' : 'positive';
   }
 }
 
 function createResource(
-  id: ResourceId,
+  id: StatId,
   state: GameCoreState,
 ): ResourceViewModel {
   return {
@@ -138,11 +128,10 @@ function createResource(
     tone: resourceTone(id, state),
     units: resourceUnits(id, state),
     capacity: barCapacity[id],
-    critical: resourceIsCritical(id, state),
   };
 }
 
-function resourceLabel(id: ResourceId): string {
+function resourceLabel(id: StatId): string {
   switch (id) {
     case 'hunger':
       return 'Hambre';
@@ -150,9 +139,30 @@ function resourceLabel(id: ResourceId): string {
       return 'Energía';
     case 'food':
       return 'Comida';
-    case 'shelter':
-      return 'Refugio';
+    case 'health':
+      return 'Salud';
   }
+}
+
+/**
+ * El refugio no es un stat: es un interruptor. Por eso no se mezcla con las
+ * cifras en la misma rejilla, sino que va debajo como una línea con su propio
+ * bloque, y por eso su estado se dice con una palabra entera en vez de con una
+ * cifra o un aviso. Las dos cosas salen de la misma bandera para que no puedan
+ * contradecirse.
+ */
+function createShelter(state: GameCoreState): ShelterViewModel {
+  return {
+    label: 'Refugio',
+    hasShelter: state.hasShelter,
+    status: shelterStatus(state.hasShelter),
+    tone: state.hasShelter ? 'positive' : 'warning',
+  };
+}
+
+/** Palabra del refugio, en un solo sitio: la fila y el cambio de la terminal. */
+function shelterStatus(hasShelter: boolean): 'Construido' | 'Destruido' {
+  return hasShelter ? 'Construido' : 'Destruido';
 }
 
 function formatDelta(value: number): string {
@@ -176,7 +186,7 @@ function deltaTone(
     return difference > 0 ? 'warning' : 'positive';
   }
 
-  if (id === 'energy') {
+  if (id === 'energy' || id === 'health') {
     return difference < 0 ? 'warning' : 'positive';
   }
 
@@ -192,10 +202,11 @@ function createDeltas(
   }
 
   const deltas: ResourceDeltaViewModel[] = [];
-  const numericResources = [
-    { id: 'hunger' as const, label: 'Hambre' },
-    { id: 'energy' as const, label: 'Energía' },
-    { id: 'food' as const, label: 'Comida' },
+  const numericResources: ReadonlyArray<{ id: StatId; label: string }> = [
+    { id: 'hunger', label: 'Hambre' },
+    { id: 'energy', label: 'Energía' },
+    { id: 'food', label: 'Comida' },
+    { id: 'health', label: 'Salud' },
   ];
 
   for (const resource of numericResources) {
@@ -214,7 +225,7 @@ function createDeltas(
     deltas.push({
       id: 'shelter',
       label: 'Refugio',
-      value: current.hasShelter ? 'Presente' : 'Ausente',
+      value: shelterStatus(current.hasShelter),
       tone: deltaTone('shelter', 0, current.hasShelter),
     });
   }
@@ -224,25 +235,19 @@ function createDeltas(
 
 function actionIdForOutcome(outcome: ActionOutcome): GameAction {
   switch (outcome.type) {
-    case 'help':
-      return 'help';
-    case 'forage-found':
-    case 'forage-empty':
-      return 'forage';
     case 'rest-without-shelter':
-    case 'rest-shelter-miss':
     case 'rest-shelter-success':
       return 'rest';
-    case 'explore-shelter':
-    case 'explore-food':
+    case 'explore-rich':
+    case 'explore-find':
     case 'explore-empty':
       return 'explore';
     case 'repair-failed':
     case 'repair-succeeded':
       return 'repair';
-    case 'fish-catch':
-    case 'fish-failed':
-      return 'fish';
+    case 'cure-done':
+    case 'cure-no-food':
+      return 'cure';
     case 'eat-consumed':
     case 'eat-no-food':
       return 'eat';
@@ -256,54 +261,38 @@ interface OutcomeCopy {
 
 function outcomeCopy(outcome: ActionOutcome): OutcomeCopy {
   switch (outcome.type) {
-    case 'help':
-      return {
-        headline: 'Consultas las reglas del refugio.',
-        details: [
-          'La ayuda no consume un turno. En Agonía todavía puede ocurrir un evento.',
-        ],
-      };
-    case 'forage-found':
-      return {
-        headline: 'Encuentras comida.',
-        details: ['La búsqueda añade 1 comida.'],
-      };
-    case 'forage-empty':
-      return {
-        headline: 'No encuentras comida.',
-        details: ['La búsqueda no cambia la comida.'],
-      };
     case 'rest-without-shelter':
       return {
-        headline: 'Intentas descansar, pero no tienes refugio.',
-        details: ['Sin refugio, el descanso no recupera energía.'],
-      };
-    case 'rest-shelter-miss':
-      return {
-        headline: 'Descansas, pero la recuperación es menor.',
-        details: ['Recuperas 3 de energía antes del coste del turno.'],
+        headline: 'Descansas al aire libre.',
+        details: [
+          'Sin refugio solo recuperas lo que cuesta el turno. El refugio multiplica el descanso, no lo habilita.',
+        ],
       };
     case 'rest-shelter-success':
       return {
-        headline: 'El refugio te permite recuperar más energía.',
+        headline: 'El techo te devuelve lo que cuesta el turno.',
         details: [
           `Recuperas ${outcome.energyRecovered} de energía antes del coste del turno.`,
         ],
       };
-    case 'explore-shelter':
+    case 'explore-rich':
       return {
-        headline: 'Descubres un lugar donde construir un refugio.',
-        details: ['La exploración da con un lugar seguro.'],
+        headline: 'Aguantas más de lo previsto y vuelves cargado.',
+        details: [
+          `La exploración añade ${outcome.foodGained} comidas y te cuesta ${outcome.healthLost} de salud.`,
+        ],
       };
-    case 'explore-food':
+    case 'explore-find':
       return {
-        headline: 'Encuentras comida durante la exploración.',
-        details: ['La exploración añade 1 comida.'],
+        headline: 'Vuelves con algo y con algún rasguño.',
+        details: [
+          `La exploración añade ${outcome.foodGained} comidas y te cuesta ${outcome.healthLost} de salud.`,
+        ],
       };
     case 'explore-empty':
       return {
         headline: 'La exploración no te lleva a nada.',
-        details: ['No encuentras refugio ni comida.'],
+        details: ['No encuentras comida, y al menos no te hiere.'],
       };
     case 'repair-failed':
       return {
@@ -315,31 +304,26 @@ function outcomeCopy(outcome: ActionOutcome): OutcomeCopy {
         headline: 'Levantas o reparas el refugio.',
         details: ['El trabajo consume dos turnos.'],
       };
-    case 'fish-failed':
+    case 'cure-done':
       return {
-        headline: 'La pesca no consigue nada.',
+        headline: 'Te vendas las heridas.',
         details: [
-          `La pesca agota ${outcome.attempts} intentos y no añade comida.`,
+          `Gastas ${outcome.foodSpent} comidas y recuperas ${outcome.healthRecovered} de salud.`,
         ],
       };
-    case 'fish-catch': {
-      const attempts = outcome.attempts;
+    case 'cure-no-food':
       return {
-        headline:
-          attempts === 1 ? 'Capturas un pez.' : `Capturas ${attempts} peces.`,
+        headline: 'No tienes material para curarte.',
         details: [
-          `La pesca consume ${attempts} ${attempts === 1 ? 'turno' : 'turnos'} y añade 3 comidas.`,
+          'Cerrar las heridas cuesta 2 comidas, y come comida que no te va a bajar el hambre.',
         ],
       };
-    }
     case 'eat-consumed':
       return {
         headline: 'Comes una ración.',
         details: [
           `Consumes 1 comida y reduces el hambre en ${outcome.hungerReduced}.`,
-          outcome.healthRecovered === 1
-            ? 'La comida te ayuda a recuperar un poco de salud.'
-            : 'Tu salud ya estaba al máximo.',
+          'Comer no cura: para eso están las heridas.',
         ],
       };
     case 'eat-no-food':
@@ -375,43 +359,45 @@ function eventCopy(event: GameEvent): EventViewModel {
   }
 }
 
-const actionLabels: ReadonlyArray<readonly [GameAction, string]> = [
-  ['forage', 'Buscar comida'],
-  ['rest', 'Descansar'],
-  ['explore', 'Explorar'],
-  ['repair', 'Reparar refugio'],
-  ['fish', 'Cazar o pescar'],
-  ['eat', 'Comer'],
-  ['help', 'Ayuda'],
+const actionLabels: Record<GameAction, string> = {
+  explore: 'Explorar',
+  eat: 'Comer',
+  cure: 'Curar heridas',
+  rest: 'Descansar',
+  repair: 'Reparar refugio',
+};
+
+/**
+ * Orden de la rejilla. Va por recursos, no por importancia: primero lo que produce
+ * comida, después lo que la gasta, después lo que sostiene la energía y al final
+ * lo que sostiene el techo. Rendirse no aparece: va aparte, debajo.
+ */
+const gridActions: readonly GameAction[] = [
+  'explore',
+  'eat',
+  'cure',
+  'rest',
+  'repair',
 ];
 
 /**
  * Gasto de una acción en hambre y energía, en tres o cuatro palabras.
  *
  * Hambre y energía se gastan por turno, no por acción, así que la cifra sale de
- * la amenaza vigente. Cuando el gasto es un rango, de la pesca, se enuncia el
- * peor caso: es el número con el que el jugador decide si vale la pena.
+ * la amenaza vigente. Todas las acciones tienen un coste fijo y conocido, así que
+ * aquí no hay peor caso que enunciar: el número que se dice es el que va a
+ * pasar, y es con el que el jugador decide.
  */
 export function actionCostLabel(action: GameAction, threat: number): string {
   const cost = actionCost(action, threat);
 
-  if (cost.span.max === 0) {
-    return '(sin coste)';
-  }
-
-  if (cost.minHunger === cost.maxHunger) {
-    return `(+${cost.minHunger} hambre, −${cost.minEnergy} energía)`;
-  }
-
-  return `(hasta +${cost.maxHunger} hambre, −${cost.maxEnergy} energía)`;
+  return `(+${cost.hunger} hambre, −${cost.energy} energía)`;
 }
 
 function createAction(action: GameAction, threat: number): ActionViewModel {
-  const label = actionLabels.find(([id]) => id === action);
-
   return {
     id: action,
-    label: label === undefined ? action : label[1],
+    label: actionLabels[action],
     cost: actionCostLabel(action, threat),
   };
 }
@@ -437,12 +423,13 @@ export function createGameViewModel(
     difficulty: game.difficulty,
     turn: game.turn,
     threat: game.threat,
-    resources: resourceIds.map((id) => createResource(id, game)),
+    stats: statIds.map((id) => createResource(id, game)),
+    shelter: createShelter(game),
     resolution:
       resolution === null
         ? null
         : createResolutionViewModel(resolution, previousState),
-    actions: actionLabels.map(([id]) => createAction(id, game.threat)),
+    actions: gridActions.map((id) => createAction(id, game.threat)),
   };
 }
 

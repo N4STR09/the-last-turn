@@ -24,6 +24,15 @@ describe('StartScreen', () => {
     expect(screen.queryByRole('button', { name: /Agonía/i })).toBeNull();
   });
 
+  it('escribe «Sobrevive» y no el anglicismo que lo deformaba', () => {
+    render(<StartScreen onBegin={vi.fn()} />);
+
+    // La entradilla decía «Overvive». No es que se viese mal: es que la palabra
+    // no es esa, y una comprobacion literal evita que vuelva a colarse.
+    expect(screen.getByText(/Sobrevive todo lo que puedas/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Overvive/i)).toBeNull();
+  });
+
   it('emite el callback al comenzar', async () => {
     const user = userEvent.setup();
     const onBegin = vi.fn();
@@ -91,6 +100,15 @@ describe('DifficultyScreen', () => {
     // prometer una muerte, porque desde salud inicial no mata.
     expect(screen.queryByText(/provocar una muerte|matar al jugador/i)).toBeNull();
     expect(screen.queryByText(/quitarte toda la salud/i)).toBeNull();
+  });
+
+  it('no rotula las tarjetas con un modo que no existe', () => {
+    const { container } = render(<DifficultyScreen onSelect={vi.fn()} />);
+
+    // «Modo de supervivencia» era una etiqueta fija que no distinguía una
+    // tarjeta de la otra: las dos son supervivencia, así que la etiqueta sobra.
+    expect(container.querySelector('.difficulty-card__label')).toBeNull();
+    expect(screen.queryByText(/modo de supervivencia/i)).toBeNull();
   });
 
   it('permite seleccionar con teclado', async () => {
