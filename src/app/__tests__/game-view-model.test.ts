@@ -18,6 +18,7 @@ function createCoreState(overrides: Partial<GameCoreState> = {}): GameCoreState 
     health: 10,
     hasShelter: false,
     threat: 0,
+    pendingEvents: [],
     ...overrides,
   };
 }
@@ -125,16 +126,19 @@ describe('createGameViewModel', () => {
   });
 
   it('recoge todos los eventos de la resolución', () => {
+    // Los eventos que la terminal narra son los que ya habían caído este turno,
+    // que en la partida real venían anunciados desde el anterior.
     const previous = createCoreState({
       difficulty: 'agony',
       turn: 4,
       threat: 4,
       hasShelter: true,
+      pendingEvents: [{ type: 'storm' }, { type: 'storm' }],
     });
     const resolution = resolveTurn(
       { ...previous, status: 'playing' },
       'eat',
-      () => 5,
+      () => 50,
     );
 
     const model = createGameViewModel(resolution.state, resolution, previous);
@@ -219,33 +223,78 @@ describe('createGameViewModel', () => {
 
   it('traduce los tres eventos de Agonía', () => {
     const cases = [
-      [1, 'Tormenta', 'Tu refugio ha resultado dañado por las fuertes tormentas!'],
-      [51, 'Mapache', 'Un mapache te ha robado tu comida!'],
-      [99, 'Meteorito', 'Un meteorito te golpea y te deja herido.'],
+      ['storm', 'Tormenta', 'Tu refugio ha resultado dañado por las fuertes tormentas!'],
+      ['raccoon', 'Mapache', 'Un mapache te ha robado tu comida!'],
+      ['meteorite', 'Meteorito', 'Un meteorito te golpea y te deja herido.'],
     ] as const;
 
-    for (const [value, headline, description] of cases) {
+    for (const [type, headline, description] of cases) {
       const state = {
-        ...createCoreState({ difficulty: 'agony' }),
+        ...createCoreState({
+          difficulty: 'agony',
+          food: 9,
+          pendingEvents: [{ type }],
+        }),
         status: 'playing' as const,
       };
-      const resolution = resolveTurn(
-        state,
-        'eat',
-        () => value,
-      );
+      const resolution = resolveTurn(state, 'eat', () => 50);
 
       expect(
         createGameViewModel(resolution.state, resolution, state).resolution
           ?.events,
-      ).toEqual([
-        {
-          type: value === 1 ? 'storm' : value === 51 ? 'raccoon' : 'meteorite',
-          headline,
-          description,
-        },
-      ]);
+      ).toEqual([{ type, headline, description }]);
     }
+  });
+});
+
+describe('createForecast', () => {
+  function forecastFor(pending: GameCoreState['pendingEvents']) {
+    const state = {
+      ...createCoreState({ difficulty: 'agony', pendingEvents: pending }),
+      status: 'playing' as const,
+    };
+
+    return createGameViewModel(state, null, state).forecast;
+  }
+
+  it('no dice nada cuando la cola está vacía', () => {
+    // El primer turno de cada partida es exactamente este caso: el motor todavía
+    // no ha tirado nada, así que un aviso aquí sería inventado.
+    expect(forecastFor([])).toBeNull();
+  });
+
+  it('anuncia el mapache cuando es lo único que hay', () => {
+    expect(forecastFor([{ type: 'raccoon' }])).toEqual({
+      headline: 'Algo se mueve entre los árboles.',
+      detail: 'No es el viento. Huele a comida.',
+      count: 1,
+    });
+  });
+
+  it('ordena por gravedad: tormenta, meteorito y por último mapache', () => {
+    // El orden no es caprichoso: la tormenta se lleva el refugio y sin techo
+    // descansar deja de rendir, así que es la que encadena. Va primera por eso, no
+    // porque suene más dramática. El mapache va el último porque solo roba comida,
+    // que se recupera explorando.
+    expect(forecastFor([{ type: 'meteorite' }, { type: 'raccoon' }])?.headline).toBe(
+      'Una luz cruza el cielo.',
+    );
+    expect(forecastFor([{ type: 'raccoon' }, { type: 'storm' }])?.headline).toBe(
+      'El aire pesa.',
+    );
+    expect(forecastFor([{ type: 'storm' }, { type: 'meteorite' }])?.headline).toBe(
+      'El aire pesa.',
+    );
+  });
+
+  it('cuenta cuántos hay aunque solo narre el peor', () => {
+    // Con carga 4 en adelante el turno tira dos o tres veces. Anunciar uno solo
+    // sin decir cuántos es peor que no anunciar nada: parece que ya está todo dicho.
+    expect(forecastFor([{ type: 'storm' }, { type: 'storm' }, { type: 'raccoon' }])).toEqual({
+      headline: 'El aire pesa.',
+      detail: 'Algo baja desde el norte. El refugio no lo va a resistir.',
+      count: 3,
+    });
   });
 });
 

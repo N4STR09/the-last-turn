@@ -113,8 +113,11 @@ describe('useGameSession', () => {
     await user.click(screen.getByRole('button', { name: 'Comenzar' }));
     await user.click(screen.getByRole('button', { name: 'Jugar en Agonía' }));
     // El umbral 1 cae en el turno 10, así que el noveno descanso es el último
-    // antes del aviso. Cada turno gasta un punto de energía y el meteorito de
-    // Agonía quita uno de salud, y al noveno ya no queda nada que gastar.
+    // antes del aviso. La partida necesita once descansos para caer: con el
+    // evento telegrafiado el primer meteorito ya no se aplica en el turno uno,
+    // así que al undécimo es el que deja la salud en cero. Cada turno gasta un
+    // punto de energía y el meteorito de Agonía quita uno de salud, y al undécimo
+    // ya no queda nada que gastar.
     for (let rest = 0; rest < 9; rest += 1) {
       await user.click(screen.getByRole('button', { name: /^Descansar/ }));
     }
@@ -122,12 +125,14 @@ describe('useGameSession', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     await user.click(screen.getByText('Haz click para continuar...'));
 
-    await user.click(screen.getByRole('button', { name: /^Descansar/ }));
+    for (let rest = 0; rest < 2; rest += 1) {
+      await user.click(screen.getByRole('button', { name: /^Descansar/ }));
+    }
 
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: 'La partida ha terminado',
+        name: 'Game Over',
       }),
     ).toBeInTheDocument();
     // Agotamiento y hambre llegan el mismo turno, y el motor dice el hambre
@@ -135,7 +140,7 @@ describe('useGameSession', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       'El estómago vacío marcó tu final. Cada bocado perdido se cobró su precio.',
     );
-    expect(screen.getByText('10 turnos aguantados')).toBeInTheDocument();
+    expect(screen.getByText('11 turnos aguantados')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Volver a jugar' }));
     expect(
@@ -289,7 +294,7 @@ describe('rendirse desde la sesión', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: 'La partida ha terminado',
+        name: 'Game Over',
       }),
     ).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent(

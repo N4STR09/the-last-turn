@@ -9,6 +9,7 @@ import {
   hungerPerTurn,
   repairFailureRadius,
   REPAIR_TURNS,
+  repairDemolishesShelter,
   restEnergyCap,
   REST_ENERGY_WITHOUT_SHELTER,
 } from './threat';
@@ -136,10 +137,19 @@ function resolveRepair(
   // Con radio 0 solo falla la tirada 5, que es el comportamiento heredado. La
   // banda se ensancha hacia ambos lados conforme sube la carga.
   const succeeded = Math.abs(value - 5) > repairFailureRadius(state.threat);
+  // Un fallo deja el refugio como estaba: se han gastado dos turnos y ya. A partir
+  // de la carga 1, en cambio, se lleva el refugio por delante. Antes el fallo era
+  // gratis de riesgo y la tirada no decidía nada, así que reparar no era una
+  // apuesta sino un peaje. Derribarlo le da peso al d10.
+  const hasShelter = succeeded
+    ? true
+    : repairDemolishesShelter(state.threat)
+      ? false
+      : state.hasShelter;
   const nextState = applyTurnCost(
     {
       ...state,
-      hasShelter: succeeded ? true : state.hasShelter,
+      hasShelter,
     },
     REPAIR_TURNS,
   );

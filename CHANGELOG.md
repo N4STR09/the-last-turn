@@ -4,6 +4,79 @@
 
 ### Added
 
+- **El evento se telegrafía un turno antes de caer.** Es el cambio de mayor valor de
+  esta tanda. El azar del evento se tira al cerrar el turno y se guarda en
+  `GameCoreState.pendingEvents`; al empezar el siguiente se aplica y además se
+  publica en `GameResolution.randomEvents`. Antes la tormenta caía sobre un turno
+  que el jugador ya había decidido y ya había pagado, y la medición lo cuantificó:
+  el 52 % de las partidas de Agonía morían en los tres turnos siguientes a una
+  tormenta, y 181 de 201 muertes por energía tenían una tormenta en los seis
+  turnos previos. `rollRandomEvents` y `applyRandomEvents` quedan separadas a
+  propósito: una tira sin tocar el estado y la otra aplica sin tirar.
+- **El pronóstico, en la interfaz.** Se renderiza fuera de `.terminal__screen`
+  con su propio `role="status"`, para que un lector de pantalla no lea el parte
+  entero dos veces. Anuncia el evento de mayor prioridad —tormenta, meteorito,
+  mapache— y cuenta cuántos hay cuando son más de uno.
+- **Un fallo al reparar derriba el refugio desde la carga 1.** Antes un fallo no
+  tocaba nada y la tirada gastada solo costaba los dos turnos, así que reparar era
+  gratis de riesgo y el fallo era un turno perdido en vez de una decisión. La carga
+  1 es el turno 10, el primer aviso de escalada, y ese nivel no cambiaba ningún
+  modificador. Es la única regla de meseta que sale gratis: solo puede dispararse
+  sobre una tirada que ya era un fallo, y la medición de 400 semillas deja la
+  mediana de Normal en 119 y el techo en 152, los de antes.
+### Changed
+- **La tormenta baja del 10 % al 4 %**, sin tocar el coste de reparación. Apagarla
+  entera sacaba la mediana de Agonía de 29 a 44, y el 4 % se queda cerca de ese
+  techo. Subir el coste de reparación habría castigado justo a quien ya moría por
+  ahí. Medido en el motor real: tormentas por partida de 2.42 a 1.24 y mediana de
+  Agonía de 29 a 38, con reparto L1 11.5 % / L2 27.0 % / L3 49.8 % / L4 11.8 %.
+- **La tabla de sorteos deja de tener huecos muertos.** Las tres bandas pasan a ser
+  contiguas desde el 1: tormenta 1-4, mapache 5-13, meteorito 99. La probabilidad
+  conjunta no cambia —4 + 9 + 1—, lo que cambia es dónde estaban.
+- **La pantalla de muerte se rehace como el resto del juego.** Negro de punta a
+  punta, sin la tarjeta con borde y fondo que la convertía en un panel de
+  aplicación, y composición centrada como la del inicio. Encima el rótulo de
+  siempre, `Game Over` en rojo de alarma con el halo en rojo sangre, debajo el
+  mensaje jocoso de la causa en blanco puro y sin recuadro, y debajo los datos de
+  la partida en monoespaciada. El relleno del título va en `--color-alarm` y no en
+  `--color-blood` a propósito: sobre negro puro la sangre da 2.02:1 y un título
+  grande necesita 3:1, así que en sangre se leería por el halo y no por las
+  letras.
+### Fixed
+- **El violeta del hambre se había comido media interfaz.** Al mover el hambre de
+  rojo a violeta en `93d4176`, tres cosas que tomaban `--stat-hunger` por ser el
+  único rojo que no era `--color-alarm` se llevaron el violeta con ella: el botón
+  de rendirse, los cambios de recursos en tono de aviso y el pronóstico del
+  turno siguiente. Vuelven al rojo de alarma, el pronóstico deja de hablar con el
+  color de un recurso del que no habla, y la fila base de `.stat` pasa a gris
+  neutro para que ninguna fila sin modificador herede el tono de otra. Los cinco
+  `--stat-*` quedan declarados en `tokens.css` y en el SPEC como de un recurso y
+  solo de un recurso.
+- **Agonía ya no es cuatro veces más corta que Normal.** La medición cambió el
+  diagnóstico: no era aritmética de la escalada sino el impuesto de la tormenta, y
+  Agonía no era más corta sino **más variable**. El techo de las dos dificultades
+  es el mismo, 152. Apagando los eventos, Agonía da 121 y Normal 119: el hueco
+  entero son los eventos.
+### Known issues
+- **L9 y L10 no son alcanzables, y L5 y L7 no cambian ningún modificador.** No es
+  una omisión: la carga es el propio nivel y todos los modificadores son
+  `⌊load / k⌋`, así que dividir enteros produce mesetas —con `k = 3`, los niveles
+  6, 7 y 8 dan 2, 2 y 2. Se implementaron y midieron reglas para L5 y L7 —desgaste
+  del refugio y comida estropeada en las cargas 5 a 8, con periodos de 6 a 30
+  turnos, más acaparamiento, curar más caro, reparar más caro y hallazgos secos— y
+  **se descartaron**: toda regla que aguanta la partida baja el techo absoluto, y
+  el techo es justamente lo que dejaría L9 dentro de alcance. El mejor azar posible
+  muere en el turno 152 y el umbral de L9 está en el 162. Rellenar la meseta y
+  alcanzar L9 son objetivos que se contradicen con la forma de rampa actual; atacar
+  el segundo exige cambiar `threshold(n)`, que es una decisión de alcance. Queda
+  registrado como `D-05` en `SPEC-threat.md` y en `docs/fidelity.md`.
+- El desgaste del refugio además queda descartado por un motivo propio:
+  `repairFailureRadius` se frena en 4, así que en carga alta reparar acierta un
+  10 %. Quitarle el refugio a alguien que ya no puede recuperarlo es un tapón, no
+  una dificultad. En la carga 5 dio mediana de Normal 85 y techo 121, con el cien
+  por cien de las muertes por hambre.
+
+
 - **Cinco acciones con una sola función cada una.** `explore` produce comida y
   paga con salud; `eat` baja el hambre; `cure` sube la salud; `rest` sube la
   energía; `repair` levanta el refugio y paga con dos turnos. La suma de las cinco

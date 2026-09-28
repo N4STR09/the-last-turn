@@ -17,7 +17,18 @@ describe('createGame', () => {
       health: 10,
       hasShelter: false,
       threat: 0,
+      // El primer turno no tiene nada anunciado: los eventos se tiran al final
+      // de un turno para el siguiente, así que la partida arranca sin ninguno.
+      pendingEvents: [],
     });
+  });
+
+  it('arranca sin eventos pendientes y con listas distintas', () => {
+    const firstGame = createGame('agony');
+    const secondGame = createGame('agony');
+
+    expect(firstGame.pendingEvents).toEqual([]);
+    expect(firstGame.pendingEvents).not.toBe(secondGame.pendingEvents);
   });
 
   it('crea estados independientes para partidas distintas', () => {

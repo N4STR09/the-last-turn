@@ -25,7 +25,15 @@
      ocupado quedan cuatro huecos útiles —amarillo, verde, cian y violeta— y el
      amarillo ya es de la energía, así que solo queda el violeta. La cuenta por
      matiz lo confirma: el violeta está a 262 grados, a 64 del cian y a 104 del
-     rojo, mientras que el rojo y el amarillo solo se separan 36. */
+     rojo, mientras que el rojo y el amarillo solo se separan 36.
+
+     Estos cinco tokens son de un recurso y solo de un recurso, y nada que no sea
+     la fila de ese recurso puede tomarlos. Cuando el hambre era roja, el botón
+     de rendirse, los cambios de recursos en tono de aviso y el pronóstico la
+     tomaban por ser el único rojo que no era `--color-alarm`, y al moverse al
+     violeta se llevaron consigo tres cosas que no son hambre. Lo que avisa de
+     peligro toma `--color-alarm`; lo que solo necesita un color que no sea
+     blanco toma `--color-text` o `--color-hint`. */
   --stat-health: #ff5f4d;
   --stat-hunger: #b184ff;
   --stat-energy: #ffd166;

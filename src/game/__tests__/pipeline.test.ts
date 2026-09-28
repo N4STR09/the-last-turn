@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveAction } from '../actions';
 import { finishGame, surrenderGame } from '../end-state';
-import { resolveRandomEvents } from '../events';
-import { applyThreat } from '../threat';
-import type { GameCoreState, PlayingGameState } from '..';
+import { applyRandomEvents, rollRandomEvents } from '../events';
+import { resolveTurn } from '..';
+import type { GameCoreState, GameEvent, GameState, PlayingGameState, RandomInt } from '..';
 import { createCoreState } from './test-state';
 import { failIfRandomIntIsCalled, sequenceRandomInt } from './test-random';
 
@@ -17,23 +16,38 @@ function createPlayingState(overrides: Partial<PlayingGameState> = {}) {
   return { ...createCoreState(), status: 'playing' as const, ...overrides };
 }
 
-describe('resolveRandomEvents', () => {
+/**
+ * Tirar y aplicar sobre el mismo estado, que es lo que estas pruebas miran.
+ *
+ * El motor ya no tiene una función que haga las dos cosas: tira al final de un
+ * turno lo que cae en el siguiente, y lo aplica al empezar. Juntarlas aquí deja
+ * estas pruebas midiendo la tabla de eventos y el recargo de energía, que es lo
+ * que medían, y `engine.test.ts` mide por separado el orden real de la partida.
+ */
+function rollAndApply(
+  state: GameCoreState,
+  randomInt: RandomInt,
+): { readonly state: GameCoreState; readonly events: readonly GameEvent[] } {
+  const events = rollRandomEvents(state, randomInt);
+
+  return { state: applyRandomEvents(state, events), events };
+}
+
+describe('rollAndApply', () => {
   it('no consume azar en Normal', () => {
     const state = createCoreState({ difficulty: 'normal' });
 
-    const result = resolveRandomEvents(state, failIfRandomIntIsCalled());
+    const result = rollAndApply(state, failIfRandomIntIsCalled());
 
     expect(result).toEqual({ state, events: [] });
   });
 
   it.each([
     [1, 'storm', { hasShelter: false }],
-    [10, 'storm', { hasShelter: false }],
-    [11, null, {}],
-    [50, null, {}],
-    [51, 'raccoon', { food: 1 }],
-    [59, 'raccoon', { food: 1 }],
-    [60, null, {}],
+    [4, 'storm', { hasShelter: false }],
+    [5, 'raccoon', { food: 1 }],
+    [13, 'raccoon', { food: 1 }],
+    [14, null, {}],
     [98, null, {}],
     [99, 'meteorite', { health: 7 }],
     [100, null, {}],
@@ -48,7 +62,7 @@ describe('resolveRandomEvents', () => {
       });
       const random = sequenceRandomInt([value]);
 
-      const result = resolveRandomEvents(state, random.randomInt);
+      const result = rollAndApply(state, random.randomInt);
 
       expect(result.events).toEqual(
         eventType === null ? [] : [{ type: eventType }],
@@ -62,7 +76,7 @@ describe('resolveRandomEvents', () => {
     const state = createCoreState({ difficulty: 'agony', health: 10 });
     const random = sequenceRandomInt([99]);
 
-    const result = resolveRandomEvents(state, random.randomInt);
+    const result = rollAndApply(state, random.randomInt);
 
     expect(result).toEqual({
       state: { ...state, health: 9 },
@@ -74,7 +88,7 @@ describe('resolveRandomEvents', () => {
     const state = createCoreState({ difficulty: 'agony', health: 1 });
     const random = sequenceRandomInt([99]);
 
-    const result = resolveRandomEvents(state, random.randomInt);
+    const result = rollAndApply(state, random.randomInt);
 
     expect(result).toEqual({
       state: { ...state, health: 0 },
@@ -88,9 +102,9 @@ describe('resolveRandomEvents', () => {
     // que decir. Robar una cantidad fija golpea a quien tiene el depósito lleno,
     // que es una decisión, y deja sobrevivir a quien juega con poco.
     const state = createCoreState({ difficulty: 'agony', food: 12 });
-    const random = sequenceRandomInt([55]);
+    const random = sequenceRandomInt([13]);
 
-    const result = resolveRandomEvents(state, random.randomInt);
+    const result = rollAndApply(state, random.randomInt);
 
     expect(result.state.food).toBe(9);
   });
@@ -98,14 +112,14 @@ describe('resolveRandomEvents', () => {
   it('saca más comida conforme sube la carga', () => {
     // Carga 10 abre tres tiradas por turno, así que la secuencia lleva tres
     // valores: el primero saca y los dos siguientes no sacan nada.
-    const bajo = sequenceRandomInt([55]);
-    const alto = sequenceRandomInt([55, 60, 60]);
+    const bajo = sequenceRandomInt([13]);
+    const alto = sequenceRandomInt([13, 60, 60]);
 
-    const atZero = resolveRandomEvents(
+    const atZero = rollAndApply(
       createCoreState({ difficulty: 'agony', food: 20 }),
       bajo.randomInt,
     );
-    const atTen = resolveRandomEvents(
+    const atTen = rollAndApply(
       createCoreState({ difficulty: 'agony', food: 20, threat: 10 }),
       alto.randomInt,
     );
@@ -116,9 +130,9 @@ describe('resolveRandomEvents', () => {
 
   it('no baja de cero el saqueo aunque el depósito sea más pequeño', () => {
     const state = createCoreState({ difficulty: 'agony', food: 1, threat: 10 });
-    const random = sequenceRandomInt([55, 60, 60]);
+    const random = sequenceRandomInt([13, 60, 60]);
 
-    const result = resolveRandomEvents(state, random.randomInt);
+    const result = rollAndApply(state, random.randomInt);
 
     expect(result.state.food).toBe(0);
   });
@@ -136,7 +150,7 @@ describe('resolveRandomEvents', () => {
     });
     const random = sequenceRandomInt([1, 1, 1]);
 
-    const result = resolveRandomEvents(state, random.randomInt);
+    const result = rollAndApply(state, random.randomInt);
 
     expect(result.events).toHaveLength(3);
     expect(result.state.energy).toBe(4);
@@ -151,9 +165,9 @@ describe('resolveRandomEvents', () => {
       hasShelter: true,
       threat: 4,
     });
-    const random = sequenceRandomInt([5, 99]);
+    const random = sequenceRandomInt([1, 99]);
 
-    const result = resolveRandomEvents(state, random.randomInt);
+    const result = rollAndApply(state, random.randomInt);
 
     expect(result.events).toEqual([{ type: 'storm' }, { type: 'meteorite' }]);
     expect(result.state.energy).toBe(4);
@@ -172,7 +186,7 @@ describe('resolveRandomEvents', () => {
     });
     const random = sequenceRandomInt([5]);
 
-    const result = resolveRandomEvents(state, random.randomInt);
+    const result = rollAndApply(state, random.randomInt);
 
     expect(result.state.energy).toBe(5);
   });
@@ -185,14 +199,14 @@ describe('resolveRandomEvents', () => {
     });
     const random = sequenceRandomInt([1]);
 
-    const result = resolveRandomEvents(state, random.randomInt);
+    const result = rollAndApply(state, random.randomInt);
 
     expect(result.state.energy).toBe(5);
   });
 
   it.each([
     [1, { hasShelter: false, energy: 4 }],
-    [55, { food: 0, energy: 4 }],
+    [13, { food: 0, energy: 4 }],
   ] as const)(
     'cobra un punto de energía extra a la tirada %i con carga 1',
     (value, changes) => {
@@ -206,7 +220,7 @@ describe('resolveRandomEvents', () => {
       });
       const random = sequenceRandomInt([value]);
 
-      const result = resolveRandomEvents(state, random.randomInt);
+      const result = rollAndApply(state, random.randomInt);
 
       expect(result.state).toEqual({ ...state, ...changes });
     },
@@ -220,14 +234,14 @@ describe('resolveRandomEvents', () => {
       health: 10,
       threat: 2,
     };
-    const light = sequenceRandomInt([55]);
-    const heavy = sequenceRandomInt([55]);
+    const light = sequenceRandomInt([13]);
+    const heavy = sequenceRandomInt([13]);
 
-    const atTwo = resolveRandomEvents(
+    const atTwo = rollAndApply(
       createCoreState({ ...base }),
       light.randomInt,
     );
-    const atThree = resolveRandomEvents(
+    const atThree = rollAndApply(
       createCoreState({ ...base, threat: 3 }),
       heavy.randomInt,
     );
@@ -245,7 +259,7 @@ describe('resolveRandomEvents', () => {
     });
     const random = sequenceRandomInt([1]);
 
-    const result = resolveRandomEvents(state, random.randomInt);
+    const result = rollAndApply(state, random.randomInt);
 
     expect(result.state.energy).toBe(0);
   });
@@ -254,11 +268,11 @@ describe('resolveRandomEvents', () => {
     const atThree = sequenceRandomInt([30, 30, 30]);
     const atTen = sequenceRandomInt([30, 30, 30]);
 
-    resolveRandomEvents(
+    rollAndApply(
       createCoreState({ difficulty: 'agony', threat: 3 }),
       atThree.randomInt,
     );
-    resolveRandomEvents(
+    rollAndApply(
       createCoreState({ difficulty: 'agony', threat: 10 }),
       atTen.randomInt,
     );
@@ -280,9 +294,9 @@ describe('resolveRandomEvents', () => {
       hasShelter: true,
       threat: 4,
     });
-    const random = sequenceRandomInt([5, 5]);
+    const random = sequenceRandomInt([1, 1]);
 
-    const result = resolveRandomEvents(state, random.randomInt);
+    const result = rollAndApply(state, random.randomInt);
 
     expect(result.events).toEqual([{ type: 'storm' }, { type: 'storm' }]);
     // La segunda tormenta no vuelve a cobrar: el recargo es del turno, no del
@@ -300,9 +314,9 @@ describe('resolveRandomEvents', () => {
       hasShelter: true,
       threat: 4,
     });
-    const random = sequenceRandomInt([5, 99]);
+    const random = sequenceRandomInt([1, 99]);
 
-    const result = resolveRandomEvents(state, random.randomInt);
+    const result = rollAndApply(state, random.randomInt);
 
     expect(result.events).toEqual([
       { type: 'storm' },
@@ -394,65 +408,110 @@ describe('finishGame', () => {
 });
 
 describe('composición del pipeline', () => {
-  it('resuelve acción, evento, escalada y fin en ese orden', () => {
-    const state: GameCoreState = createCoreState({
-      difficulty: 'agony',
-      turn: 29,
-      hunger: 9,
-      energy: 10,
-      food: 0,
-      health: 10,
-      hasShelter: false,
-    });
+  it('aplica los eventos anunciados, sube la escalada y no tira si el turno mata', () => {
+    // El estado lleva la tormenta ya sorteada en `pendingEvents`: es lo que el
+    // turno anterior tiró y la terminal ya anunció. La acción va primero, luego
+    // cae la tormenta, luego sube la escalada. El orden es el de `resolveTurn`,
+    // no una reconstrucción de las piezas sueltas.
+    const state: GameState = {
+      ...createCoreState({
+        difficulty: 'agony',
+        turn: 29,
+        hunger: 9,
+        energy: 10,
+        food: 0,
+        health: 10,
+        hasShelter: false,
+      }),
+      status: 'playing',
+      pendingEvents: [{ type: 'storm' }],
+    };
     const random = sequenceRandomInt([1, 50]);
 
-    const action = resolveAction(state, 'repair', random.randomInt);
-    const event = resolveRandomEvents(action.state, random.randomInt);
-    const threat = applyThreat(event.state);
-    const finished = finishGame(threat.state);
+    const result = resolveTurn(state, 'repair', random.randomInt);
 
-    expect(finished).toEqual({
-      difficulty: 'agony',
-      status: 'dead',
+    expect(result.state).toMatchObject({
       turn: 31,
       hunger: 11,
       energy: 8,
-      food: 0,
-      health: 10,
-      hasShelter: true,
+      hasShelter: false,
       threat: 2,
+      status: 'dead',
       end: {
         condition: 'hunger',
         reportedCause: 'hunger',
         turnsSurvived: 30,
       },
     });
-    expect(threat.notice).toEqual({ threat: 2, load: 2 });
-    expect(random.calls).toEqual([
-      { min: 1, max: 10 },
-      { min: 1, max: 100 },
-    ]);
+    expect(result.randomEvents).toEqual([{ type: 'storm' }]);
+    expect(result.threatNotice).toBeNull();
+    // Solo la tirada de la reparación: la tormenta venía anunciada y una partida
+    // muerta no gasta una tirada en un turno que no existe.
+    expect(random.calls).toEqual([{ min: 1, max: 10 }]);
   });
 
-  it('aplica el evento de Agonía sobre el estado de la acción', () => {
-    const state = createCoreState({ difficulty: 'agony' });
-    const random = sequenceRandomInt([99]);
-
-    // Comer sin comida no tira nada, así que la única tirada que se ve aquí es
-    // la del evento: el meteorito quita salud sin haber gastado turno la acción.
-    const action = resolveAction(state, 'eat', random.randomInt);
-    const event = resolveRandomEvents(action.state, random.randomInt);
-    const threat = applyThreat(event.state);
-    const finished = finishGame(threat.state);
-
-    expect(finished).toMatchObject({
+  it('tira el evento del turno siguiente al terminar vivo', () => {
+    const state: GameState = {
+      ...createCoreState({ difficulty: 'agony' }),
       status: 'playing',
-      turn: 2,
-      health: 9,
-      threat: 0,
-    });
-    expect(threat.notice).toBeNull();
+    };
+    const random = sequenceRandomInt([99, 1]);
+
+    const result = resolveTurn(state, 'eat', random.randomInt);
+
+    // Comer sin comida no tira nada, así que la única tirada es la del evento del
+    // turno siguiente. El meteorito queda guardado y anunciado, no aplicado: la
+    // salud sigue intacta.
+    expect(result.state.pendingEvents).toEqual([{ type: 'meteorite' }]);
+    expect(result.state.health).toBe(10);
+    expect(result.randomEvents).toEqual([]);
     expect(random.calls).toEqual([{ min: 1, max: 100 }]);
+  });
+
+  it('aplica en el turno siguiente lo que el anterior dejó anunciado', () => {
+    // Es la telegrafía entera: un turno entero de aviso entre el dado y el daño.
+    const initial: GameState = {
+      ...createCoreState({ difficulty: 'agony' }),
+      status: 'playing',
+    };
+    const first = sequenceRandomInt([99]);
+    const afterFirst = resolveTurn(initial, 'eat', first.randomInt).state;
+
+    expect(afterFirst.pendingEvents).toEqual([{ type: 'meteorite' }]);
+    expect(afterFirst.health).toBe(10);
+
+    const second = sequenceRandomInt([1, 50]);
+    const result = resolveTurn(afterFirst, 'eat', second.randomInt);
+
+    expect(result.randomEvents).toEqual([{ type: 'meteorite' }]);
+    expect(result.state.health).toBe(9);
+  });
+
+  it('no deja eventos pendientes en una partida terminada', () => {
+    const state: GameState = {
+      ...createCoreState({ difficulty: 'agony', hunger: 10 }),
+      status: 'playing',
+      pendingEvents: [{ type: 'storm' }],
+    };
+    const random = sequenceRandomInt([1, 50]);
+
+    const result = resolveTurn(state, 'eat', random.randomInt);
+
+    expect(result.state.status).toBe('dead');
+    expect(result.state.pendingEvents).toEqual([]);
+  });
+
+  it('no tira eventos en Normal ni los anuncia', () => {
+    const state: GameState = {
+      ...createCoreState({ difficulty: 'normal' }),
+      status: 'playing',
+    };
+    const random = sequenceRandomInt([1, 50]);
+
+    const result = resolveTurn(state, 'eat', random.randomInt);
+
+    expect(result.state.pendingEvents).toEqual([]);
+    expect(random.calls).toEqual([]);
   });
 });
 

@@ -69,18 +69,22 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Jugar en Agonía' }));
 
     // El umbral 1 cae en el turno 10, así que el noveno descanso es el último
-    // antes del aviso de escalada.
+    // antes del aviso de escalada. La partida necesita once descansos para caer:
+    // con el evento telegrafiado el primer meteorito ya no se aplica en el turno
+    // uno, así que al undécimo es el que deja la salud en cero.
     for (let rest = 0; rest < 9; rest += 1) {
       await user.click(screen.getByRole('button', { name: /^Descansar/ }));
     }
 
     await user.click(screen.getByText('Haz click para continuar...'));
-    await user.click(screen.getByRole('button', { name: /^Descansar/ }));
+    for (let rest = 0; rest < 2; rest += 1) {
+      await user.click(screen.getByRole('button', { name: /^Descansar/ }));
+    }
 
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: 'La partida ha terminado',
+        name: 'Game Over',
       }),
     ).toHaveFocus();
     // Salud y energía se agotan el mismo turno, y el hambre también llega a 10.
@@ -89,7 +93,7 @@ describe('App', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       'El estómago vacío marcó tu final. Cada bocado perdido se cobró su precio.',
     );
-    expect(screen.getByText('10 turnos aguantados')).toBeInTheDocument();
+    expect(screen.getByText('11 turnos aguantados')).toBeInTheDocument();
 
     await user.click(
       screen.getByRole('button', { name: 'Volver a jugar' }),
@@ -123,7 +127,7 @@ describe('App', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: 'La partida ha terminado',
+        name: 'Game Over',
       }),
     ).toHaveFocus();
     expect(screen.getByText('Fin voluntario')).toBeInTheDocument();

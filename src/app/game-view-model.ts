@@ -12,6 +12,7 @@ import type {
 import type {
   ActionViewModel,
   EventViewModel,
+  ForecastViewModel,
   GameOverViewModel,
   GameViewModel,
   ResourceDeltaViewModel,
@@ -366,6 +367,51 @@ function eventCopy(event: GameEvent): EventViewModel {
   }
 }
 
+/**
+ * Aviso previo a cada evento, en el mismo orden en que la partida los usa.
+ *
+ * La tormenta va primera porque es la que se lleva el refugio, y sin techo
+ * descansar deja de rendir, así que es la que encadena. El meteorito va segundo
+ * porque quita salud directamente. El mapache va el último porque solo roba
+ * comida, que se recupera.
+ */
+const forecastCopy: Record<GameEvent['type'], Omit<ForecastViewModel, 'count'>> = {
+  storm: {
+    headline: 'El aire pesa.',
+    detail: 'Algo baja desde el norte. El refugio no lo va a resistir.',
+  },
+  raccoon: {
+    headline: 'Algo se mueve entre los árboles.',
+    detail: 'No es el viento. Huele a comida.',
+  },
+  meteorite: {
+    headline: 'Una luz cruza el cielo.',
+    detail: 'Va a hacer daño.',
+  },
+};
+
+const forecastOrder: readonly GameEvent['type'][] = ['storm', 'meteorite', 'raccoon'];
+
+/**
+ * Traduce la cola de eventos a un aviso.
+ *
+ * Con carga alta hay dos o tres tiradas por turno y la cola puede traer el mismo
+ * evento repetido. Se anuncia el que más pesa y se cuenta cuántos son, en vez de
+ * listarlos: una lista de tres líneas empuja los botones fuera de la pantalla, y
+ * lo que el jugador necesita para decidir es si viene algo grave y cuántas veces.
+ */
+function createForecast(pending: readonly GameEvent[]): ForecastViewModel | null {
+  const worst = forecastOrder.find((type) =>
+    pending.some((event) => event.type === type),
+  );
+
+  if (worst === undefined) {
+    return null;
+  }
+
+  return { ...forecastCopy[worst], count: pending.length };
+}
+
 const actionLabels: Record<GameAction, string> = {
   explore: 'Explorar',
   eat: 'Comer',
@@ -432,6 +478,7 @@ export function createGameViewModel(
     threat: game.threat,
     stats: statIds.map((id) => createResource(id, game)),
     shelter: createShelter(game),
+    forecast: createForecast(game.pendingEvents),
     resolution:
       resolution === null
         ? null

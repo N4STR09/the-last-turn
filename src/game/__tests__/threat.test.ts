@@ -13,6 +13,7 @@ import {
   foodRaid,
   foodRelief,
   MAX_THREAT_LOAD,
+  repairDemolishesShelter,
   repairFailureRadius,
   REPAIR_TURNS,
   REST_ENERGY_WITHOUT_SHELTER,
@@ -175,6 +176,19 @@ describe('modificadores de carga', () => {
     expect(failsAt(repairFailureRadius(0))).toEqual([5]);
     expect(failsAt(repairFailureRadius(10))).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9,
+    ]);
+  });
+
+  it('derriba el refugio al fallar la reparacion desde la carga 1', () => {
+    // La regla que rellena el primer escalón de la rampa. Solo puede dispararse
+    // sobre una tirada que ya era un fallo, así que no añade coste esperado: es la
+    // diferencia entre la curva de L1 y la de L0, cero modificadores antes.
+    const table = Array.from({ length: 12 }, (_, threat) =>
+      repairDemolishesShelter(threat),
+    );
+
+    expect(table).toEqual([
+      false, true, true, true, true, true, true, true, true, true, true, true,
     ]);
   });
 

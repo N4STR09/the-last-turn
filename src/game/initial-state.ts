@@ -11,5 +11,6 @@ export function createGame(difficulty: Difficulty): PlayingGameState {
     health: 10,
     hasShelter: false,
     threat: 0,
+    pendingEvents: [],
   };
 }

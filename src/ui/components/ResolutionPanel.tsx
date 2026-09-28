@@ -1,9 +1,10 @@
 import type { Difficulty } from '../../game/types';
-import type { ResolutionViewModel } from '../view-models/ui-types';
+import type { ForecastViewModel, ResolutionViewModel } from '../view-models/ui-types';
 import { Skull } from './Skull';
 
 export interface ResolutionPanelProps {
   readonly resolution: ResolutionViewModel | null;
+  readonly forecast: ForecastViewModel | null;
   readonly turn: number;
   readonly difficulty: Difficulty;
 }
@@ -18,12 +19,31 @@ export interface ResolutionPanelProps {
  */
 export function ResolutionPanel({
   resolution,
+  forecast,
   turn,
   difficulty,
 }: ResolutionPanelProps) {
   return (
     <section className="terminal" aria-label="Registro del turno">
       <Skull difficulty={difficulty} />
+      {forecast !== null ? (
+        // Vive fuera de la región viva a propósito. Es un aviso sobre el futuro,
+        // no un resultado: si compartiera `aria-live` con el registro, cada turno
+        // volvería a leer la calavera y el parte. Se anuncia con `role="status"`
+        // propio para que se oiga una vez, cuando cambia.
+        <p aria-live="polite" className="terminal__forecast" role="status">
+          <span className="terminal__forecast-mark" aria-hidden="true" />
+          <span className="terminal__forecast-head">{forecast.headline}</span>
+          <span className="terminal__forecast-detail">{forecast.detail}</span>
+          {/* El recuento solo cuando hay más de uno. Con carga alta el turno trae
+              hasta tres tiradas, y un "1" fijo mentiría en dos de cada tres. */}
+          {forecast.count > 1 ? (
+            <span className="terminal__forecast-count">
+              {`Vienen ${forecast.count} cosas.`}
+            </span>
+          ) : null}
+        </p>
+      ) : null}
       <div
         aria-atomic="true"
         aria-live="polite"

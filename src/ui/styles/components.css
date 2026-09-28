@@ -177,6 +177,11 @@
  * `color` pone el tono de la fila, y de ahí cuelgan tanto el texto como el
  * brillo de los bloques: un solo color por fila hace que no pueda desincronizarse
  * el número y su barra.
+ *
+ * El tono de la fila base es gris neutro, no el de ningún recurso. Cada fila
+ * lleva el suyo en su `stat--*`, así que la base no se ve nunca; ponerla aquí
+ * con un color de recurso solo sirve para que, cuando el hambre cambió de rojo a
+ * violeta, media interfaz heredara el violeta sin querer.
  */
 .stat {
   display: grid;
@@ -185,7 +190,7 @@
   gap: var(--space-3);
   min-width: 0;
   padding: 0.3rem 0;
-  color: var(--stat-hunger);
+  color: var(--color-text);
 }
 
 .stat--hunger {
@@ -464,8 +469,76 @@
   color: var(--stat-food);
 }
 
+/*
+ * Un cambio de recurso que avisa va en rojo de alarma, no en el tono del recurso
+ * que se movió. La fila de la cifra ya dice de qué recurso se trata, así que el
+ * tono del aviso no tiene que repetirlo: tiene que ser peligro, y el peligro en
+ * esta interfaz es un color solo.
+ */
 .terminal__deltas li[data-tone='warning'] {
-  color: var(--stat-hunger);
+  color: var(--color-alarm);
+}
+
+/*
+ * Aviso de lo que ya está tirado. Va por encima de la pantalla, no dentro: es
+ * una advertencia de futuro y el registro es el parte de lo que ya pasó. Mezclar
+ * los dos en la misma caja hacía que el aviso pareciera un resultado más, que es
+ * justo lo contrario de lo que significa.
+ *
+ * El matiz es el de la alarma, y no por capricho. Cuando el aviso nació se puso el
+ * del hambre porque las dos cosas eran rojas y nadie notó la diferencia; al
+ * moverse el hambre al violeta, el pronóstico se tiñó con ella y pasó a ser un
+ * aviso de un recurso que no es el que va a caer. La cuenta se cierra así: el
+ * aviso habla de la tormenta y del refugio, así que su color es el del peligro.
+ *
+ * Sigue siendo una ocasión de reaccionar y no una sentencia, y por eso la marca y
+ * el titular van en rojo de alarma y no en el rojo sangre de los estados
+ * terminales: el jugador todavía tiene un turno entero.
+ */
+.terminal__forecast {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.6ch;
+  margin: 0;
+  padding: var(--space-2) var(--space-5) var(--space-2);
+  border-bottom: 1px solid rgb(255 255 255 / 8%);
+  background: rgb(0 0 0 / 35%);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  text-shadow: 0 0 4px var(--color-terminal);
+}
+
+/*
+ * La marca no es decorativa: para quien no distingue el color es lo único que
+ * separa el aviso de una línea más del parte. Por eso lleva `aria-hidden` y no
+ * está en el texto, y por eso es un glifo y no un color.
+ */
+.terminal__forecast-mark {
+  /* `flex: none` para que la marca no se aplaste cuando el titular largo obliga
+     al aviso a repartirse en dos líneas: si se encoge, el borde desaparece y con
+     él la única pista que no depende del color. */
+  flex: none;
+  width: 0.5ch;
+  height: 1em;
+  border-left: 2px solid var(--color-alarm);
+}
+
+.terminal__forecast-head {
+  color: var(--color-alarm);
+  font-weight: 700;
+}
+
+.terminal__forecast-detail {
+  color: var(--color-muted);
+}
+
+.terminal__forecast-count {
+  color: var(--color-hint);
+  font-variant-numeric: tabular-nums;
 }
 
 .terminal__events {
@@ -576,12 +649,13 @@
 /*
  * Rendirse ocupa la fila entera debajo de las cinco acciones. Comparte su forma
  * para que se lea como una más, y no como un enlace olvidado en el margen, pero
- * es la única que tira la partida: por eso lleva la sangre en vez de blanco, y
- * por eso su halo es rojo y no el brillo general de la pantalla.
+ * es la única que tira la partida: por eso su texto va en rojo de alarma en vez de
+ * blanco, y por eso su marco y su halo son sangre y no el brillo general de la
+ * pantalla.
  */
 .action-button--surrender {
   grid-column: 1 / -1;
-  color: var(--stat-hunger);
+  color: var(--color-alarm);
   border-color: rgb(139 0 0 / 55%);
   background: rgb(139 0 0 / 10%);
 }
@@ -642,20 +716,29 @@
   text-transform: uppercase;
 }
 
+/*
+ * El mensaje de causa, sin recuadro. El borde rojo y el lavado de sangre
+ * tenían sentido sobre el panel claro, pero aquí la pantalla es negra entera y
+ * una caja dentro de una pantalla negra solo resta negro: lo que hace falta es
+ * que el texto se lea como la única frase que queda, no como un aviso más.
+ * Sobre negro, en blanco puro, es la segunda fuente de luz de la pantalla.
+ *
+ * Se queda el `role="alert"` del envoltorio: es el anuncio de la causa a un
+ * lector de pantalla, y no depende de que haya recuadro.
+ */
 .game-over-panel__alert {
   width: 100%;
-  margin: var(--space-5) 0;
-  border-left: 2px solid var(--color-blood);
-  padding: var(--space-3) var(--space-4);
-  background: rgb(139 0 0 / 14%);
+  margin: var(--space-2) 0;
 }
 
 .game-over-panel__alert p {
-  margin: 0;
-  color: var(--color-text);
+  max-width: 34ch;
+  margin: 0 auto;
+  color: var(--color-light);
   font-family: var(--font-display);
-  font-size: clamp(1.05rem, 2.3vw, 1.35rem);
+  font-size: clamp(1.05rem, 2.6vw, 1.5rem);
   line-height: 1.5;
+  text-wrap: balance;
 }
 
 .game-meta,

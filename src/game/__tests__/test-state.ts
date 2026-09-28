@@ -9,6 +9,7 @@ export const baseCoreState: GameCoreState = {
   health: 10,
   hasShelter: false,
   threat: 0,
+  pendingEvents: [],
 };
 
 export function createCoreState(

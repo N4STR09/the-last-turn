@@ -41,7 +41,7 @@ export function GameOverScreen({ model, onRestart }: GameOverScreenProps) {
       <section className="game-over-panel">
         <p className="eyebrow">{eyebrow}</p>
         <h1 id="game-over-title" tabIndex={-1}>
-          La partida ha terminado
+          Game Over
         </h1>
         <div className="game-over-panel__alert" role="alert">
           <p>{causeMessages[model.reportedCause]}</p>

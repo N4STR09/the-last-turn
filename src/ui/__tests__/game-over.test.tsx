@@ -18,7 +18,7 @@ describe('GameOverScreen', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: 'La partida ha terminado',
+        name: 'Game Over',
       }),
     ).toHaveAttribute('tabindex', '-1');
     expect(

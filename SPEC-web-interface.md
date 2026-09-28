@@ -23,6 +23,13 @@ Crear una interfaz oscura, atmosférica e interactiva para jugar *The Last Turn*
   tres por los dos lados.
 - El peligro es un color solo, `--color-alarm`, deliberadamente el mismo que el
   de la salud: no hay una segunda familia roja que compita con ella.
+- **Los cinco `--stat-*` son de un recurso y solo de un recurso**, y nada que no
+  sea la fila de ese recurso puede tomarlos. Cuando el hambre era roja, el botón
+  de rendirse, los cambios de recursos en tono de aviso y el pronóstico la
+  tomaban por ser el único rojo que no era `--color-alarm`; al moverse al violeta
+  se llevaron consigo tres cosas que no son hambre. Lo que avisa de peligro toma
+  `--color-alarm`; lo que solo necesita un color que no sea blanco toma
+  `--color-text` o `--color-hint`.
 - Tipografía del sistema: sans para el cuerpo, serif para los titulares y
   monoespaciada del sistema para la terminal. No se cargarán fuentes externas.
 - El nombre del juego usa su propia pila gótica, `--font-title`:
@@ -155,9 +162,12 @@ Eso no significa que la salud deje de tener reglas: cada punto que se pierde se 
 
 ### 4. Fin de partida
 
-- Título claro de derrota.
-- Texto correspondiente a `end.reportedCause`, respetando la precedencia fiel del C.
-- Total de turnos aguantados: `end.turnsSurvived`.
+Pantalla **negra de punta a punta**, sin tarjeta ni panel: al terminar no queda interfaz, queda el anuncio de que se acabó. El negro cubre la pantalla entera, como el diálogo de rendirse y el aviso de escalada, y la composición va centrada como la del inicio.
+
+- Rótulo superior: `Fin voluntario` si la causa es `surrender`, si no `El último aliento`.
+- Título `Game Over` en rojo de alarma `--color-alarm`, en la serif de titular, en negrita, con el halo en rojo sangre. Es lo único rojo de la pantalla, a propósito: en un negro entero una sola cosa puede brillar, y lo que tiene que brillar es que se acabó. El relleno va en alarma y no en `--color-blood` porque sobre negro puro la sangre da 2.02:1 y un título grande necesita 3:1; el halo sí es sangre, porque el halo es luz y no forma.
+- Mensaje de causa, en la serif de titular y blanco puro, centrado: el texto correspondiente a `end.reportedCause`, respetando la precedencia fiel del C. Se anuncia con `role="alert"`.
+- Datos de la partida, en monoespaciada y centrados: dificultad y total de turnos aguantados, `end.turnsSurvived`.
 - Botón “Volver a jugar” que vuelve a la selección de dificultad y descarta la partida anterior.
 
 No habrá pantalla de victoria en esta migración.

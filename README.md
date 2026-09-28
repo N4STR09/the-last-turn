@@ -2,7 +2,7 @@
 
 Versión web de *The Last Turn* construida con React + Vite + TypeScript. La aplicación parte del prototipo C auditado y aplica explícitamente tres capas: la **supervivencia** (no hay victoria, comer consume una ración y reduce el hambre), la **escalada progresiva de dificultad** (un nivel de amenaza que sube solo con el avance de la partida y que endurece las reglas de forma continua) y el **rediseño de acciones** (cinco acciones con una sola función cada una, la salud como cifra visible y administrable, y la comida convertida en el único recurso con tres sumideros que compiten entre sí: calorías, medicina y reserva).
 
-No hay victoria. La partida siempre termina; la única forma de durar más es aguantar más turnos frente a una escalada que no se detiene. Con juego ordenado en Normal la mediana es el turno 118 y el techo absoluto con el mejor azar posible es el 153, así que la escalada aprieta sin convertirse en un muro.
+No hay victoria. La partida siempre termina; la única forma de durar más es aguantar más turnos frente a una escalada que no se detiene. Con juego ordenado en Normal la mediana es el turno 119 y el techo absoluto con el mejor azar posible es el 152, así que la escalada aprieta sin convertirse en un muro.
 
 La aplicación es una web 100 % estática preparada para publicarse en Cloudflare Pages. No tiene backend, cuentas, multijugador, telemetría, persistencia, Web Storage, endpoints ni recursos de terceros en runtime. Una persona jugará abriendo una URL HTTPS, sin instalar ni configurar nada.
 
@@ -72,7 +72,7 @@ La guía completa para integración Git, carga directa, aceptación, rollback y 
 4. Cada acción actualiza la resolución y, cuando corresponde, el turno y los recursos.
 5. Al subir la dificultad, la partida se congela a negro con un aviso de escalada. Un click, `Enter` o `Espacio` lo descarta y la partida continúa desde el turno en que estaba, ya con el incremento aplicado.
 6. **Rendirse** es la última fila de la rejilla, y no es una acción: no gasta turnos ni tira dados. Pide confirmación, y al confirmar termina la partida. El diálogo cierra con `Escape` o con «Seguir jugando», nunca con un click fuera. No tiene atajo de teclado, a propósito.
-7. La pantalla final muestra la causa comunicada, la dificultad y los turnos aguantados. Si te rendiste, el rótulo dice «Fin voluntario» en lugar de «El último aliento». **Volver a jugar** regresa a la selección de dificultad.
+7. Al terminar, la pantalla se queda **negra de punta a punta**, sin tarjeta: solo un **Game Over** en rojo brillante, el mensaje jocoso de la causa de muerte debajo y los datos de la partida —dificultad y turnos aguantados— en monoespaciada. Si te rendiste, el rótulo de arriba dice «Fin voluntario» en lugar de «El último aliento». **Volver a jugar** regresa a la selección de dificultad.
 
 Durante la partida también funcionan los atajos `E` (explorar), `C` (comer), `S` (curarse), `D` (descansar) y `R` (reparar), que son las iniciales de los verbos. Los atajos se desactivan fuera de la partida, no interfieren con controles interactivos y quedan inactivos mientras el aviso de escalada o la confirmación de rendirse están abiertos.
 
@@ -94,16 +94,40 @@ Medido con el motor real sobre 400 semillas, no estimado:
 
 | Medida | Turno |
 |---|---:|
-| Normal, mediana con juego ordenado | 118 |
-| Normal, percentil 90 | 147 |
-| Normal, máximo observado | 172 |
-| Normal, techo absoluto con el mejor azar posible en cada tirada | **153** |
+| Normal, mediana con juego ordenado | 119 |
+| Normal, percentil 90 | 145 |
+| Normal, máximo observado | 166 |
+| Normal, techo absoluto con el mejor azar posible en cada tirada | **152** |
+| Agonía, mediana | 38 |
+| Agonía, techo absoluto con el mejor azar posible | **152** |
 
 El primer nivel salta en el turno 10 y el octavo en el 136, así que **los niveles 1 a 8 de la rampa quedan dentro del alcance alcanzable**. El noveno y el décimo empiezan en los turnos 162 y 190, por encima de cualquier ruta medible: es donde el juego pasa de difícil a histórico.
 
-El máximo observado (172) está por encima del techo con el mejor azar (153) y no es una contradicción: el «mejor azar posible» fuerza el hallazgo grande en cada exploración, y el hallazgo grande cuesta entre 2 y 5 de salud. Una partida que juega normal y tiene suerte de vez en cuando vive más que una que acierta el premio grande todas las veces.
+El máximo observado (166) está por encima del techo con el mejor azar (152) y no es una contradicción: el «mejor azar posible» fuerza el hallazgo grande en cada exploración, y el hallazgo grande cuesta entre 2 y 5 de salud. Una partida que juega normal y tiene suerte de vez en cuando vive más que una que acierta el premio grande todas las veces.
 
-**Agonía es mucho más corta:** mediana 31, máximo 57, y 57 % de las muertes por energía. Su fractura estructural —el recargo de energía por evento y la tormenta que anulaba el descanso en el mismo turno— está arreglada, pero el impuesto de la tormenta (10 % por tirada, y reparar cuesta dos turnos) sigue marcando el techo. Se acepta como dificultad y no como defecto; si al jugarlo se lee como un muro, esa decisión hay que revertirla.
+**Agonía no es más corta, es más variable.** Su techo medido es el mismo que el de
+Normal, 152. Apagando los eventos, Agonía da 121 y Normal 119: el hueco entero son
+los eventos, no la aritmética de la escalada. Con la tormenta al 4 % su mediana
+pasa de 29 a 38 y las tormentas por partida de 2.42 a 1.24, con reparto L1 11.5 % /
+L2 27.0 % / L3 49.8 % / L4 11.8 %.
+
+El motivo por el que era un muro está medido en el orden de resolución: el 52 % de
+las partidas de Agonía morían en los tres turnos siguientes a una tormenta, y 181 de
+201 muertes por energía tenían una tormenta en los seis turnos previos, porque el
+evento caía sobre un turno que el jugador ya había decidido y ya había pagado. Por
+eso el azar se adelanta una tirada: se guarda en `pendingEvents` y se aplica al
+turno siguiente, de modo que el pronóstico avisa antes de que la persona elija.
+**Los niveles 9 y 10 no son alcanzables, y es un problema abierto.** El mejor azar
+posible muere en el turno 152, y sus umbrales están en 162 y 190. Además L1, L5 y
+L7 no cambian ningún modificador, lo que parece una omisión pero es aritmética: la
+carga es el propio nivel y todos los modificadores son `⌊load / k⌋`, así que dividir
+enteros produce mesetas —con `k = 3`, los niveles 6, 7 y 8 dan 2, 2 y 2. Se
+implementaron y midieron reglas para L5 y L7 y se descartaron: toda regla que
+aguanta la partida baja el techo, y el techo es lo que dejaría L9 dentro de
+alcance. Rellenar la meseta y alcanzar L9 se contradicen con la forma de rampa
+actual. La única que entra es la de la carga 1, un fallo al reparar derriba el
+refugio, porque solo puede dispararse sobre una tirada que ya era un fallo y no
+cuesta nada medible.
 
 ## Estructura
 

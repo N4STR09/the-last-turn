@@ -259,7 +259,7 @@ describe('resolveAction', () => {
       expect(calls).toEqual([{ min: 1, max: 10 }]);
     });
 
-    it('conserva un refugio existente cuando falla', () => {
+    it('conserva un refugio existente cuando falla en carga 0', () => {
       const state = createCoreState({ hasShelter: true });
 
       const { resolution } = resolve(state, 'repair', [5]);
@@ -273,6 +273,36 @@ describe('resolveAction', () => {
         }),
         outcome: { type: 'repair-failed' },
       });
+    });
+
+    it('derriba el refugio cuando falla desde la carga 1 en adelante', () => {
+      // La carga 1 es el turno 10, el primer aviso de escalada, y es el nivel que
+      // no cambiaba ningún modificador. Un aviso al que no le pasa nada se lee
+      // como un error de pantalla.
+      const state = createCoreState({ hasShelter: true, threat: 1 });
+
+      const { resolution } = resolve(state, 'repair', [5]);
+
+      expect(resolution).toEqual({
+        state: createCoreState({
+          turn: 3,
+          hunger: 2,
+          energy: 8,
+          threat: 1,
+          hasShelter: false,
+        }),
+        outcome: { type: 'repair-failed' },
+      });
+    });
+
+    it('derriba el refugio igual con la carga saturada al tope', () => {
+      // La condición es sobre la carga, no sobre el nivel, así que el tope tiene
+      // que comportarse como cualquier otro valor alto.
+      const state = createCoreState({ hasShelter: true, threat: 99 });
+
+      const { resolution } = resolve(state, 'repair', [5]);
+
+      expect(resolution.state.hasShelter).toBe(false);
     });
 
     it.each([1, 10])(

@@ -2,6 +2,7 @@ export { createGame } from './initial-state';
 export { resolveTurn } from './engine';
 export { surrenderGame } from './end-state';
 export { actionCost, actionTurns } from './action-cost';
+export { applyRandomEvents, rollRandomEvents } from './events';
 export {
   applyThreat,
   CURE_FOOD_COST,
@@ -13,6 +14,7 @@ export {
   hungerPerTurn,
   MAX_THREAT_LOAD,
   REPAIR_TURNS,
+  repairDemolishesShelter,
   REST_ENERGY_WITHOUT_SHELTER,
   threatForTurn,
   threatLoad,

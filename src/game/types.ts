@@ -46,6 +46,18 @@ export interface GameCoreState {
   readonly health: number;
   readonly hasShelter: boolean;
   readonly threat: number;
+  /**
+   * Eventos ya tirados que caen en el PRÓXIMO turno.
+   *
+   * No es un recurso ni un dato que el jugador administre: es la memoria del
+   * motor sobre el dado que ya sorteó. Vive en el estado porque es la única forma
+   * de que un turno pueda aplicar lo que el anterior sorteó, y de que la interfaz
+   * pueda anunciarlo antes de que el jugador elija. Al empezar la partida está
+   * vacía, así que el primer turno no tiene nada anunciado.
+   *
+   * Cuando la partida termina queda vacía: no hay nada que venga después.
+   */
+  readonly pendingEvents: readonly GameEvent[];
 }
 
 /**
@@ -125,8 +137,15 @@ export interface GameResolution {
   readonly state: GameState;
   readonly actionOutcome: ActionOutcome;
   /**
-   * Lista de eventos de la resolución. Con tiradas extra una acción puede
-   * provocar más de uno, y cada tirada se aplica sobre el estado anterior.
+   * Los eventos que han CAÍDO este turno, ya aplicados sobre el estado.
+   *
+   * Con tiradas extra una acción puede provocar más de uno, y cada tirada se
+   * aplica sobre el estado que dejó la anterior.
+   *
+   * Es la misma lista que la del turno anterior en `state.pendingEvents`, vista un
+   * momento antes y otro después. Aquí ya hizo efecto; allí solo estaba anunciado.
+   * El orden importa y por eso viaja: lo que se anuncia es exactamente lo que cae,
+   * en el mismo orden, o el aviso estaría mintiendo.
    */
   readonly randomEvents: readonly GameEvent[];
   readonly threatNotice: ThreatNotice | null;

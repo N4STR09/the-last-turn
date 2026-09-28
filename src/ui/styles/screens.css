@@ -37,15 +37,26 @@
 }
 
 /*
- * La pantalla de inicio no lleva panel. Un marco alrededor del título lo
- * convertiría en una tarjeta de aplicación, y lo que se busca es lo
- * contrario: negro, y una luz en mitad de la nada.
+ * La pantalla de muerte es negro de punta a punta y no lleva tarjeta. Un marco
+ * con borde y fondo alrededor del aviso lo convertiría en un panel de
+ * aplicación, que es justo lo contrario de lo que se busca: al terminar no queda
+ * interfaz, queda el anuncio de que se acabó y los datos de lo que se perdió.
+ * Por eso el negro sube a la pantalla entera y no a la columna de contenido, lo
+ * mismo que hacen los dos estados que también paran la partida, el diálogo de
+ * rendirse y el aviso de escalada.
+ *
+ * Y por lo mismo la composición va centrada, como la del inicio: negro, y una
+ * luz en mitad de la nada.
  */
+.screen--game-over {
+  width: 100%;
+  max-width: none;
+  background: #000;
+}
+
 .game-over-panel {
-  border: 1px solid rgb(255 255 255 / 9%);
-  border-radius: 2px;
-  background: var(--color-panel);
-  overflow: hidden;
+  justify-items: center;
+  text-align: center;
 }
 
 .screen--start .hero-panel {
@@ -209,15 +220,30 @@
   overflow: hidden;
 }
 
+/*
+ * Lo único rojo de la pantalla, y a propósito: en un negro entero una sola cosa
+ * puede brillar, y lo que tiene que brillar es que se acabó.
+ *
+ * El relleno va en `--color-alarm`, no en `--color-blood`. Sobre negro puro el
+ * rojo de alarma da 7.0:1 y el de sangre 2.02:1, así que un título en sangre no
+ * llegaría ni al 3:1 que WCAG exige al texto grande: se leería por el halo y no
+ * por las letras. El halo sí es sangre, porque el halo es luz y no forma, y
+ * porque es lo que hace que parezca una lápida y no un error.
+ */
 .game-over-panel h1 {
-  max-width: 12ch;
-  color: var(--color-light);
+  color: var(--color-alarm);
   font-size: clamp(2.1rem, 7vw, 3.5rem);
-  text-shadow: var(--glow-far);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-shadow:
+    var(--glow-far),
+    0 0 1.2em var(--color-blood);
 }
 
 .game-over-meta {
   width: 100%;
+  justify-content: center;
+  text-align: center;
 }
 
 @media (max-width: 760px) {

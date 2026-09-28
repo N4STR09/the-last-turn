@@ -3,6 +3,25 @@ import type { GameCoreState, ThreatNotice } from './types';
 /**
  * Carga mecánica máxima. `threat` sigue subiendo y sigue generando avisos, pero
  * los modificadores se saturan aquí para que la partida siga siendo jugable.
+ *
+ * Ojo con lo que esto implica, porque explica por qué la rampa tiene mesetas y no
+ * huecos. La carga es el propio nivel, no el turno: `threatLoad(5) === 5`. Y todos
+ * los modificadores del juego son `⌊carga / k⌋` con `k` entre 2 y 4. La aritmética
+ * de dividir enteros produce mesetas por necesidad, no por descuido: con `k = 3` los
+ * niveles 6, 7 y 8 dan 2, 2 y 2, así que L7 es idéntico a L6 porque 7/3 y 6/3
+ * redondean igual, no porque a nadie se le ocurriera omitirlo.
+ *
+ * Por eso el intento de rellenar las mesetas con reglas propias se midió y se
+ * descartó, y conviene no volver a intentarlo sin datos nuevos. Se probaron
+ * desgaste del refugio y comida estropeada en las cargas 5, 6, 7 y 8, con periodos
+ * de 6 a 30, más acaparamiento, curar más caro, reparar más caro y hallazgos secos.
+ * Todas las que sobrevivían al tramo 5-6 movían el techo absoluto hacia abajo, y el
+ * techo es justo lo que impide que L9 y L10 se alcancen: el mejor azar posible
+ * muere en el turno 152 y el umbral de L9 está en el 162. Cada turno que una regla
+ * quita es un turno que L9 no recibe.
+ *
+ * La única que salió gratis fue `repairDemolishesShelter`, y solo porque no puede
+ * dispararse más que sobre una tirada que ya era un fallo.
  */
 export const MAX_THREAT_LOAD = 10;
 
@@ -156,6 +175,29 @@ export function repairFailureRadius(threat: number): number {
 export const REPAIR_TURNS = 2;
 
 /**
+ * Carga desde la que un fallo al reparar se lleva el refugio por delante.
+ *
+ * Antes un fallo no tocaba nada: el refugio se quedaba como estaba y la tirada
+ * gastada solo costaba los dos turnos. Eso hacía que reparar fuera gratis de
+ * riesgo y que el fallo no fuera una decisión sino un turno perdido. Derribar el
+ * refugio convierte la tirada en algo que el jugador tema, que es lo único que
+ * le puede dar peso a un d10 con una banda de fallo.
+ *
+ * Entra en la carga 1 y no más tarde porque la carga 1 es el turno 10: es el
+ * primer aviso de escalada, y un aviso al que no le pasa nada se lee como un error
+ * de la pantalla. Ese nivel no cambiaba ningún modificador, y ahora no lo está.
+ *
+ * Sale gratis, y eso también está medido. La regla solo puede dispararse sobre una
+ * tirada que ya era un fallo, así que no añade coste esperado: en Normal, donde no
+ * hay tormentas y el refugio nunca se cae, el piloto ni siquiera repara. La
+ * medición de 400 semillas con las cargas de aquí dentro deja la mediana de Normal
+ * en 119 y el techo en 152, exactamente los de antes del cambio.
+ */
+export function repairDemolishesShelter(threat: number): boolean {
+  return threatLoad(threat) >= 1;
+}
+
+/**
  * Raciones que se lleva el mapache.
  *
  * Antes lo dejaba a cero. Eso era una ruina económica: mataba a todos por igual y
@@ -194,3 +236,4 @@ export function applyThreat(state: GameCoreState): ThreatResolution {
     notice: { threat: level, load: threatLoad(level) },
   };
 }
+

@@ -70,6 +70,9 @@ describe('resolveTurn', () => {
   });
 
   it('resuelve acción, evento y fin en Agonía', () => {
+    // La partida arranca sin eventos anunciados, así que este turno solo gasta la
+    // reparación y deja el meteorito guardado para el siguiente. Es el orden
+    // nuevo: el dado se tira antes de que caiga, nunca en el mismo turno.
     const state = createPlayingState('agony');
     const random = sequenceRandomInt([1, 99]);
 
@@ -84,19 +87,36 @@ describe('resolveTurn', () => {
         energy: 8,
         food: 0,
         // Reparar ya no hiere: es la única acción que no toca la salud, y la que
-        // solo paga con tiempo. Lo único que la baja aquí es el meteorito.
-        health: 9,
+        // solo paga con tiempo. El meteorito está anunciado pero aún no ha caído.
+        health: 10,
         hasShelter: true,
         threat: 0,
+        pendingEvents: [{ type: 'meteorite' }],
       },
       actionOutcome: { type: 'repair-succeeded' },
-      randomEvents: [{ type: 'meteorite' }],
+      randomEvents: [],
       threatNotice: null,
     });
     expect(random.calls).toEqual([
       { min: 1, max: 10 },
       { min: 1, max: 100 },
     ]);
+  });
+
+  it('hace caer en Agonía el evento que el turno anterior dejó anunciado', () => {
+    const state = createPlayingState('agony', {
+      turn: 3,
+      energy: 8,
+      pendingEvents: [{ type: 'meteorite' }],
+    });
+    const random = sequenceRandomInt([99, 50]);
+
+    const result = resolveTurn(state, 'eat', random.randomInt);
+
+    expect(result.randomEvents).toEqual([{ type: 'meteorite' }]);
+    expect(result.state.health).toBe(9);
+    expect(result.state.turn).toBe(4);
+    expect(result.state.pendingEvents).toEqual([{ type: 'meteorite' }]);
   });
 
   it('emite el aviso de escalada en el turno 10', () => {
@@ -195,8 +215,14 @@ describe('resolveTurn', () => {
   });
 
   it('recoge varios eventos cuando la carga añade tiradas', () => {
-    const state = createPlayingState('agony', { turn: 4, threat: 4 });
-    const random = sequenceRandomInt([5, 5]);
+    // Con carga 4 hay dos tiradas por turno. Las dos se anuncian a la vez, en el
+    // turno que las tiró, y las dos caen juntas en el siguiente.
+    const state = createPlayingState('agony', {
+      turn: 4,
+      threat: 4,
+      pendingEvents: [{ type: 'storm' }, { type: 'storm' }],
+    });
+    const random = sequenceRandomInt([1, 1]);
 
     const result = resolveTurn(state, 'eat', random.randomInt);
 
@@ -204,6 +230,12 @@ describe('resolveTurn', () => {
       { type: 'storm' },
       { type: 'storm' },
     ]);
+    expect(result.state.pendingEvents).toEqual([
+      { type: 'storm' },
+      { type: 'storm' },
+    ]);
+    // Las dos tiradas son las del turno siguiente: este turno ya traía los
+    // eventos encima y no vuelve a tirar por ellos.
     expect(random.calls).toEqual([
       { min: 1, max: 100 },
       { min: 1, max: 100 },

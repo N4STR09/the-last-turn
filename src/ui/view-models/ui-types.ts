@@ -52,6 +52,22 @@ export interface EventViewModel {
   readonly description: string;
 }
 
+/**
+ * Lo que ya está tirado y va a caer en el turno siguiente.
+ *
+ * No es un resultado: es un aviso. El motor tira el evento al final de un turno y
+ * lo guarda, así que la partida entera le da al jugador un turno entero de
+ * reacción antes de que el dado cobre. La medición que lo justifica: el 52 % de
+ * las partidas de Agonía terminaban en los tres turnos siguientes a una tormenta
+ * y el 90 % de las muertes por energía tenían una a la vista.
+ */
+export interface ForecastViewModel {
+  readonly headline: string;
+  readonly detail: string;
+  /** Cuántos eventos hay en cola, para no prometer solo el primero. */
+  readonly count: number;
+}
+
 export interface ResolutionViewModel {
   readonly actionId: GameAction;
   readonly headline: string;
@@ -80,6 +96,11 @@ export interface GameViewModel {
   readonly stats: ReadonlyArray<ResourceViewModel>;
   /** El refugio, en su propia línea debajo de las cifras. */
   readonly shelter: ShelterViewModel;
+  /**
+   * El aviso de lo que ya está tirado para el turno siguiente. `null` en Normal y
+   * cuando no hay nada en cola, que incluye el primer turno de cada partida.
+   */
+  readonly forecast: ForecastViewModel | null;
   readonly resolution: ResolutionViewModel | null;
   readonly actions: ReadonlyArray<ActionViewModel>;
 }

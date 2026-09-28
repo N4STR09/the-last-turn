@@ -1,6 +1,6 @@
 # Registro de QA final
 
-**Fecha:** 25 de septiembre de 2026, revisado el 28 tras el rediseño de acciones
+**Fecha:** 25 de septiembre de 2026, revisado el 28 tras el rediseño de acciones y el arreglo de colores y pantalla de muerte
 **Alcance:** entrega web estática de *The Last Turn Web* con las reglas de la Fase 1 de supervivencia, la Fase 2 de escalada progresiva, el rediseño completo de la interfaz y el rediseño de acciones de la Fase 5
 
 ## Estado de este registro
@@ -157,6 +157,11 @@ Los cuatro cambios de la válvula: `extraHungerPerTurn` a `min(4, ⌊load/3⌋)`
 | Causa de muerte en Normal | — | 57 % hambre / 43 % salud |
 | Causa de muerte en Agonía | — | 57 % energía / 32 % hambre / 11 % salud |
 
+**Estas cifras son de su fecha.** Se midieron con las siete acciones anteriores al
+rediseño y con la tormenta al 10 %. El techo vigente del juego de hoy es 152, con
+mediana 119 en Normal y 38 en Agonía, y se mide en el bloque siguiente. Cuando las
+dos cifras conviven en el documento, la que describe el juego de hoy es 152.
+
 El máximo (172) por encima del techo con mejor azar (153) no es una
 contradicción y conviene no perderlo: el «mejor azar posible» fuerza el hallazgo
 grande en cada exploración, y el hallazgo grande cuesta entre 2 y 5 de salud. Una
@@ -164,12 +169,32 @@ partida que juega normal y tiene suerte de vez en cuando vive más que una que
 acierta el premio grande todas las veces. Es exactamente lo que persigue la
 paridad entre `cureAmount` y `exploreWound`.
 
-Un dato incómodo queda sin cerrar: **Agonía sigue siendo mucho más corta que
-Normal** (mediana 31 frente a 118) y el arreglo la movió tres turnos. El muro de
-Agonía no es aritmético, es el impuesto de la tormenta: tirada al 10 % por vuelta,
-y reparar cuesta dos turnos. Se acepta como dificultad, no como defecto, y por
-eso el techo de 153 se define sobre Normal. Está anotado en `SPEC-threat.md` como
-`D-02` cerrado pero con el techo de Agonía fuera de alcance medible.
+Un dato incómodo queda cerrado, y el cierre cambia el diagnóstico. **Agonía ya
+no es cuatro veces más corta que Normal**: la tormenta bajó del 10 % al 4 % y la
+mediana de Agonía pasó de 29 a 38, con reparto L1 11.5 % / L2 27.0 % / L3 49.8 % /
+L4 11.8 % y 1.24 tormentas por partida en vez de 2.42. La mediana de Normal no se
+mueve: 119, con techo 152.
+Lo que la medición dejó claro es que Agonía no es «más corta» sino **más
+variable**. El techo de las dos dificultades es el mismo, 152. Apagando los
+eventos, Agonía da 121 y Normal 119: el hueco entero son los eventos, no la
+aritmética de la escalada. Y el motivo está medido en el orden de resolución: el
+52 % de las partidas de Agonía morían en los tres turnos siguientes a una tormenta,
+y 181 de 201 muertes por energía tenían una tormenta en los seis turnos previos. El
+evento caía sobre un turno que el jugador ya había decidido y ya había pagado.
+Por eso el arreglo es de orden y no de números: el azar se adelanta una tirada, se
+guarda en `GameCoreState.pendingEvents` y se aplica al turno siguiente, de modo que
+el pronóstico avisa antes de que la persona elija.
+Queda un problema abierto y declarado: **L9 y L10 no son alcanzables**, y no por
+falta de suerte. El mejor azar posible muere en el turno 152, el umbral de L9 está
+en el 162 y el de L10 en el 190. L1, L5 y L7 no cambian ningún modificador, y
+rellenarlos se midió entero —desgaste del refugio y comida estropeada en las cargas
+5 a 8, con periodos de 6 a 30 turnos, más acaparamiento, curar más caro, reparar
+más caro y hallazgos secos— y se descartó: toda regla que aguanta la partida baja
+el techo, y el techo es justamente lo que dejaría L9 dentro de alcance. La
+explicación de las mesetas es aritmética, no una omisión: la carga es el propio
+nivel y todos los modificadores son `⌊load / k⌋`, así que dividir enteros las
+produce. Está en `SPEC-threat.md` como `D-05`, con la tabla completa de lo medido.
+Atacar L9 exigiría bajar `threshold(n)`, que es una decisión de alcance.
 
 ### Cobertura de la regresión
 
@@ -444,12 +469,78 @@ el despliegue.
 - **La sensación de endless.** Que 118 de mediana y 172 de máximo produzcan la
   tensión buscada no lo dice ninguna prueba. Un número alto puede sentirse como
   una lista larga de lo mismo.
-- **Que Agonía siga siendo un modo y no un muro.** Su techo medido es 57 frente a
-  los 153 de Normal. La fractura estructural está arreglada, pero el impuesto de
-  la tormenta sigue marcando el techo. Si al probarlo en navegador se lee como
-  un muro y no como un modo, la Fase 5 no está cerrada.
+- **Que Agonía siga siendo un modo y no un muro.** El techo medido ya no la
+  distingue: 152 en las dos dificultades, con medianas de 119 y 38. Lo que queda
+  por ver en navegador es si la telegrafía convierte la tormenta en una decisión en
+  vez de en una lotería, que es justo lo que se cambió para lograrlo.
+- **Que el pronóstico se lea bien con lector de pantalla.** Vive fuera de
+  `.terminal__screen` y lleva su propio `role="status"`, precisamente para no
+  releer el parte. Eso está pensado y probado, pero no está verificado en un
+  lector real.
 - **La inspección de residuos en `dist/`** tras el despliegue, sobre todo que no
   queden cadenas de `forage`, `fish` ni los textos de los hitos.
+
+## Colores y pantalla de muerte
+
+Dos arreglos de interfaz sobre el mismo defecto de fondo: la interfaz tomaba el
+color de un recurso para cosas que no son un recurso.
+
+### El violeta que se comió media interfaz
+
+Cuando el hambre pasó de rojo a violeta en `93d4176`, tres elementos que
+referenciaban `var(--stat-hunger)` se volvieron violetas sin que nadie lo pidiera.
+Los tres lo hacían por la misma razón equivocada: era el único rojo de la paleta
+que no era `--color-alarm`, y eso bastaba para tomarlo.
+
+| Elemento | Toma el color de | Por qué |
+|---|---|---|
+| `.action-button--surrender` | `--color-alarm` | Tiraba la partida, y su propio comentario decía que por eso iba en rojo y no en blanco. |
+| `.terminal__deltas li[data-tone='warning']` | `--color-alarm` | Un cambio de recurso que avisa es peligro, y el peligro en esta interfaz es un color solo. |
+| `.terminal__forecast-head` y su marca | `--color-alarm` | Avisa de una tormenta sobre el refugio. En violeta se leía como un aviso del hambre, que no es lo que va a caer. |
+
+También `.stat` —la fila base, sin modificador— tomaba `--stat-hunger`. No se ve
+nunca, porque cada fila lleva su `stat--*`, pero quedaba como un `--stat-hunger`
+sin dueño. Ahora es `--color-text`.
+
+**Cómo se evita que vuelva.** Los cinco `--stat-*` quedan declarados en
+`tokens.css` y en `SPEC-web-interface.md` como de un recurso y solo de un recurso,
+con el ejemplo concreto de estos tres. La fila base de un recurso no puede llevar
+el tono de otro.
+
+Verificado sobre el CSS compilado de `dist/`: `.stat--hunger` conserva
+`var(--stat-hunger)` y es la única declaración del fichero que lo usa; las tres
+anteriores emiten `var(--color-alarm)`.
+
+### La pantalla de muerte
+
+Rehecha a negro de punta a punta, sin la tarjeta con borde y fondo, y centrada
+como la del inicio. Encima el rótulo de siempre, `Game Over` en rojo de alarma
+con el halo en rojo sangre, debajo el mensaje jocoso de la causa en blanco puro y
+sin recuadro, y debajo los datos de la partida en monoespaciada y centrados. Se
+conservan el `role="alert"` de la causa, el `tabIndex={-1}` del `h1` y los
+mensajes de `causeMessages`, que las pruebas ya fijaban.
+
+El título va en `--color-alarm` y no en `--color-blood` por contraste y no por
+gusto: sobre negro puro el rojo de alarma da 7.0:1 y el de sangre 2.02:1, y un
+título grande necesita 3:1. En sangre el texto se leería por el halo y no por las
+letras. El halo sí es sangre, porque el halo es luz y no forma.
+
+Cambian cuatro `expect` de nombre de encabezado: dos en `src/App.test.tsx`, uno en
+`src/ui/__tests__/game-over.test.tsx` y uno en
+`src/app/__tests__/use-game-session.test.tsx`. 351 pruebas en verde, `src/game` y
+`src/ui` al 100 %.
+
+### Lo que sigue sin comprobarse
+
+- **En navegador, los dos arreglos.** Que el negro cubra la pantalla entera y no
+  deje los bordes del fondo de página, que la composición centrada no se descentre
+  en móvil, y sobre todo que el `Game Over` rojo se lea como una lápida y no como
+  un error de estilo. Ninguna prueba automática dice nada de eso: los cuatro
+  `expect` que han cambiado comprueban el nombre accesible del encabezado, y el
+  color no entra en el árbol de accesibilidad.
+- **Que el violeta no se haya colado en ningún otro sitio.** El barrido fue sobre
+  `src/`, y sobre `dist/` solo se miraron las tres reglas concretas. Un barrido de
+  color sobre el bundle completo, no solo de `--stat-hunger`, sigue pendiente.
 
 ## Aceptación en la URL pública (Fase 2, desplegada)
 
@@ -538,6 +629,12 @@ Queda pendiente, y no se afirma aquí ningún resultado hasta ejecutarlo:
   veces seguidas, para confirmar que el copy cicla y que la escalada se nota.
 - Repetición de anchos 320, 360, 768 y 1440 px, objetivos táctiles, movimiento
   reducido, consola y red sobre el build actual.
+- Recorrido del pronóstico: que la terminal anuncie el evento que va a caer antes
+  de elegir la acción, que cuente cuántos hay cuando son varios, y que no se vuelva
+  a leer el parte entero por el lector de pantalla, porque el pronóstico vive
+  fuera de `.terminal__screen` con su propio `role="status"`.
+- Recorrido de la carga 1: una partida donde un fallo al reparar derribe el
+  refugio, que es la única regla nueva de la rampa.
 - Barrido de residuos en `dist/`: que no queden `forage`, `fish`, `Auxiliary`,
   `Ayuda`, `Hito` ni los textos de los hitos de los turnos 15 y 30.
 - Confirmación de infraestructura en el dashboard de Cloudflare: si el proyecto
@@ -545,5 +642,9 @@ Queda pendiente, y no se afirma aquí ningún resultado hasta ejecutarlo:
 - Empuje a `origin/main` y redespliegue, que requieren autorización explícita.
 
 `D-01`, `D-02` y `D-03` ya no bloquean la publicación: los tres están resueltos,
-medidos y cubiertos por tests. Lo único que bloquea es que nadie ha mirado el
-resultado en una pantalla.
+medidos y cubiertos por tests. `D-05` no bloquea pero queda **abierto y declarado**:
+L9 y L10 no son alcanzables porque el techo medido es 152 y sus umbrales están en
+162 y 190, y rellenar las mesetas de L5 y L7 se midió y se descartó porque baja
+justamente ese techo. Atacar L9 exige cambiar `threshold(n)`, que es una decisión
+de alcance. Lo único que bloquea la publicación sigue siendo que nadie ha mirado
+el resultado en una pantalla.

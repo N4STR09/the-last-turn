@@ -40,6 +40,7 @@ export function GameScreen({ model, onAction, surrender }: GameScreenProps) {
       <ResourcePanel stats={model.stats} shelter={model.shelter} />
       <ResolutionPanel
         difficulty={model.difficulty}
+        forecast={model.forecast}
         resolution={model.resolution}
         turn={model.turn}
       />

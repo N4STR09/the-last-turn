@@ -54,6 +54,11 @@ const model: GameViewModel = {
     status: 'Destruido',
     tone: 'warning',
   },
+  forecast: {
+    headline: 'El aire pesa.',
+    detail: 'Algo baja desde el norte. El refugio no lo va a resistir.',
+    count: 1,
+  },
   resolution: {
     actionId: 'repair',
     headline: 'No consigues reparar el refugio.',
@@ -138,6 +143,53 @@ describe('GameScreen', () => {
     // La salud se ve porque se administra: explorar la gasta, curar la
     // devuelve, y un dato que no sale por ningún sitio no se puede decidir.
     expect(screen.getByText('5')).toBeInTheDocument();
+  });
+
+  it('anuncia arriba lo que ya está tirado para el turno siguiente', () => {
+    const { container } = renderScreen();
+
+    const forecast = screen.getByText('El aire pesa.');
+    expect(
+      screen.getByText('Algo baja desde el norte. El refugio no lo va a resistir.'),
+    ).toBeInTheDocument();
+
+    // El aviso va por encima de la pantalla, no dentro: es una advertencia de
+    // futuro y el registro es el parte de lo que ya pasó. Mezclados, el aviso
+    // parecía un resultado más, que es justo lo contrario de lo que significa.
+    const screen_ = container.querySelector('.terminal__screen');
+    expect(screen_).not.toBeNull();
+    expect(
+      forecast.compareDocumentPosition(screen_ as Node) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    // Y es su propia región viva, para que no vuelva a leer el parte entero.
+    expect(forecast.closest('[role="status"]')).toBe(forecast.parentElement);
+  });
+
+  it('no inventa un aviso cuando no hay nada en cola', () => {
+    renderScreen({ model: { ...model, forecast: null } });
+
+    expect(screen.queryByText('El aire pesa.')).toBeNull();
+  });
+
+  it('cuenta los avisos cuando el turno trae más de una tirada', () => {
+    renderScreen({
+      model: {
+        ...model,
+        forecast: { ...model.forecast!, count: 3 },
+      },
+    });
+
+    // Con carga 4 en adelante el turno tira dos o tres veces, así que la cola
+    // puede traer el mismo evento repetido. Un "1" fijo mentiría en dos de cada
+    // tres turnos de Agonía.
+    expect(screen.getByText('Vienen 3 cosas.')).toBeInTheDocument();
+  });
+
+  it('no cuenta cuando solo viene una cosa', () => {
+    renderScreen();
+
+    expect(screen.queryByText(/^Vienen/)).toBeNull();
   });
 
   it('deja el refugio fuera de la lista de cifras', () => {
@@ -328,7 +380,9 @@ describe('GameScreen', () => {
   it('anuncia la resolución en orden: acción, detalles y evento', () => {
     renderScreen();
 
-    const resolution = screen.getByRole('status');
+    // La región del parte se busca por su clase, no por `role="status"`: con el
+    // aviso previo hay dos regiones vivas y el papel solo ya no dice cuál es cuál.
+    const resolution = document.querySelector('.terminal__screen') as HTMLElement;
 
     expect(resolution).toHaveAttribute('aria-live', 'polite');
     expect(resolution).toHaveAttribute('aria-atomic', 'true');
@@ -362,7 +416,7 @@ describe('GameScreen', () => {
       },
     });
 
-    const resolution = screen.getByRole('status');
+    const resolution = document.querySelector('.terminal__screen') as HTMLElement;
     expect(resolution).toHaveTextContent('No tienes nada que comer.');
     expect(
       within(resolution).queryByRole('list', { name: 'Cambios de recursos' }),
