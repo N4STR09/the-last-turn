@@ -266,6 +266,15 @@
 }
 
 .stat__block {
+  /*
+   * `flex: 0 0 auto` impide que el bloque encoja. Cada fila es su propia rejilla
+   * y la cuarta columna es `auto`, así que cuando una fila escribe su aviso en
+   * texto, esa columna crece, la `minmax(0, 1fr)` de la barra se encoge y los
+   * bloques de esa fila quedaban más estrechos que los de las de al lado. El
+   * ancho sale de `width`; con la base en `auto` no hay que repetirlo aquí ni en
+   * el breakpoint de 480px, donde el bloque ya es más pequeño.
+   */
+  flex: 0 0 auto;
   width: 0.55rem;
   height: 0.8rem;
   border: 1px solid var(--color-track);
