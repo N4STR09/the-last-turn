@@ -2,9 +2,15 @@
 
 ## Estado
 
-Aprobada el 25 de septiembre de 2026. Es la **Fase 2** y sustituye a la presión
-de una sola vez de la Fase 1 (`I-04`). El juego sigue siendo una SPA estática,
-sin victoria, sin persistencia y sin recursos de terceros.
+Aprobada el 25 de septiembre de 2026 como **Fase 2** y revisada después del
+rediseño de acciones. Sigue siendo la espina dorsal de la dificultad: la escalada
+se anuncia siempre con una pantalla a negro que congela la partida, y el
+incremento se aplica en el motor, no en la interfaz. Lo que cambió en la revisión
+son las fórmulas —la válvula de escape—, el conjunto de modificadores y las
+mediciones.
+
+El juego sigue siendo una SPA estática, sin victoria, sin persistencia y sin
+recursos de terceros.
 
 ## Objetivo
 
@@ -29,6 +35,13 @@ salto es de 10 turnos y después cada hueco crece 2 turnos más. Una acción
 multiturno puede cruzar varios umbrales de una vez: el nivel pasa al más alto
 alcanzado y se emite un único aviso.
 
+Que la acción más larga sea de dos turnos —reparar— tiene una consecuencia que
+conviene dejar escrita: **ninguna acción puede saltarse un umbral entero**, porque
+entre umbrales hay al menos 10 turnos y la más larga dura 2. El salto de varios
+niveles de una vez sigue siendo código vivo, y está probado en
+`threat.test.ts` sobre `applyThreat` directamente, pero ya no lo alcanza ninguna
+jugada.
+
 ## Carga mecánica
 
 Los modificadores no usan `threat` directamente sino la **carga**, que satura:
@@ -43,37 +56,84 @@ sería viable y el juego dejaría de ser difícil para ser una ejecución.
 
 | Modificador | Fórmula | Carga 0 → 10 |
 |---|---|---|
-| Hambre extra por turno | `min(6, ⌊load/2⌋)` | 0,0,1,1,2,2,3,3,4,4,5 |
-| **Alivio de la ración** | `4 + min(6, ⌊load/2⌋)` | 4,4,5,5,6,6,7,7,8,8,9 |
-| Tope de energía al descansar | `max(1, 5 − ⌊load/3⌋)` | 5,5,5,4,4,4,3,3,3,2,2 |
-| Tiradas de evento extra (Agonía) | `min(2, ⌊load/4⌋)` | 0,0,0,0,1,1,1,1,2,2,2 |
-| Éxito al buscar comida (`valor ≤`) | `max(1, 3 − ⌊load/3⌋)` | 3,3,3,2,2,2,1,1,1,1,1 |
+| Hambre extra por turno | `min(4, ⌊load/3⌋)` | 0,0,0,1,1,1,2,2,2,3,3 |
+| **Alivio de la ración** | `4 + 2·min(4, ⌊load/3⌋)` | 4,4,4,6,6,6,8,8,8,10,10 |
+| Tope de energía al descansar | `max(3, 5 − ⌊load/4⌋)` | 5,5,5,5,4,4,4,4,3,3,3 |
+| Herida y cura de explorar | `2 + ⌊load/3⌋` | 2,2,2,3,3,3,4,4,4,5,5 |
+| Hallazgo grande al explorar (`valor ≤`) | `max(2, 6 − ⌊load/2⌋)` | 6,6,5,5,4,4,3,3,2,2,2 |
+| Hallazgo normal al explorar (`valor ≤`) | `max(10, 16 − ⌊load/2⌋)` | 16,16,15,15,14,14,13,13,12,12,11 |
+| Raciones que roba el mapache | `max(2, 3 + ⌊load/3⌋)` | 3,3,3,4,4,4,5,5,5,6,6 |
 | Radio de fallo al reparar | `min(4, ⌊load/2⌋)` | 0,0,1,1,2,2,3,3,4,4,4 |
-| Turnos al reparar | `min(5, 2 + ⌊load/5⌋)` | 2,2,2,2,2,3,3,3,3,3,4 |
+| Tiradas de evento extra (Agonía) | `min(2, ⌊load/4⌋)` | 0,0,0,0,1,1,1,1,2,2,2 |
 
 Con `load = 0` todos los modificadores reproducen exactamente la Fase 1.
 
-### El alivio de la ración
+Las tres palancas que dejaron de existir no se sustituyeron, se eliminaron junto
+con las acciones que las usaban: el éxito de **buscar comida** (`max(1, 3 − ⌊load/3⌋)`)
+y los **turnos al reparar** (`min(5, 2 + ⌊load/5⌋)`) desaparecieron con la acción de
+buscar y al fijar la reparación en dos turnos. La **pesca** desapareció entera,
+con su límite de intentos y con su coste por turno variable.
 
-La ración quita `4 + hambreExtraPorTurno`. **No es un modificador decorativo: es
-lo que hace el juego superable.** Sin él, la escalada de hambre es
-aritméticamente letal a partir de la carga 4, porque cada ración cuesta más hambre
-de la que devuelve. Está en la tabla por eso, y no como ajuste de equilibrio
-posterior.
+### La válvula de escape
 
-La consecuencia de diseño es que la ración se vuelve más potente conforme sube
-la amenaza mientras el resto de ingresos se empobrece. El juego no se abarata:
-se estrecha. La holgura total del bucle baja hacia cero y cualquier evento o
-fallo de búsqueda te hunde. Hay un invariante comprobable en
+`extra = min(4, ⌊load/3⌋)` es el número del que cuelgan el hambre por turno, el
+alivio de la ración y la herida de explorar. Antes de la válvula valía
+`min(6, ⌊load/2⌋)`, y ese `/2` era el problema: **el hambre por turno y el alivio
+de la ración crecían exactamente al mismo ritmo**, así que la holgura por ración no
+se movía nunca con la carga. Con el `/2` la holgura era 3 puntos en toda la
+rampa; con el `/3` es 3,3,3,4,4,4,5,5,5,6,6.
+
+Tres modificadores cambian con la válvula, y los tres por la misma razón:
+
+- `hungerPerTurn = 1 + extra`. El turno sale más barato: a carga 10 cuesta 4 en
+  lugar de 7.
+- `foodRelief = 4 + 2·extra`. La ración sube al **doble** que el hambre por turno.
+  Esa asimetría es deliberada: con el mismo multiplicador en los dos, comer solo
+  tapaba el gasto del turno más un margen fijo, la fracción de turnos que había
+  que dedicar a comer no bajaba nunca con la carga y el presupuesto se cerraba
+  solo. Al doblarlo, comer cubre más turnos conforme sube la amenaza y explorar
+  conserva su parte.
+- `restEnergyCap = max(3, 5 − ⌊load/4⌋)`. El suelo sube de 2 a 3, así que
+  descansar con refugio **siempre** devuelve más de lo que cuesta el turno. Con
+  suelo 2 el descanso se convertía en un impuesto en carga alta —neto +1— y la
+  energía se iba de rositas en silencio.
+- `cureAmount = max(2, exploreWound)`. Ver abajo, es una corrección de paridad y no
+  parte de la válvula.
+
+### La holgura de la ración
+
+La ración quita `foodRelief`. **No es un modificador decorativo: es lo que hace el
+juego superable.** Sin él, la escalada de hambre es aritméticamente letal a
+partir de la carga 4, porque cada ración costaría más hambre de la que devuelve.
+Está en la tabla por eso, y no como ajuste de equilibrio posterior.
+
+La consecuencia de diseño es que la ración se vuelve más potente conforme sube la
+amenaza mientras el resto de ingresos se empobrece. El juego no se abarata: se
+estrecha. Hay un invariante comprobable en
 `src/game/__tests__/threat.test.ts`:
 
 ```text
-foodRelief(threat) > 1 + extraHungerPerTurn(threat)   para todo threat >= 0
+foodRelief(threat) > hungerPerTurn(threat)   para todo threat >= 0
 ```
 
-con la diferencia constante de 3 puntos en toda la rampa. Ese margen es lo que
-hace falta para que dos turnos de pesca más tres comidas tapen el gasto, y por
-eso `SPEC-threat.md` fija el techo por encima de 190.
+Con la diferencia creciente de 3 a 6 puntos según la carga, que es la holgura que
+compra turnos de comer. Ese margen es lo que hace falta para que la partida siga
+siendo renewable en la carga alta, y por eso `SPEC-threat.md` fija el techo
+medido por encima de 150.
+
+### La paridad entre herida y cura
+
+`cureAmount(threat) = max(2, exploreWound(threat))`. Curar devuelve exactamente lo
+que abre el hallazgo grande, así que los dos tiers de explorar se pagan al mismo
+precio por punto de salud.
+
+Con escaleras separadas pasaba esto: a carga 6 el hallazgo grande costaba 4 de
+salud y cerrar las heridas devolvía 3, de modo que el hallazgo grande salía a
+1 comida por punto de salud y el pequeño —2 comidas por 1 de salud— era el doble
+de rentable. **El premio grande se convertía en la peor jugada de la tabla.**
+Explorar tenía una opción mala, y esa es la razón de que la partida se cerrara
+antes de tiempo sin que nadie hubiera cometido un error evidente. La igualdad se
+comprueba como test, no como comentario.
 
 ### La banda de fallo al reparar
 
@@ -88,13 +148,17 @@ Con radio 4 fallan las tiradas 1 a 9 y la única salida segura es el 10.
 
 | Carga | Efecto adicional |
 |---|---|
-| `≥ 1` | Tormenta y mapache cuestan además 1 de energía. |
+| `≥ 1` | Tormenta y mapache cuestan además 1 de energía, **una sola vez por turno**. |
 | `≥ 3` | El mapache quita además 1 de salud. |
 
 La tabla de sorteos 1..100 **no cambia**: tormenta 1–10, mapache 51–59,
 meteorito 99. Con tiradas extra, cada tirada se aplica en orden sobre el
 estado resultante de la anterior, y `GameResolution` expone `randomEvents` como
 lista, no como valor único.
+
+El recargo único de energía es lo que separa «dificultad» de «fractura», y está
+en `events.ts` con la marca propagada entre tiradas en lugar de reiniciarse. Ver
+`D-02`.
 
 ## Orden de resolución
 
@@ -113,7 +177,7 @@ Se muestra sobre la partida, a negro, con el foco atrapado dentro.
 - `role="dialog"` y `aria-modal="true"`, etiquetada por el mensaje principal.
 - El foco se mueve al diálogo al abrirse y no puede salir mientras esté abierto.
 - Cierra con click en cualquier sitio, `Enter` o `Espacio`.
-- Mientras está abierta, los atajos `B D E R P C ?` están desactivados.
+- Mientras está abierta, los atajos `E C S D R` están desactivados.
 - El mensaje principal nombra el nivel y usa un texto jocoso cuyo tono empeora
   con el nivel. Debajo, `Haz click para continuar...` en gris apagado.
 - El incremento ya está aplicado en el estado: el click solo despeja el aviso.
@@ -132,9 +196,11 @@ tiene conflicto estético.
 
 ## Decisiones de alcance
 
-- **No hay decaimiento pasivo de la salud.** La salud está oculta por diseño, así
-  que un desgaste silencioso sería ilegible. El único daño por salud sigue
-  siendo un evento que se anuncia.
+- **No hay decaimiento pasivo de la salud.** La salud es una cifra visible, y un
+  desgaste silencioso seguiría siendo ilegible igual que antes: la única forma
+  de que el jugador administre la salud es que cada punto que pierde se anuncie
+  con un evento o con el resultado de una acción. Por eso explorar dice en la
+  terminal cuánto ha costado.
 - **No se añaden tipos de evento nuevos.** «Más severos» se resuelve con la
   tabla de severidad; ampliar la tabla 1..100 con bandas condicionales
   complicaría el motor sin aportar.
@@ -174,25 +240,13 @@ El bucle depende de ingresos que no escalan igual:
 La única razón por la que el bucle aguantaba hasta el turno 50 era que la pesca
 rinde 1,5 raciones por turno, casi el doble que buscar. En cuanto el hambre por
 turno llegaba a 3 (carga 4, turno 52) esa ventaja se consumía y el balance pasaba
-a ser negativo para siempre. Con 3 de hambre por turno, un ciclo completo de
-pesca más las tres comidas consumía 5 turnos y 5 de energía y dejaba +3 de
-hambre; reponer la energía exigía 2 descansos, que sumaban 2 turnos y +4 de
-hambre. Siete turnos y +7 de hambre, y ninguna cantidad extra de comida cerraba
-el círculo.
-
-### Consecuencia que se evitó
-
-El calendario sube en los turnos 10, 22, 36, 52, 70, 90, 112, 136, 162 y 190. Con
-techo en 50, **los niveles 4 a 10 eran inalcanzables por construcción**: el aviso
-a negro se habría visto en los turnos 10, 22 y 36 y después nunca más. Quedaban
-sin usar el tramo de la rampa a partir del 40 %, cuatro de los seis
-modificadores en su rango alto y la mayor parte del copy de escalada.
+a ser negativo para siempre.
 
 ### El arreglo aplicado
 
 Opción 1, aprobada por la persona usuaria: **escalar también el alivio de la
-ración** a `4 + hambreExtraPorTurno`. Con carga 0 y 1 no cambia nada, así que la
-Fase 1 queda intacta; a partir de ahí la ración vuelve a tapar el gasto.
+ración**. Con carga 0, 1 y 2 no cambia nada, así que la Fase 1 queda intacta; a
+partir de ahí la ración vuelve a tapar el gasto.
 
 Se descartaron las otras dos opciones por razones que siguen vigentes:
 
@@ -202,53 +256,133 @@ Se descartaron las otras dos opciones por razones que siguen vigentes:
   obligaba a justificar los avisos de nivel 4 en adelante por las otras cinco
   palancas.
 
-### Medidas después del arreglo
+### Cobertura de la regresión
 
-| Medición | Resultado |
-|---|---|
-| Partida con juego ordenado (recuperar energía hasta pasar el tope del nivel, mantener 2 raciones, gastarlas comiendo) | **Turno 103** en Normal y en Agonía, muriendo de hambre en el nivel 6 con el hambre en 0 justo en cada cambio de nivel. |
-| Búsqueda exhaustiva sobre las 7 acciones con el mejor azar posible | Techo absoluto: **turno 191**, con amenaza 10, 400 962 estados alcanzables y el espacio agotado en la iteración 190. |
+`src/game/__tests__/threat.test.ts` fija la rampa entera de cada modificador, con
+tablas medidas con aritmética antes de escribir los asserts, más el invariante
+aritmético que estaba detrás del defecto:
 
-El techo absoluto pasa de 50 a **191**, y el nivel 10 arranca en el turno 190, así
-que **la rampa completa queda dentro del alcance**. El margen sobre el último
-umbral es de un turno, lo que significa que en el tramo final la partida se
-sostiene con las reservas iniciales y no con un ciclo infinito: a partir de ahí
-no hay estrategia sostenible, hay un final.
+```text
+foodRelief(threat) > hungerPerTurn(threat)   para todo threat >= 0
+```
 
-Un dato que conviene no perder: con juego ordenado el techo práctico es 103, no
-191. Llegar a 191 exige acumular energía y comida a la vez durante muchos turnos y
-gastarlas después en ráfaga, algo que ninguna regla de umbral fijo reproduce. El
-juego, por tanto, sigue siendo duro de verdad: lo que arregló el reequilibrio es
-que el tramo escalonado sea **alcanzable**, no que sea **fácil**.
+## Defecto D-02: la fractura de Agonía
+
+**Estado: resuelto.**
+
+### Qué pasaba
+
+Agonía es un impuesto, no un juego. Antes del rediseño, con el piloto competente,
+la mediana de supervivencia en Agonía era el turno 27 y el máximo absoluto 58,
+frente a los 103 de Normal. Ese hueco no lo causaba ningún reequilibrio de
+recursos: se probaron las tres palancas de la Fase 2 sobre el mismo piloto y la
+mediana de Agonía se movió como mucho un turno. La partida no moría de hambre ni
+de salud. Moría de **energía**, y por una razón concreta:
+
+1. Con carga alta, Agonía hace tres tiradas de evento por turno.
+2. Cada tormenta y cada mapache cobraban 1 de energía, **uno por evento**, así
+   que el peor turno costaba 3.
+3. Descansar con refugio devolvía como mucho 2, y con el suelo antiguo 1.
+4. La tormenta ponía `hasShelter` en `false`, y sin refugio descansar devolvía 0,
+   o sea que el descanso **dejaba de funcionar** en el mismo turno en que la
+   tormenta lo rompía.
+
+Los cuatro puntos encadenan: la energía caía sola, sin que hubiera un turno en el
+que el jugador pudiera decidir. Eso no es dificultad, es una fractura, y por eso
+no se arregla con números sino con estructura.
+
+### Qué se cambió
+
+- **El recargo de energía se cobra una vez por turno**, no uno por evento. La
+  marca se propaga entre las tiradas del mismo turno en lugar de reiniciarse, y
+  el meteorito no la consume porque no la cobra. El peor turno de Agonía pasa a
+  costar 1 de energía en lugar de 3.
+- **Descansar sin refugio devuelve 1**, que es exactamente lo que cuesta el
+  turno. El refugio multiplica, no habilita: perderlo duele —el descanso se
+  queda neutro— pero ya no es una sentencia. Antes devolvía 0, y ese 0 era el
+  segundo tramo de la fractura.
+- **El mapache saquea una cantidad fija** en vez de vaciar el depósito. Vaciarlo
+  era una ruina económica: mataba a todos por igual y en el mismo turno, así que
+  decidía la partida antes de que la estrategia tuviera nada que decir. Robar
+  `foodRaid` golpea a quien tiene el depósito lleno, que es una decisión —¿guardo
+  o gasto?— y no una sentencia.
+- **Reparar no hiere y dura dos turnos fijos.** Antes costaba 6 unidades de
+  hambre en una sola acción a carga 7, sin importar si salía bien.
+
+## Defecto D-03: la partida no era renewable por construcción
+
+**Estado: resuelto con la válvula de escape.**
+
+### Qué pasaba
+
+Con `extra = min(6, ⌊load/2⌋)`, el hambre por turno y el alivio de la ración
+crecían al mismo ritmo, así que la holgura por ración era una constante de 3
+puntos. Sumado a que a carga 6 el hallazgo grande (4 comidas por 4 de salud) salía
+peor por punto de salud que el pequeño (2 comidas por 1 de salud), la partida
+tenía una opción mala y su techo absoluto se quedaba en el **turno 97**, muy por
+debajo del umbral 6 que empieza en el turno 90. Ninguna combinación de los otros
+tres modificadores lo subía.
+
+La partida no era renewable, y no por suerte del piloto: no había ninguna ruta.
+
+### Qué se cambió
+
+Los cuatro modificadores de la válvula de escape, descritos más arriba. El efecto
+medido, con el mismo piloto competente:
+
+| Medición | Antes | Después |
+|---|---|---|
+| Techo absoluto, mejor azar posible, Normal | 97 (turno) | **153** (turno, carga 8, muerte por hambre) |
+| Normal, mediana | 80 | **118** |
+| Normal, percentil 90 | 92 | **147** |
+| Normal, máximo sobre 400 semillas | 105 | **172** |
+| Agonía, mediana | 27 | **31** |
+| Agonía, percentil 90 | — | **44** |
+| Agonía, máximo | 58 | **57** |
+| Causa de muerte en Normal | — | 57 % hambre / 43 % salud |
+| Causa de muerte en Agonía | — | 57 % energía / 32 % hambre / 11 % salud |
+
+### Un dato que conviene no perder
+
+El máximo sobre 400 semillas es **172** y el techo con el mejor azar posible es
+**153**, y no es una contradicción: el «mejor azar posible» fuerza el hallazgo
+grande en cada exploración, y el hallazgo grande cuesta entre 2 y 5 de salud. Una
+partida que juega de forma normal y tiene suerte de vez en cuando sobrevive más
+que una que acierta el premio grande todas las veces. Es exactamente lo que
+persigue la paridad entre `cureAmount` y `exploreWound`: el hallazgo grande tiene
+que valer la pena, y vale la pena porque curarlo es proporcional, no porque
+perjudique menos.
 
 ### Cobertura de la regresión
 
-Los tests de `src/game/__tests__/engine.test.ts` que afirmaban el defecto se
-invirtieron: ahora exigen que la partida supere el turno 100 en las dos
-dificultades, y que el nivel 6 sea alcanzable con juego ordenado. El invariante
-aritmético que estaba detrás del defecto está en
-`src/game/__tests__/threat.test.ts`:
-
-```text
-foodRelief(threat) > 1 + extraHungerPerTurn(threat)   para todo threat >= 0
-```
-
-Si alguien vuelve a tapar el alivio de la ración, ese test falla antes de que
-alguien diese en el 37.
+`src/game/__tests__/engine.test.ts` lleva el piloto `competentAction` con el
+`bestLuck` de cada dado, y exige superar el turno 100 en las dos dificultades.
+Las dos guardas del piloto no son decoración: sin reparar cuando la tormenta se
+lleva el refugio, `rest` pasa a ser neto 0 y la partida se cuelga dormida; sin
+explorar cuando no hay comida, los turnos se van en `eat` sin raciones. Con
+cualquiera de las dos faltas, la ruta muere en el 16 por mucho que el motor esté
+bien: mide al piloto, no al juego.
 
 ## Criterios de aceptación
 
 - `threat` llega a 1 exactamente en el turno 10 y a 2 exactamente en el 22.
-- Una acción que salta de 9 a 23 entrega nivel 2 y un solo aviso.
+- `applyThreat` sobre un salto de varios umbrales entrega el nivel más alto y un
+  solo aviso. Ninguna acción lo puede provocar, porque la más larga dura 2
+  turnos y entre umbrales hay al menos 10.
 - Con `load = 0` el comportamiento es idéntico a la Fase 1, incluida la
   reparación que solo falla con la tirada 5.
-- Con carga 10, el hambre por turno es 6 y el tope de energía al descansar es 2.
-- `foodRelief` supera al hambre que cuesta el turno en toda la rampa.
+- Con carga 10, el hambre por turno es 4 y el tope de energía al descansar es 3.
+- `foodRelief` supera al hambre que cuesta el turno en toda la rampa, con
+  diferencia creciente.
+- `cureAmount(threat) === exploreWound(threat)` en toda la rampa, para que
+  explorar no tenga una opción mala.
 - La partida sigue muriéndose solo por hambre, energía o salud.
 - El aviso aparece con la partida congelada y desaparece al continuar.
 - Los atajos de teclado no actúan mientras el aviso está abierto.
 - El motor mantiene 100 % de cobertura.
 - **Se puede sobrevivir más de 100 turnos** con juego ordenado, en Normal y en
-  Agonía. Cumplido tras el reequilibrio de `D-01`.
-- **El techo absoluto con el mejor azar posible alcanza el turno 190**, de modo
-  que la rampa de niveles 1 a 10 es alcanzable entera. Medido: 191.
+  Agonía. Cumplido tras la válvula de escape: techo medido 153.
+- **El techo absoluto con el mejor azar posible alcanza el turno 153**, de modo
+  que los niveles 1 a 8 de la rampa quedan dentro del alcance alcanzable. Los
+  niveles 9 y 10, que empiezan en los turnos 162 y 190, quedan por encima de
+  cualquier ruta medible: es donde el juego pasa de difícil a histórico.

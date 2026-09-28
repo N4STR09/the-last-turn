@@ -1,5 +1,24 @@
 # Especificación: supervivencia infinita — Fase 1
 
+## Estado: superada
+
+**Este documento ya no describe el juego.** Se conserva entero como registro de
+la primera fase, y su análisis sigue siendo válido como explicación de por qué
+existieron los problemas que corrigieron las fases siguientes. Las reglas
+vigentes están en [`SPEC-game-engine.md`](SPEC-game-engine.md) y
+[`SPEC-threat.md`](SPEC-threat.md).
+
+Lo que quedó desmentido por fases posteriores:
+
+| Regla de este documento | Qué pasó |
+|---|---|
+| Comer recupera 1 de salud | Retirado por `A-03`. Comer no cura; `cure` es la única vía. |
+| La pesca acotada a 6 intentos | La acción desaparece entera (`A-01`). |
+| Los hitos de los turnos 15 y 30 | Absorbidos por la escalada progresiva (`T-09`). |
+| La reducción de hambre por comer es 4 fijos | `T-11` la escaló, y `A-04` la escaló al doble del gasto del turno. |
+| La estrategia renewable es reparar + buscar + comer + descansar | Sustituida por la ruta de `A-01`; con la ruta de este documento el techo medido era el turno 97, por debajo del umbral del nivel 6. |
+| La salud no se muestra | Invertido por `A-05`, que declara la desviación a propósito. |
+
 ## Objetivo
 
 Convertir el motor de *The Last Turn* en un juego de supervivencia endless sin

@@ -1,11 +1,11 @@
 # Registro de QA final
 
-**Fecha:** 25 de septiembre de 2026
-**Alcance:** entrega web estática de *The Last Turn Web* con las reglas de la Fase 1 de supervivencia y la Fase 2 de escalada progresiva, y el rediseño completo de la interfaz
+**Fecha:** 25 de septiembre de 2026, revisado el 28 tras el rediseño de acciones
+**Alcance:** entrega web estática de *The Last Turn Web* con las reglas de la Fase 1 de supervivencia, la Fase 2 de escalada progresiva, el rediseño completo de la interfaz y el rediseño de acciones de la Fase 5
 
 ## Estado de este registro
 
-Las tablas de la sección «Comandos automáticos» reflejan el árbol con el rediseño. Las secciones de navegador real y de aceptación pública se realizaron sobre el build `0.1.0`, publicado antes de la Fase 1, y están etiquetadas como tales; la repetición en navegador con el build actual queda registrada como pendiente porque no hay navegador de escritorio conectado a esta sesión. El rediseño agrava esa limitación: su objeto de entrega es visual, así que ninguna prueba automática dice si la interfaz queda bien.
+Las tablas de la sección «Comandos automáticos» reflejan el árbol con el rediseño de acciones. Las secciones de navegador real y de aceptación pública se realizaron sobre el build `0.1.0`, publicado antes de la Fase 1, y están etiquetadas como tales; la repetición en navegador con el build actual queda registrada como pendiente porque no hay navegador de escritorio conectado a esta sesión. El rediseño agrava esa limitación: su objeto de entrega es visual, así que ninguna prueba automática dice si la interfaz queda bien. La Fase 5 agrava la limitación en el otro sentido: cambió el motor, y ninguna prueba automática dice si el endless se siente endless.
 
 ## Comandos automáticos
 
@@ -14,23 +14,23 @@ Las tablas de la sección «Comandos automáticos» reflejan el árbol con el re
 | `npm ci` | Pasa; instalación reproducible sin vulnerabilidades reportadas |
 | `npm run typecheck` | Pasa |
 | `npm run lint` | Pasa sin warnings |
-| `npm run test:coverage` | Pasa; 19 archivos y 290 pruebas; cobertura global 94.95% statements, 88.96% branches, 100% functions, 94.88% lines |
+| `npm run test:coverage` | Pasa; 20 archivos y 337 pruebas; cobertura global 97.14% statements, 95.73% branches, 100% functions, 97.12% lines |
 | `npm run test:coverage:scoped` | Pasa; aplica los umbrales de `src/app`, `src/ui` y `src/game` dentro de `verify` |
-| `npm run test:coverage -- src\app` | Pasa; cobertura de `src/app` 90.47% statements, 83.15% branches, 100% functions, 90.37% lines (69 pruebas) |
-| `npm run test:coverage -- src\game` | Pasa; cobertura de `src/game` 100% en las cuatro métricas (165 pruebas) |
-| `npm run test:coverage -- src\ui` | Pasa; cobertura de `src/ui` 100% en las cuatro métricas (39 pruebas) |
+| `npm run test:coverage -- src\app` | Pasa; cobertura de `src/app` 94.27% statements, 93.04% branches, 100% functions, 94.24% lines (81 pruebas) |
+| `npm run test:coverage -- src\game` | Pasa; cobertura de `src/game` 100% en las cuatro métricas (177 pruebas) |
+| `npm run test:coverage -- src\ui` | Pasa; cobertura de `src/ui` 100% en las cuatro métricas (63 pruebas) |
 | `npm run verify` | Pasa; typecheck, lint, cobertura global, cobertura por capacidad, build y presupuestos |
 | `npm run build` | Pasa; bundle estático dentro de presupuesto |
-| `npm run check:budget` | Pasa; 76.13 KiB JS gzip (38,1 % de 200 KiB) y 3.48 KiB CSS gzip (7 % de 50 KiB) |
+| `npm run check:budget` | Pasa; 76.47 KiB JS gzip (38,2 % de 200 KiB) y 3.85 KiB CSS gzip (7,7 % de 50 KiB) |
 | `npm audit` | 0 vulnerabilidades |
 
-La puerta mide con gzip nivel 9 sobre `dist/assets/` e informa de 75.44 KiB, mientras que Vite imprime su propia cifra para el mismo archivo. La diferencia es esperable y está explicada en `scripts/check-budget.mjs`: ambos ajustan gzip de forma distinta y la puerta aplica siempre su propia medición.
+La puerta mide con gzip nivel 9 sobre `dist/assets/` e informa de 76.47 KiB de JavaScript y 3.85 KiB de CSS, mientras que Vite imprime 79.28 y 3.95 para los mismos archivos. La diferencia es esperable y está explicada en `scripts/check-budget.mjs`: ambos ajustan gzip de forma distinta y la puerta aplica siempre su propia medición.
 
 Las puertas se comprobaron además en su sentido de fallo, porque una comprobación que solo pasa no demuestra que bloquee:
 
 | Puerta | Escenario provocado | Resultado |
 |---|---|---|
-| `test:coverage:scoped` | Una función sin cubrir en `src/game` | Falla con `exit=1`; cobertura al 94,73 % de funciones frente al umbral de 100 % |
+| `test:coverage:scoped` | Una función sin cubrir en `src/game` | Falla con `exit=1`; la cobertura de funciones baja del umbral de 100 % |
 | `test:coverage:scoped` | Ámbito mal escrito `src/ap` | Falla con `exit=1` y lista los ámbitos admitidos, en vez de degradar a los umbrales globales |
 | `check:budget` | JavaScript de 250 KiB | Falla con `exit=1` nombrando el recurso y el límite superado |
 | `check:budget` | `dist/` ausente | Falla con `exit=1` con un mensaje accionable |
@@ -40,7 +40,11 @@ En todos los casos se restauró el estado y se volvió a comprobar que la puerta
 
 ## Defecto detectado en QA: `D-01`, ya resuelto
 
-La verificación de la Fase 2 encontró un defecto de diseño, no de implementación. Se documenta entero porque alteró el criterio de aceptación de supervivencia indefinida y porque el arreglo cambió números que ya estaban aprobados.
+**Todas las cifras de esta sección son de la Fase 2 y están superadas.** Se
+conservan enteras porque el diagnóstico sigue siendo válido —el de Fase 5
+confirmó que el problema de fondo era aritmético, no de recursos— y porque
+alteró el criterio de aceptación de supervivencia indefinida. La verificación
+de la Fase 2 encontró un defecto de diseño, no de implementación.
 
 ### Lo que se encontró
 
@@ -76,6 +80,8 @@ Se descartaron las otras dos: que la comida no empeorara con la carga contradec�
 
 El techo absoluto pasa de 50 a 191 y el nivel 10 arranca en el turno 190, así que la rampa completa queda dentro del alcance. El techo práctico con juego ordenado es 103, no 191: llegar hasta 191 exige acumular energía y comida a la vez durante muchos turnos y gastarlas después en ráfaga, algo que ninguna regla de umbral fijo reproduce. El reequilibrio hizo que el tramo escalonado sea alcanzable, no fácil.
 
+Las dos búsquedas dicen «7 acciones» porque se midieron cuando Ayuda todavía existía. En la Fase 4 el espacio se reduce a 6 acciones, así que los 400 962 estados y el techo de 191 son **cotas superiores**, no las cifras de hoy. No se han vuelto a medir: quitar Ayuda no cambia ninguna regla de gasto, y la escalated no depende de cuántas acciones haya.
+
 ### Cobertura de la regresión
 
 Los dos tests que afirmaban el defecto se invirtieron. Ahora `src/game/__tests__/engine.test.ts` exige superar el turno 100 en las dos dificultades y alcanzar el nivel 6, y `src/game/__tests__/threat.test.ts` fija el invariante aritmético que estaba detrás del defecto:
@@ -90,6 +96,93 @@ Volver a tapar el alivio de la ración rompe ese test antes de que alguien vuelv
 
 Ninguno en diseño: el defecto está cerrado y medido. Queda pendiente la verificación en navegador real y la autorización de publicación, ambas en la sección final de este registro.
 
+## Diagnóstico de la Fase 5: dos fracturas, medidas antes de tocar nada
+
+La revisión de las acciones se hizo al revés que la Fase 2. Antes de cambiar
+una fórmula se construyó un modelo mutable del motor y se midió sobre 400
+semillas, en vez de razonar sobre el diseño. Salieron tres hallazgos, y solo
+uno era el que se sospechaba.
+
+| Hallazgo | Medición | Qué era en realidad |
+|---|---|---|
+| Agonía es insensible a todo reequilibrio | Mediana 27 con las tres palancas de la Fase 2 probadas sobre el mismo piloto; se movió **un turno como mucho**. Causa de muerte: **energía** | Una fractura estructural, no un desequilibrio de recursos |
+| La partida no es renewable | Techo absoluto **97** con el mejor azar posible, por debajo del nivel 6 que empieza en el turno 90 | Aritmética: el hambre por turno y el alivio de la ración crecían al mismo ritmo |
+| Explorar tenía una opción mala | A carga 6, el hallazgo grande daba 4 comidas por 4 de salud y el pequeño 2 por 1 | El premio grande salía peor por punto de salud que el premio pequeño |
+
+El tercero es el que mejor resume por qué conviene medir. Nadie lo habría
+detectado leyendo la tabla: los dos resultados son «buenos» en valor absoluto.
+Lo que no lo era era la comparación, y comparar es lo que hace el jugador.
+
+## Defecto `D-02`: la fractura de Agonía
+
+**Estado: resuelto.** Cuatro cosas encadenaban, y por eso no se arreglaba con
+números.
+
+1. Con carga alta, Agonía hace tres tiradas de evento por turno.
+2. Tormenta y mapache cobraban 1 de energía **uno por evento**, así que el peor
+   turno costaba 3.
+3. Descansar con refugio devolvía como mucho 2, y con el suelo antiguo 1.
+4. La tormenta tiraba el refugio, y sin refugio descansar devolvía 0: el
+   descanso **dejaba de funcionar** en el mismo turno en que la tormenta lo
+   rompía.
+
+La energía caía sola, sin que hubiera turno en el que el jugador pudiera
+decidir. Qué se cambió: el recargo se cobra una vez por turno propagando la
+marca entre tiradas, descansar sin refugio devuelve 1 (lo que cuesta el turno),
+el mapache saquea una cantidad fija en vez de vaciar el depósito, y reparar no
+hiere. El peor turno de Agonía pasa a costar 1 de energía en lugar de 3.
+
+## Defecto `D-03`: la partida no era renewable por construcción
+
+**Estado: resuelto con la válvula de escape.** Con
+`extra = min(6, ⌊load/2⌋)`, el hambre por turno y el alivio de la ración
+crecían al mismo ritmo, así que la holgura por ración era una constante de 3
+puntos. Sumado a la opción mala de explorar, el techo absoluto se quedaba en el
+turno 97, muy por debajo del nivel 6 que empieza en el 90. **Ninguna combinación
+de los otros tres modificadores lo subía.**
+
+Los cuatro cambios de la válvula: `extraHungerPerTurn` a `min(4, ⌊load/3⌋)`,
+`foodRelief` a `4 + 2·extra`, `restEnergyCap` a `max(3, 5 − ⌊load/4⌋)` y
+`cureAmount` a `max(2, exploreWound)`.
+
+| Medición | Antes | Después |
+|---|---|---|
+| Techo absoluto, mejor azar posible, Normal | 97 (turno) | **153** (turno, carga 8, muerte por hambre) |
+| Normal, mediana | 80 | **118** |
+| Normal, percentil 90 | 92 | **147** |
+| Normal, máximo sobre 400 semillas | 105 | **172** |
+| Agonía, mediana | 27 | **31** |
+| Agonía, percentil 90 | — | **44** |
+| Agonía, máximo | 58 | **57** |
+| Causa de muerte en Normal | — | 57 % hambre / 43 % salud |
+| Causa de muerte en Agonía | — | 57 % energía / 32 % hambre / 11 % salud |
+
+El máximo (172) por encima del techo con mejor azar (153) no es una
+contradicción y conviene no perderlo: el «mejor azar posible» fuerza el hallazgo
+grande en cada exploración, y el hallazgo grande cuesta entre 2 y 5 de salud. Una
+partida que juega normal y tiene suerte de vez en cuando vive más que una que
+acierta el premio grande todas las veces. Es exactamente lo que persigue la
+paridad entre `cureAmount` y `exploreWound`.
+
+Un dato incómodo queda sin cerrar: **Agonía sigue siendo mucho más corta que
+Normal** (mediana 31 frente a 118) y el arreglo la movió tres turnos. El muro de
+Agonía no es aritmético, es el impuesto de la tormenta: tirada al 10 % por vuelta,
+y reparar cuesta dos turnos. Se acepta como dificultad, no como defecto, y por
+eso el techo de 153 se define sobre Normal. Está anotado en `SPEC-threat.md` como
+`D-02` cerrado pero con el techo de Agonía fuera de alcance medible.
+
+### Cobertura de la regresión
+
+- `src/game/__tests__/threat.test.ts` fija las nueve rampas completas con tablas
+  calculadas con aritmética antes de escribir los asserts, el invariante
+  `foodRelief > hungerPerTurn` y la paridad `cureAmount === exploreWound`.
+- `src/game/__tests__/engine.test.ts` lleva el piloto `competentAction` con el
+  `bestLuck` de cada dado y exige superar el turno 100 en las dos dificultades.
+- `src/game/__tests__/pipeline.test.ts` fija el recargo único de energía y el
+  saqueo parcial: con carga 10, tres tiradas de evento y una sola marca.
+- `src/game/__tests__/actions.test.ts` cubre que comer no cura y que curar no
+  tira dados, que es la paridad de recursos que hace que valgan la pena.
+
 ## Navegador real (build 0.1.0, anterior a la Fase 1)
 
 Se comprobó el build servido por `vite preview` en `127.0.0.1` con un perfil aislado de Edge y CDP. El flujo recorrido fue:
@@ -103,7 +196,7 @@ Resultados observados:
 - Anchos comprobados: 320, 360, 768 y 1440 px. No hubo elementos fuera del viewport ni scroll horizontal estable.
 - Todos los botones midieron al menos 44 × 44 px.
 - `prefers-reduced-motion: reduce` coincidió y la hoja de estilos elimina transiciones y animaciones no esenciales.
-- La salud no apareció en el texto de la partida.
+- La salud no apareció en el texto de la partida. **Esta línea describe el build 0.1.0 y ya no es un requisito:** la Fase 5 invirtió esa regla a propósito, y la salud es ahora la cuarta cifra. Se conserva como registro del árbol anterior.
 - Consola: 0 mensajes y 0 errores.
 - Red en este recorrido completo: 28 peticiones, todas al origen local; 0 peticiones a terceros.
 - El favicon se carga como recurso local, por lo que no se produce la solicitud 404 implícita de `favicon.ico`.
@@ -222,6 +315,142 @@ Tres cosas que aparecieron al implementar y que se corrigieron:
 Ninguno era visible desde las pruebas, y los tres eran del tipo que se acumula
 en silencio.
 
+## Rendirse, refugio y copy (Fase 4)
+
+Cinco correcciones sobre el rediseño. Dos borran algo del motor, una reorganiza
+la lectura del refugio y una es una errata. Ninguna cambia una regla de juego, y
+eso no significa que no fueran verificables: se comprueban igual.
+
+### Qué cubren las pruebas
+
+| Pieza | Qué demuestra |
+|---|---|
+| `src/game/__tests__/pipeline.test.ts` | `surrenderGame` termina la partida, declara `'surrender'` en `condition` y en `reportedCause`, conserva `turnsSurvived` y no toca ningún recurso ni el nivel. Que no tire azar no se comprueba con una fuente que falle: `surrenderGame` no recibe `RandomInt`, así que la firma es la prueba. |
+| `src/app/__tests__/app-state.test.ts` | Los tres comandos de rendirse y sus tres guardas. Con el aviso abierto, fuera de la partida viva o sin confirmación puesta, el reducer devuelve el estado **idéntico** (`toBe`), no una copia. |
+| `src/ui/__tests__/surrender-control.test.tsx` | Apertura, foco en el diálogo, trampa de tabulador en los cuatro sentidos incluido el foco en el propio diálogo, Escape, click fuera que no hace nada, foco devuelto al botón al cancelar, y Enter ignorado. |
+| `src/app/__tests__/use-game-session.test.tsx` | La partida queda congelada y sin atajos con la confirmación puesta, y los atajos vuelven a funcionar al cancelar en cuanto el foco sale del botón. |
+| `src/App.test.tsx` | El flujo entero: pedir, arrepentirse, volver a pedir, confirmar, y que la pantalla final enfoque su encabezado. |
+| `src/ui/__tests__/game-screen.test.tsx` | Cuatro filas de cifras con la salud entre ellas, la barra de salud con diez bloques y no con doce, el refugio fuera de la lista, su bloque encendido solo cuando hay techo, y las cinco acciones más la salida. La geometría de la fila del refugio se fija aquí: comparte rejilla con las cifras y se cuadra con ellas. |
+| `src/ui/__tests__/game-over.test.tsx` | «Fin voluntario» frente a «El último aliento», y el mensaje de la rendición. |
+| `src/ui/__tests__/screens.test.tsx` | «Sobrevive» y no «Overvive», y que las tarjetas no rotulen un modo que no distingue nada. |
+
+### Dos ramas muertas que las pruebas encontraron
+
+Escribir las pruebas del 100 % no es trámite: salió código que no se podía probar.
+
+1. **La guarda de lista vacía de la trampa de foco** (`if (first === undefined
+   || last === undefined) return;`) no puede ser falsa mientras el diálogo lleve
+   sus dos botones, así que era código muerto. Se quitó. Y con ella se cayó el
+   `?? []` que la sostenía, que v8 sí cuenta como rama. Ahora el manejador busca
+   los botones con `event.currentTarget` en lugar de un ref, y enfoca con `?.`.
+   Si la lista viniera vacía, el foco no sería ningún extremo, el tabulador
+   saldría del diálogo y Escape seguiría funcionando: perder el foco es un fallo
+   recuperable, atraparlo en un diálogo sin salida no.
+2. **`actionLabels` era un array de tuplas** con una rama `label === undefined ?
+   action : label[1]` que quedaba muerta desde que las etiquetas se movieron a
+   la aplicación. Pasó a ser `Record<GameAction, string>` con `gridActions`
+   ordenado, y la rama desapareció.
+
+### Un cambio de muerte que las pruebas obligaron a corregir
+
+Al sustituir Ayuda por `Descansar` en los fixtures, dos pruebas de muerte
+empezaron a fallar, y no por un error del código: la causa comunicada había
+cambiado. Antes, Ayuda no costaba hambre ni energía, así que diez turnos de
+meteorito dejaban salud en 0 con el hambre intacta y la causa era `health`. Ahora
+Descansar gasta un punto de cada cosa por turno, así que al décimo turno el
+hambre llega a 10 y a la vez, y el motor dice `hunger` porque es el número que el
+jugador llevaba viendo subir toda la partida. El umbral 1 de escalada cae
+también en el turno 10, así que el noveno descanso es el último antes del aviso.
+
+Ambas pruebas se actualizaron al hecho y lo dicen en un comentario. Merece la
+pena dejarlo escrito porque «la prueba estaba mal» y «la prueba-documenta-el-cambio»
+son cosas distintas, y aquí era lo segundo.
+
+### Lo que sigue sin comprobarse
+
+- **El título gótico.** Que la pila `--font-title` caiga en «Old English Text MT»
+  o en Blackadder ITC está verificado en la máquina del usuario (261 familias
+  instaladas, ambas presentes), pero que el resultado se vea bien en pantalla no.
+- **El centrado de la pantalla de dificultad.** Que la cabecera mida lo mismo en
+  los cuatro breakpoints y que la nota de reglas se lea como párrafo, no como
+  banda.
+- **La línea de refugio.** Que «Destruido» en su sitio sea más legible que
+  «Ausente» dentro de la lista.
+- **El diálogo de rendirse.** Que el overlay oscurezca como debe, que el texto de
+  la derrota jocosa aterrice y que la fila completa en color sangre no compita
+  con las cinco acciones.
+- El aspecto visual en general, que sigue necesitando navegador de escritorio.
+
+## Rediseño de acciones (Fase 5)
+
+La sección más larga de este registro, porque esta fase sí cambió reglas y
+todas se obtuvieron midiendo. El análisis completo está en la sección de
+diagnóstico de más arriba y en `SPEC-threat.md`; aquí queda lo que la QA añade.
+
+### Cómo se midió, y por qué importa
+
+El modelo de medición fue un duplicado mutable del motor real en TypeScript, no
+una simulación aparte. Se validó contra el motor de producción reproducciendo
+partidas turno a turno con las mismas semillas antes de usar un solo número: si
+el modelo y el motor no coinciden, cualquier cifra que salga de él es ficción.
+Una vez validado, se pudieron probar miles de partidas en minutos, lo que hizo
+posible la pregunta que decide el diseño: *¿con el mejor azar posible, cuál es el
+turno más alto al que se puede llegar?*
+
+Esa pregunta es la que separa «difícil» de «imposible». Una estrategia que llega
+al turno 97 con el mejor azar posible no es una estrategia buena: es la mejor, y
+si no pasa de 97 el diseño no tiene ruta.
+
+### Cuatro errores que se colaron al escribir los asserts
+
+Todos del mismo tipo, y todos se habrían evitado con una operación antes del
+`expect`. Se dejan escritos porque el patrón es lo que hay que evitar:
+
+1. El hallazgo grande a carga 10 sale solo con la tirada 1, no con la tirada 2.
+2. La reparación a carga 7 suma 6 de hambre —dos turnos por 3 de hambre por
+   turno— y el test asumía otra cifra.
+3. `rest` con techo deja la energía final en 1, no en 2: el tope se recorta
+   *después* de la tirada, no antes.
+4. El umbral del nivel 2 es el turno 22, no el 20.
+
+El cuarto es el más representativo: escribir un test de memoria sobre una tabla
+que ya se había calculado. La tabla de umbrales es `n² + 9n`, así que el nivel 2
+cae en `4 + 18 = 22`.
+
+### Lo que ya no existe y hay que decir en voz alta
+
+| Antes | Ahora |
+|---|---|
+| Siete acciones, incluidas Ayuda, buscar comida y pescar | Cinco acciones |
+| `B D E R P C` y `?` como atajos | `E C S D R`; `B` y `P` sin mapeo |
+| El botón de pescar decía «hasta +6 hambre, −6 energía» | Ningún botón dice «hasta» |
+| La salud no se mostraba | Cuarta cifra, con barra propia de diez bloques |
+| Comer curaba 1 de salud | Comer no cura; `cure` es la única vía |
+| Reparar duraba de 2 a 5 turnos según la carga | Dos turnos fijos |
+| Sin acción de curación | `Curarse`: 2 comidas, sin tirada |
+
+La comprobación automática que ata el bundle a estas cifras es más débil que
+quien las lee. `grep` sobre el artefacto encuentra las cadenas, pero no verifica
+que no queden restos: los restos de la Fase 2 se detectaron porque la
+comprobación buscaba «quince turnos» en palabras y el texto usaba cifras. La
+búsqueda de residuos sobre `dist/` es manual y queda pendiente de hacerla tras
+el despliegue.
+
+### Lo que sigue sin comprobarse tras la Fase 5
+
+- **En navegador de escritorio**, todo lo visual: la nueva fila de salud, el
+  cuarto bloque de la rejilla, el nuevo copy de la terminal, y que la fila del
+  refugio siga cuadrada con cuatro filas en lugar de tres.
+- **La sensación de endless.** Que 118 de mediana y 172 de máximo produzcan la
+  tensión buscada no lo dice ninguna prueba. Un número alto puede sentirse como
+  una lista larga de lo mismo.
+- **Que Agonía siga siendo un modo y no un muro.** Su techo medido es 57 frente a
+  los 153 de Normal. La fractura estructural está arreglada, pero el impuesto de
+  la tormenta sigue marcando el techo. Si al probarlo en navegador se lee como
+  un muro y no como un modo, la Fase 5 no está cerrada.
+- **La inspección de residuos en `dist/`** tras el despliegue, sobre todo que no
+  queden cadenas de `forage`, `fish` ni los textos de los hitos.
+
 ## Aceptación en la URL pública (Fase 2, desplegada)
 
 La publicación accesible está en `https://the-last-turn.erpro-ferru.workers.dev`.
@@ -288,18 +517,33 @@ Aun así se verificó sobre el despliegue:
 
 Las capturas de pantalla de 360, 768 y 1440 px se generaron temporalmente para la inspección y no forman parte del repositorio. La primera versión no incluye E2E automatizado; la comprobación de navegador se mantiene como QA manual reproducible.
 
-## Pendiente para los builds de Fase 1 y Fase 2
+## Pendiente para el build de la Fase 5
 
 Los builds actuales se verificaron con los comandos automáticos de arriba y con una comprobación del artefacto servido: `npm run preview` devuelve 200 para el documento y para los tres recursos. Un barrido de URLs sobre el bundle solo encuentra `http://www.w3.org` (espacio de nombres SVG inerte) y `https://react.dev` (cadena de un mensaje de error de React); no hay peticiones a terceros en runtime.
 
 Queda pendiente, y no se afirma aquí ningún resultado hasta ejecutarlo:
 
-- Recorrido en navegador real de la Fase 1: comer con y sin comida, pesca con seis intentos, meteorito no mortal desde salud inicial, teclado, foco y ausencia de la salud en pantalla.
-- Recorrido en navegador real de la Fase 2: aviso de escalada a negro, mensaje en rojo sangre, foco en el diálogo, cierre con click, `Enter` y `Espacio`, atajos inactivos mientras el aviso está abierto, comportamiento en anchos estrechos y con `prefers-reduced-motion`.
-- Comprobación de la tabla de modificadores en partida real, no solo en pruebas: que en la carga 10 un turno cueste 6 de hambre, el descanso topa en 2 de energía y la ración quite 9.
-- Recorrido largo en partida real: llegar al menos al nivel 3 y ver el aviso tres veces seguidas, para confirmar que el copy cicla y que la escalada se nota.
-- Repetición de anchos 320, 360, 768 y 1440 px, objetivos táctiles, movimiento reducido, consola y red sobre los builds actuales.
-- Confirmación de infraestructura en el dashboard de Cloudflare: si el proyecto es Pages clásico o Workers con Static Assets, y qué rama produce despliegues.
+- Recorrido en navegador real de la Fase 5: la fila de salud con su barra de diez
+  bloques, que la salud se anuncie en texto al caer a `Sangrando` y a `A un paso
+  de la muerte`, los cinco atajos `E C S D R`, y que `B` y `P` no hagan nada.
+- Recorrido de la nueva economía: una partida donde explorar gaste salud visible,
+  una cura que la devuelva, y el reparto de comida entre comer, curar y guardar.
+- Aviso de escalada a negro, mensaje en rojo sangre, foco en el diálogo, cierre
+  con click, `Enter` y `Espacio`, atajos inactivos mientras el aviso está abierto,
+  comportamiento en anchos estrechos y con `prefers-reduced-motion`.
+- Comprobación de la tabla de modificadores en partida real, no solo en pruebas:
+  que en la carga 10 un turno cueste 4 de hambre, el descanso topa en 3 de
+  energía, la ración quite 10 y curar devuelva 5.
+- Recorrido largo en partida real: llegar al menos al nivel 3 y ver el aviso tres
+  veces seguidas, para confirmar que el copy cicla y que la escalada se nota.
+- Repetición de anchos 320, 360, 768 y 1440 px, objetivos táctiles, movimiento
+  reducido, consola y red sobre el build actual.
+- Barrido de residuos en `dist/`: que no queden `forage`, `fish`, `Auxiliary`,
+  `Ayuda`, `Hito` ni los textos de los hitos de los turnos 15 y 30.
+- Confirmación de infraestructura en el dashboard de Cloudflare: si el proyecto
+  es Pages clásico o Workers con Static Assets, y qué rama produce despliegues.
 - Empuje a `origin/main` y redespliegue, que requieren autorización explícita.
 
-`D-01` ya no bloquea la publicación: está resuelto, medido y cubierto por tests.
+`D-01`, `D-02` y `D-03` ya no bloquean la publicación: los tres están resueltos,
+medidos y cubiertos por tests. Lo único que bloquea es que nadie ha mirado el
+resultado en una pantalla.

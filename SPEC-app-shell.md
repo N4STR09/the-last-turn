@@ -12,7 +12,7 @@ start → difficulty → playing → dead → difficulty
 
 - `start`: presentación y botón “Comenzar”.
 - `difficulty`: Normal o Agonía.
-- `playing`: recursos, resolución y acciones.
+- `playing`: cifras, refugio, resolución y acciones.
 - `dead`: causa comunicada, turnos aguantados y reinicio.
 
 Recargar la página vuelve a `start`.
@@ -23,6 +23,7 @@ Recargar la página vuelve a `start`.
 - Crear el estado inicial al elegir dificultad.
 - Adaptar la fuente de azar del navegador al contrato `RandomInt`.
 - Resolver una acción fuera del reducer y despachar su resultado ya calculado.
+- Congelar la partida mientras hay un aviso o una confirmación encima, tanto para el click como para el teclado.
 - Construir view models para la interfaz.
 - Reiniciar de forma limpia una partida terminada.
 - Gestionar atajos de teclado equivalentes a los botones.
@@ -40,18 +41,27 @@ export type AppState =
       readonly screen: 'start' | 'difficulty';
       readonly game: null;
       readonly resolution: null;
+      readonly threatNotice: null;
     }
   | {
       readonly screen: 'playing';
       readonly game: PlayingGameState;
       readonly resolution: GameResolution | null;
+      readonly threatNotice: ThreatNotice | null;
+      readonly surrenderPending: boolean;
     }
   | {
       readonly screen: 'dead';
       readonly game: FinishedGameState;
-      readonly resolution: GameResolution;
+      readonly resolution: GameResolution | null;
+      readonly threatNotice: null;
     };
 ```
+
+Dos detalles que la unión impone y que hay que leer antes de tocar nada:
+
+- `resolution` es nulable en `dead` porque rendirse termina la partida **sin** que hubiera un turno que resolver. Una muerte siempre trae resolución; una rendición, no.
+- `surrenderPending` vive **solo** en la variante `playing`, igual que `threatNotice`: la confirmación solo puede existir con una partida viva, y mantenerla fuera de las otras variantes deja sus literales intactos y hace que un estado con la confirmación puesta en pantalla equivocada no compile.
 
 Comandos del reducer:
 
@@ -60,6 +70,10 @@ export type AppCommand =
   | { readonly type: 'show-difficulty' }
   | { readonly type: 'start-game'; readonly game: PlayingGameState }
   | { readonly type: 'resolve-action'; readonly resolution: GameResolution }
+  | { readonly type: 'dismiss-threat-notice' }
+  | { readonly type: 'ask-surrender' }
+  | { readonly type: 'cancel-surrender' }
+  | { readonly type: 'surrender' }
   | { readonly type: 'restart' };
 ```
 
@@ -68,9 +82,17 @@ El reducer será puro. No llamará `Math.random`, `Date`, APIs del DOM ni `resol
 - `show-difficulty` pasa de inicio a selección.
 - `start-game` almacena el estado inicial y entra en juego.
 - `resolve-action` almacena la resolución y elige `playing` o `dead` según `resolution.state.status`.
+- `dismiss-threat-notice` descarta el aviso de escalada sin tocar la partida.
+- `ask-surrender` pone la confirmación.
+- `cancel-surrender` la quita.
+- `surrender` llama a `surrenderGame(state.game)` del motor y entra en `dead` con `resolution: null`.
 - `restart` descarta partida y resolución, y vuelve a dificultad.
 
 No habrá un comando `finish-game` independiente: la finalización forma parte de la transición ya resuelta.
+
+Los tres comandos de rendirse se guardan igual que `dismiss-threat-notice`: si la pantalla no es `playing`, si hay un aviso de escalada abierto, o si la confirmación no estaba puesta, el estado se devuelve **idéntico** (`toBe`, no una copia) y no ocurre nada. La partida se congela por completo mientras hay un diálogo encima, así que un comando que llega tarde no puede colarse.
+
+`surrender` sí es el único comando que llama al motor, y lo hace con una función pura y sin azar: `surrenderGame` no tira dados, no dispara eventos y no sube la escalada.
 
 ## Integración con React
 
@@ -93,14 +115,15 @@ El adaptador pertenece a la aplicación, no a `src/game/`. Se documentará que l
 ## Atajos de teclado
 
 - Se registrarán únicamente durante la partida.
-- `B/D/E/R/P/C` activan la acción correspondiente.
-- `?` activa Ayuda.
+- `E/C/S/D/R` activan la acción correspondiente: `E` explorar, `C` comer, `S` curarse, `D` descansar, `R` reparar. La tecla es la inicial del verbo, así que se leen sin mirar.
+- Las teclas que quedaron libres al retirar acciones (`B` y `P`) **no se recuperan**: una tecla que sobró no puede seguir significando algo, y hay una prueba que lo fija.
+- **Rendirse no tiene atajo.** Una decisión que borra la partida no debería salir de una pulsación suelta que el jugador ni ha mirado, y por eso necesita un botón y una confirmación.
 - Se ignorarán `event.repeat`, `Ctrl`, `Alt` y `Meta`.
 - Se ignorarán eventos originados en `input`, `textarea`, `select`, `button`, `a` o elementos `contenteditable` para evitar duplicar la activación de un control.
-- No se registrarán en Inicio, Dificultad o Fin de partida.
+- No se registrarán en Inicio, Dificultad o Fin de partida, ni con el aviso de escalada abierto, ni con la confirmación de rendirse puesta: en los tres casos la partida está congelada.
 - Los botones seguirán siendo la vía principal y accesible.
 
-Los atajos reproducen las letras del prototipo y no añaden reglas.
+Los atajos ya no reproducen las letras del prototipo: el conjunto de acciones cambió, y una tecla que no existe en el juego no puede ser un atajo suyo. No añaden reglas.
 
 ## Gestión de foco
 

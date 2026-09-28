@@ -521,10 +521,10 @@ banner, recursos en barras, registro del turno y acciones.
 - [x] Un color por recurso, medido sobre el fondo de página. Todos AA o mejor.
 - [x] Banner con el nombre del juego y, debajo, ronda y nivel en blanco con halo. El nivel es el de escalada, no el modo de dificultad.
 - [x] La dificultad la dice la calavera y no se repite en el banner.
-- [x] Una fila por recurso con etiqueta, cifra y barra de un bloque por unidad. El refugio usa un bloque.
+- [x] Una fila por recurso con etiqueta, cifra y barra de un bloque por unidad. El refugio usa un bloque. **Retirado en la Fase 4**: el refugio pasó a línea propia.
 - [x] Barra oculta a lectores de pantalla, con la cifra y la etiqueta en texto al lado.
 - [x] El estado en texto aparece solo cuando hay algo que avisar, y entonces no depende del color.
-- [x] Punto crítico explícito, distinto de `tone === 'warning'`: sin refugio avisa pero no late.
+- [x] Punto crítico explícito, distinto de `tone === 'warning'`: sin refugio avisa pero no late. **Retirado en la Fase 4**: con el refugio fuera de la lista, el campo quedaba idéntico al tono.
 - [x] El parpadeo va a 0.55 Hz, por debajo del umbral de 3 destellos, y se anula con `prefers-reduced-motion`.
 - [x] Terminal con monoespaciada del sistema y calavera en SVG en línea, decorativa, sin peticiones de red.
 - [x] La calavera lleva cuernos y ojos rojos solo en Agonía, también en la tarjeta de dificultad.
@@ -560,3 +560,211 @@ banner, recursos en barras, registro del turno y acciones.
 - `src/ui/styles/screens.css`
 - `src/styles/app.css`
 - `SPEC-web-interface.md`
+
+## Fase 4: rendirse, refugio y copy
+
+**Descripción:** Cinco correcciones pedidas sobre el rediseño. Ninguna toca las
+reglas del juego; dos borran algo del motor (`U-12`, `U-13`), una reorganiza la
+lectura del refugio (`U-14`) y una es una errata (`U-15`).
+
+**Decisiones confirmadas antes de implementar:**
+- **Rendirse no es un `GameAction`.** Es un comando del reducer que llama a
+  `surrenderGame` en `src/game/end-state.ts`. Motivo: rendirse no es un turno, ni
+  tiradas, ni eventos, ni escalada, y hacerlo acción habría inventado un
+  `ActionOutcome` con ramas muertas en `actionIdForOutcome` y `outcomeCopy`.
+- **Sin atajo de teclado.** Se confirmó con botón. Una decisión que borra la
+  partida no debería salir de una pulsación suelta que el jugador ni ha mirado.
+- **El diálogo cierra con Escape o «Seguir jugando», nunca con click fuera.** Una
+  confirmación de derrota no se acepta por errar el ratón.
+- **Botón y diálogo en un solo componente** (`SurrenderControl`), para que el foco
+  vuelva al botón al cancelar sin atravesar la app con prop drilling. Ref local.
+- **El eyebrow de la pantalla final pasa a «Fin voluntario»** cuando la causa es
+  `surrender`, porque «El último aliento» describe una muerte.
+
+**Criterios de aceptación:**
+- [x] La entradilla de inicio dice «Sobrevive» y nunca «Overvive».
+- [x] El nombre del juego es más grande y usa una pila gótica de familias del
+      sistema, sin descargar fuentes. `clamp(3.5rem, 13vw, 7rem)`, `max-width: 10ch`,
+      `text-wrap: balance` y `--glow-title`.
+- [x] Las tarjetas de dificultad no llevan «Modo de supervivencia».
+- [x] La cabecera de dificultad y la nota de reglas se centran como bloque, no
+      solo sus líneas: `justify-self: center` más `text-align: center`, y
+      `max-width: 58ch` en la nota.
+- [x] El refugio sale de la lista de cifras a una línea propia, con su bloque, y
+      se dice `Construido` o `Destruido`. La palabra vive en un solo sitio
+      (`shelterStatus`), que el delta de la terminal también usa.
+- [x] No queda rastro de Ayuda en el motor ni en la interfaz, y `?` ya no es atajo.
+- [x] Rendirse ocupa la última fila de la rejilla, en color sangre, con la línea
+      `(te lleva la partida)`, y pide confirmación antes de terminar nada.
+- [x] El diálogo atrapa el foco en los dos sentidos, devuelve el foco al botón al
+      cancelar y, al confirmar, el foco se lo lleva la pantalla final.
+- [x] Con el aviso de escalada abierto o la confirmación puesta, ni el click ni el
+      teclado mueven la partida.
+- [x] La pantalla final dice «Fin voluntario» y reconoce el gesto sin fingir que
+      fue un fallo.
+- [x] `src/game` y `src/ui` al 100 % en las cuatro métricas.
+
+**Verificación de esta fase:**
+- [x] `npm run verify` pasa: 321 pruebas, cobertura global 95.57% statements /
+      91.29% branches / 100% functions / 95.52% lines, `src/game` y `src/ui` al
+      100 %, bundle de 76.62 KiB JS gzip y 3.81 KiB CSS gzip.
+- [x] Dos ramas muertas detectadas y resueltas al escribir las pruebas: la guarda
+      de lista vacía en la trampa de foco, y el `?? []` que la sostenía. La
+      trampa usa `event.currentTarget` y `?.focus()`, sin guarda: sin lista el
+      foco no es ningún extremo, el tabulador sale y Escape sigue funcionando.
+- [x] Ningún carácter CJK, cirílico ni `U+FFFD` en el repositorio. Dos hallazgos
+      dudosos resultaron ser artefactos de la consola de PowerShell, no del
+      archivo: `src/game/events.ts` solo tiene `é` e `í`.
+- [ ] Mirar la pantalla. Bloqueado: no hay navegador de escritorio conectado a la
+      sesión. Sin esto no se ha visto el título gótico, el centrado, la línea de
+      refugio ni el diálogo de rendirse; solo hay medidas.
+- [ ] Publicar. Requiere autorización explícita: la URL pública sigue sirviendo el
+      build de la Fase 2.
+
+**Archivos probables:**
+- `src/game/end-state.ts`
+- `src/game/types.ts`
+- `src/game/actions.ts`
+- `src/game/action-cost.ts`
+- `src/app/app-state.ts`
+- `src/app/app-reducer.ts`
+- `src/app/app-keyboard.ts`
+- `src/app/game-view-model.ts`
+- `src/app/use-game-session.ts`
+- `src/ui/components/SurrenderControl.tsx` (nuevo)
+- `src/ui/components/ResourcePanel.tsx`
+- `src/ui/components/ActionGrid.tsx`
+- `src/ui/components/AppButton.tsx`
+- `src/ui/components/DifficultyCard.tsx`
+- `src/ui/screens/StartScreen.tsx`
+- `src/ui/screens/GameScreen.tsx`
+- `src/ui/screens/GameOverScreen.tsx`
+- `src/ui/view-models/ui-types.ts`
+- `src/ui/styles/tokens.css`
+- `src/ui/styles/components.css`
+- `src/ui/styles/screens.css`
+- `SPEC-web-interface.md`
+- `SPEC-app-shell.md`
+- `SPEC-game-engine.md`
+- `docs/fidelity.md`
+
+## Tarea 9: Rediseño de acciones y arreglo de la fractura de Agonía (Fase 5)
+
+**Estado:** implementada y verificada con los comandos automáticos. Pendiente solo
+la inspección en navegador y la autorización de publicación.
+
+**Descripción:** Quitar la pesca y la búsqueda de comida, dejar cinco acciones con
+una sola función cada una, hacer visible la salud como estadística administrable y
+arreglar dos fracturas aritméticas que hacían que la partida no fuera renewable
+y que Agonía fuera un impuesto en vez de un modo.
+
+**Diagnóstico, medido antes de tocar una fórmula.** Se construyó un duplicado
+mutable del motor real, se validó turno a turno contra el motor de producción con
+las mismas semillas, y solo entonces se usó para medir. Salieron tres hallazgos, y
+el más útil no era el que se sospechaba:
+
+| Hallazgo | Medición | Qué era |
+|---|---|---|
+| Agonía es insensible a todo reequilibrio | Mediana 27; las tres palancas de la Fase 2 la movieron **un turno como mucho**. Causa: **energía** | Fractura estructural, no desequilibrio de recursos |
+| La partida no es renewable | Techo absoluto **97** con el mejor azar posible, por debajo del nivel 6 que empieza en el 90 | Aritmética: el hambre por turno y el alivio de la ración crecían al mismo ritmo |
+| Explorar tiene una opción mala | A carga 6, el hallazgo grande daba 4 comidas por 4 de salud y el pequeño 2 por 1 | El premio grande salía peor por punto de salud |
+
+**Decisiones confirmadas antes de implementar:**
+- **Válvula de escape, opción H.** `extraHungerPerTurn` a `min(4, ⌊load/3⌋)`,
+  `foodRelief` a `4 + 2·extra`, `restEnergyCap` a `max(3, 5 − ⌊load/4⌋)` y
+  `cureAmount` a `max(2, exploreWound)`. Con `/2` en el hambre por turno, el hambre
+  y el alivio crecían a la par y la holgura por ración quedaba clavada en 3.
+- **`health <= 0` y no `=== 0`.** El daño de explorar (2 a 5) y del meteorito (1)
+  salta el cero; con igualdad exacta se seguía jugando con salud negativa.
+- **Comer no cura y curar es la única vía.** Si comer curara, curar sería siempre
+  dominante y la barra de salud dejaría de ser un presupuesto.
+- **Descansar no cura.** Si lo hiciera, curar sería inútil en cuanto hubiera techo
+  y el refugio sería una segunda vía de curación en vez de multiplicar el
+  descanso.
+- **Reparar dura dos turnos fijos y no hiere.** Es la única acción de dos turnos y
+  la única que no toca la salud, así que paga solo con tiempo, y su precio se
+  puede anunciar entero en el botón.
+- **La salud se ve, y es una inversión consciente de un requisito del C.** Se
+  declara como desviación `A-05` en `docs/fidelity.md` y no como corrección.
+- **Ningún botón dice «hasta».** Quitada la pesca no queda acción con coste azar,
+  así que `actionTurns` devuelve un número y no un intervalo.
+
+**Criterios de aceptación:**
+- [x] Cinco acciones en el motor y en la rejilla, en el orden `explore, eat,
+      cure, rest, repair`.
+- [x] No queda rastro de `forage` ni de `fish` en el motor, y la tecla `?` ya no
+      era atajo desde antes.
+- [x] Atajos `E C S D R` por inicial del verbo, y `B` y `P` **sin mapeo**, con una
+      prueba que lo fija.
+- [x] La comida tiene tres sumideros que compiten, y la decisión entre ellos es
+      real: `eat` quita hambre, `cure` quita 2 comidas y devuelve salud.
+- [x] La salud es la cuarta cifra, con barra propia de `MAX_HEALTH` bloques y su
+      color, y avisa en texto a partir de 3.
+- [x] `foodRelief > hungerPerTurn` en toda la rampa, con diferencia creciente.
+- [x] `cureAmount(threat) === exploreWound(threat)` en toda la rampa, para que
+      explorar no tenga una opción mala.
+- [x] El recargo de energía de los eventos se cobra **una vez por turno**, y la
+      marca se propaga entre tiradas en lugar de reiniciarse.
+- [x] El mapache saquea `foodRaid` en vez de vaciar el depósito.
+- [x] Descansar sin refugio devuelve 1, que es lo que cuesta el turno.
+- [x] El cierre de salud es `<= 0`.
+- [x] El techo absoluto con el mejor azar posible supera el turno 100, y la
+      mediana con juego normal lo supera holgadamente.
+- [x] `src/game` y `src/ui` al 100 % en las cuatro métricas.
+
+**Verificación de esta fase:**
+- [x] `npm run verify` pasa: 337 pruebas, cobertura global 97.14 % statements /
+      95.73 % branches / 100 % functions / 97.12 % lines, `src/game` al 100 % con
+      177 pruebas y `src/ui` al 100 % con 63, bundle de 76.47 KiB JS gzip y
+      3.85 KiB CSS gzip.
+- [x] `D-02` cerrado: el peor turno de Agonía pasa a costar 1 de energía en lugar
+      de 3, y la partida ya no se cae sola.
+- [x] `D-03` cerrado: techo absoluto de 97 a **153**. Mediana de 80 a **118**,
+      percentil 90 de 92 a **147**, máximo de 105 a **172**. Causa de muerte en
+      Normal: 57 % hambre / 43 % salud.
+- [x] Cuatro errores al escribir asserts, los cuatro del mismo tipo y todos
+      evitables con una operación antes del `expect`: el hallazgo grande a carga 10
+      sale con la tirada 1 y no con la 2, la reparación a carga 7 suma 6 de
+      hambre, `rest` con tope deja la energía final en 1, y el umbral del nivel 2
+      es el turno 22 y no el 20. El último salió de escribir un test de memoria
+      sobre una tabla ya calculada: `n² + 9n` da `4 + 18 = 22`.
+- [x] Ningún carácter CJK, cirílico ni `U+FFFD` en el repositorio.
+- [ ] **Mirar la pantalla.** Bloqueado: no hay navegador de escritorio conectado a
+      la sesión. Sin esto no se ha visto la fila de salud, el cuarto bloque de la
+      rejilla, el copy nuevo de la terminal, ni se sabe si el refugio sigue
+      cuadrado con cuatro filas. Solo hay medidas.
+- [ ] **Sentir el endless.** Que 118 de mediana y 172 de máximo produzcan la
+      tensión buscada no lo dice ninguna prueba.
+- [ ] **Decidir si Agonía es un modo o un muro.** Su techo medido es 57 frente a
+      los 153 de Normal. La fractura estructural está arreglada, pero el impuesto
+      de la tormenta sigue marcando el techo. Si se lee como un muro al jugarlo,
+      esta fase no está cerrada.
+- [ ] Barrido de residuos en `dist/` tras el despliegue: `forage`, `fish`,
+      `Ayuda`, `Hito` y los textos de los hitos de los turnos 15 y 30.
+- [ ] Publicar. Requiere autorización explícita: la URL pública sigue sirviendo el
+      build de la Fase 2.
+
+**Archivos tocados:**
+- `src/game/types.ts`
+- `src/game/threat.ts`
+- `src/game/actions.ts`
+- `src/game/events.ts`
+- `src/game/action-cost.ts`
+- `src/game/end-state.ts`
+- `src/game/index.ts`
+- `src/app/game-view-model.ts`
+- `src/app/app-keyboard.ts`
+- `src/ui/components/ActionGrid.tsx`
+- `src/ui/components/ResourcePanel.tsx`
+- `src/ui/view-models/ui-types.ts`
+- `src/ui/screens/GameScreen.tsx`
+- `src/ui/styles/tokens.css`
+- `src/ui/styles/components.css`
+- `SPEC-game-engine.md`
+- `SPEC-threat.md`
+- `SPEC-web-interface.md`
+- `SPEC-app-shell.md`
+- `docs/fidelity.md`
+- `docs/qa.md`
+- `CHANGELOG.md`
+- `README.md`
