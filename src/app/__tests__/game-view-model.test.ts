@@ -28,17 +28,19 @@ describe('createGameViewModel', () => {
 
     expect(model.difficulty).toBe('normal');
     expect(model.turn).toBe(1);
+    // La salud abre el panel: es la única de las cuatro que puede acabar con la
+    // partida, y por eso se lee antes que las tres que aún se pueden arreglar.
     expect(model.stats.map((resource) => resource.id)).toEqual([
+      'health',
       'hunger',
       'energy',
       'food',
-      'health',
     ]);
     expect(model.stats.map((resource) => resource.value)).toEqual([
-      '0',
       '10',
       '0',
       '10',
+      '0',
     ]);
     expect(model.shelter).toEqual({
       label: 'Refugio',
@@ -46,9 +48,9 @@ describe('createGameViewModel', () => {
       status: 'Destruido',
       tone: 'warning',
     });
-    // La salud es la cuarta cifra, con su propio techo. Durante toda la fase
-    // anterior fue el dato que el jugador no veía nunca, y explorar la volvió
-    // una decisión: si no se puede ver, no se puede administrar.
+    // La salud es visible desde el primer turno y abre la rejilla. Durante toda
+    // la fase anterior fue el dato que el jugador no veía nunca, y explorar la
+    // volvió una decisión: si no se puede ver, no se puede administrar.
     expect(model.stats.map((resource) => resource.label)).toContain('Salud');
   });
 
@@ -108,15 +110,16 @@ describe('createGameViewModel', () => {
       'Aguantas más de lo previsto y vuelves cargado.',
     );
     // La salud aparece entre los cambios: es lo que el hallazgo grande abre y lo
-    // que el jugador tiene que decidir si puede permitirse.
+    // que el jugador tiene que decidir si puede permitirse. Sale la primera
+    // porque la terminal usa el mismo orden que el panel.
     expect(model.resolution?.details).toEqual([
       'La exploración añade 4 comidas y te cuesta 2 de salud.',
     ]);
     expect(model.resolution?.deltas).toEqual([
+      { id: 'health', label: 'Salud', value: '−2', tone: 'warning' },
       { id: 'hunger', label: 'Hambre', value: '+1', tone: 'warning' },
       { id: 'energy', label: 'Energía', value: '−1', tone: 'warning' },
       { id: 'food', label: 'Comida', value: '+4', tone: 'positive' },
-      { id: 'health', label: 'Salud', value: '−2', tone: 'warning' },
     ]);
     expect(model.resolution?.events).toEqual([]);
   });
@@ -207,10 +210,10 @@ describe('createGameViewModel', () => {
       'Gastas 2 comidas y recuperas 2 de salud.',
     ]);
     expect(model.resolution?.deltas).toEqual([
+      { id: 'health', label: 'Salud', value: '+2', tone: 'positive' },
       { id: 'hunger', label: 'Hambre', value: '+1', tone: 'warning' },
       { id: 'energy', label: 'Energía', value: '−1', tone: 'warning' },
       { id: 'food', label: 'Comida', value: '−2', tone: 'warning' },
-      { id: 'health', label: 'Salud', value: '+2', tone: 'positive' },
     ]);
   });
 

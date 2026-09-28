@@ -23,7 +23,12 @@ import type {
   Tone,
 } from '../ui/view-models/ui-types';
 
-const statIds: ReadonlyArray<StatId> = ['hunger', 'energy', 'food', 'health'];
+/**
+ * Orden del panel. La salud va la primera porque es la única de las cuatro que
+ * puede acabar con la partida: las otras tres avisan de un problema que aún se
+ * puede resolver, y esta marca el borde a partir del cual no.
+ */
+const statIds: ReadonlyArray<StatId> = ['health', 'hunger', 'energy', 'food'];
 
 /**
  * Bloques de cada barra. Las cifras comparten escala para que las filas queden
@@ -202,11 +207,13 @@ function createDeltas(
   }
 
   const deltas: ResourceDeltaViewModel[] = [];
+  // El mismo orden que el panel, para que la lista de cambios se lea mirando la
+  // rejilla de arriba y no haya que buscar cada fila por su color.
   const numericResources: ReadonlyArray<{ id: StatId; label: string }> = [
+    { id: 'health', label: 'Salud' },
     { id: 'hunger', label: 'Hambre' },
     { id: 'energy', label: 'Energía' },
     { id: 'food', label: 'Comida' },
-    { id: 'health', label: 'Salud' },
   ];
 
   for (const resource of numericResources) {

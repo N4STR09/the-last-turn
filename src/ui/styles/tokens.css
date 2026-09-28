@@ -14,20 +14,25 @@
   --color-muted: #93a09a;
   --color-hint: #7a7a7a;
 
-  /* Un color por recurso, medidos sobre --color-void:
-     6.73:1, 14.01:1, 12.43:1, 10.64:1 y 9.56:1. Todos AA o mejor.
+  /* Un color por recurso, medidos sobre --color-void: 6.73:1, 7.32:1, 14.01:1,
+     12.43:1 y 10.64:1. Todos AA o mejor.
 
-     La salud es un rosa desaturado a propósito: el hambre ya es el rojo del
-     peligro, y una segunda familia roja haría imposible saber cuál de las dos
-     está advertirte. Desaturarla la deja como carne en lugar de como alarma, y
-     aun así se distingue de un vistazo. */
-  --stat-hunger: #ff5f4d;
+     El rojo se lo queda la salud porque es la única de las cuatro que puede
+     matarte y la única que no se recupera sola: es sangre, y le toca el mismo
+     rojo que el resto de avisos de peligro de la interfaz.
+
+     El hambre se va al violeta por descarte, no por capricho. Con el rojo
+     ocupado quedan cuatro huecos útiles —amarillo, verde, cian y violeta— y el
+     amarillo ya es de la energía, así que solo queda el violeta. La cuenta por
+     matiz lo confirma: el violeta está a 262 grados, a 64 del cian y a 104 del
+     rojo, mientras que el rojo y el amarillo solo se separan 36. */
+  --stat-health: #ff5f4d;
+  --stat-hunger: #b184ff;
   --stat-energy: #ffd166;
   --stat-food: #7ee08a;
   --stat-shelter: #5ec8f5;
-  --stat-health: #e0a3a3;
 
-  /* Rojo de alarma. Deliberadamente el mismo que el hambre: el peligro es un
+  /* Rojo de alarma. Deliberadamente el mismo que la salud: el peligro es un
      color solo, y no hay una segunda familia roja que compita con ella. */
   --color-alarm: #ff5f4d;
   --color-focus: #ffffff;
