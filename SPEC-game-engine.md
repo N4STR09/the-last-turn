@@ -327,7 +327,7 @@ modifica explícitamente estas reglas:
   de `threat.ts`; ver `SPEC-threat.md`.
 - `I-05`: existe una ruta de supervivencia renewable por construcción, con techo
   medido en el turno 153.
-- `I-06`: la salud deja de estar oculta y pasa a ser la cuarta cifra, con barra
+- `I-06`: la salud deja de estar oculta y pasa a ser la primera cifra, con barra
   propia de `MAX_HEALTH` bloques. **Es una inversión consciente del requisito del
   C**, y está anotada como desviación en `docs/fidelity.md`: la salud se
   administra, y un presupuesto que no se ve no se puede administrar.

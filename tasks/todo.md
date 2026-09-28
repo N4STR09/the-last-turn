@@ -698,8 +698,8 @@ el más útil no era el que se sospechaba:
       prueba que lo fija.
 - [x] La comida tiene tres sumideros que compiten, y la decisión entre ellos es
       real: `eat` quita hambre, `cure` quita 2 comidas y devuelve salud.
-- [x] La salud es la cuarta cifra, con barra propia de `MAX_HEALTH` bloques y su
-      color, y avisa en texto a partir de 3.
+- [x] La salud es la primera cifra, con barra propia de `MAX_HEALTH` bloques y el
+      rojo de la sangre, y avisa en texto a partir de 3.
 - [x] `foodRelief > hungerPerTurn` en toda la rampa, con diferencia creciente.
 - [x] `cureAmount(threat) === exploreWound(threat)` en toda la rampa, para que
       explorar no tenga una opción mala.

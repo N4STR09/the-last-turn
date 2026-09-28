@@ -196,7 +196,7 @@ Resultados observados:
 - Anchos comprobados: 320, 360, 768 y 1440 px. No hubo elementos fuera del viewport ni scroll horizontal estable.
 - Todos los botones midieron al menos 44 × 44 px.
 - `prefers-reduced-motion: reduce` coincidió y la hoja de estilos elimina transiciones y animaciones no esenciales.
-- La salud no apareció en el texto de la partida. **Esta línea describe el build 0.1.0 y ya no es un requisito:** la Fase 5 invirtió esa regla a propósito, y la salud es ahora la cuarta cifra. Se conserva como registro del árbol anterior.
+- La salud no apareció en el texto de la partida. **Esta línea describe el build 0.1.0 y ya no es un requisito:** la Fase 5 invirtió esa regla a propósito, y la salud es ahora la primera cifra. Se conserva como registro del árbol anterior.
 - Consola: 0 mensajes y 0 errores.
 - Red en este recorrido completo: 28 peticiones, todas al origen local; 0 peticiones a terceros.
 - El favicon se carga como recurso local, por lo que no se produce la solicitud 404 implícita de `favicon.ico`.

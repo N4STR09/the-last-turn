@@ -12,11 +12,17 @@ Crear una interfaz oscura, atmosférica e interactiva para jugar *The Last Turn*
   pierde contraste, mientras que un texto brillante sobre negro lo gana.
 - El brillo va siempre en `text-shadow` y no en el color, para que el relleno
   del glifo siga siendo sólido y el contraste no dependa del halo.
-- Un color por recurso, medidos sobre el fondo de página: hambre `#ff5f4d`
-  (6.73:1), energía `#ffd166` (14.01:1), comida `#7ee08a` (12.43:1) y refugio
-  `#5ec8f5` (10.64:1). Todos AA o mejor.
+- Un color por recurso, medidos sobre el fondo de página: salud `#ff5f4d`
+  (6.73:1), hambre `#b184ff` (7.32:1), energía `#ffd166` (14.01:1), comida
+  `#7ee08a` (12.43:1) y refugio `#5ec8f5` (10.64:1). Todos AA o mejor.
+- El rojo se lo queda la salud y el hambre se va al violeta. El reparto no es
+  decorativo: el rojo es el de la sangre y el del peligro, así que le corresponde
+  a la única cifra que puede matar y que no se recupera sola. Al sacarlo de ahí
+  el hambre necesitaba un matiz que no estuviera ni en rojo ni junto a él, y de los
+  cuatro que quedaban libres el violeta es el único que está lejos de los otros
+  tres por los dos lados.
 - El peligro es un color solo, `--color-alarm`, deliberadamente el mismo que el
-  del hambre: no hay una segunda familia roja que compita con ella.
+  de la salud: no hay una segunda familia roja que compita con ella.
 - Tipografía del sistema: sans para el cuerpo, serif para los titulares y
   monoespaciada del sistema para la terminal. No se cargarán fuentes externas.
 - El nombre del juego usa su propia pila gótica, `--font-title`:
@@ -85,7 +91,12 @@ Una sola columna estrecha, de 52 rem como máximo. El vacío a los lados es lo q
 El orden es el de lectura y no cambia con el tamaño:
 
 1. **Banner.** Nombre del juego en la pila gótica de `--font-title`, a `clamp(3.5rem, 13vw, 7rem)`, con `--glow-title`. Es lo más grande de la partida porque es lo único que la identifica. Debajo, la ronda y el nivel de escalada en blanco puro y con halo.
-2. **Cifras.** Una fila por recurso numérico, en el orden hambre, energía, comida y salud. Cada fila lleva etiqueta con icono, cifra y barra de bloques.
+2. **Cifras.** Una fila por recurso numérico, en el orden salud, hambre, energía
+   y comida. Cada fila lleva etiqueta con icono, cifra y barra de bloques. La
+   salud abre la rejilla porque es la única de las cuatro que puede acabar con la
+   partida: las otras tres avisan de un problema que aún se puede resolver y esta
+   marca el borde a partir del cual no. La terminal lista los cambios en el mismo
+   orden, para que se lean mirando las filas de arriba.
 3. **Refugio.** Una línea propia debajo de las cifras, con su bloque. No es una cuarta cifra: es un interruptor, y por eso se dice entero (`Construido` o `Destruido`) en lugar de medirse. Comparte la rejilla de cuatro columnas de las cifras (`etiqueta · cifra · barra · aviso`) y coloca su palabra entera donde empieza la barra y su bloque donde está el aviso, de modo que la columna queda cuadrada sin medir nada a mano. En `max-width: 560px` se estrecha con ellas y su palabra baja a fila propia, igual que el aviso.
 4. **Registro del turno.** La terminal descrita en la dirección visual.
 5. **Acciones.** Cinco botones de gasto y, debajo, la salida.
@@ -116,6 +127,8 @@ Un bloque por unidad, hasta un máximo de doce. Por encima de la capacidad la ba
 
 Los bloques van ocultos a lectores de pantalla porque la cifra y la etiqueta ya están en texto a su lado.
 
+Cada bloque lleva `flex: 0 0 auto`. No es un detalle de maquetación: cada fila es su propia rejilla y la cuarta columna es `auto`, así que en el turno que una fila escribe su aviso la columna crece, la barra se encoge y los bloques de esa fila quedaban más estrechos que los de las de al lado. Con la base en `auto` el ancho sale de `width` y no hay que repetirlo en el breakpoint de 480px, donde el bloque ya es más pequeño.
+
 #### Gasto por acción
 
 Cada botón imprime su gasto en hambre y energía, calculado contra la escalada vigente, no un número fijo.
@@ -136,7 +149,7 @@ El aviso y el parpadeo son la misma señal: basta con que `tone` sea `'warning'`
 
 El estado en texto aparece **solo cuando hay algo que avisar**. En el resto de la partida la fila es etiqueta, cifra y barra. Así el aviso no depende del color ni del parpadeo, porque está escrito, y así la pantalla no arrastra cuatro líneas de texto que no aportan nada.
 
-**La salud sí se muestra, como cuarta cifra, y es una inversión consciente de un requisito de la interfaz C.** La salud se administra —explorar la gasta, curar la devuelve— y un presupuesto que no se ve no se puede administrar. Decidir si una exploración merece dos puntos de piel exige ver la piel.
+**La salud sí se muestra, como primera cifra, y es una inversión consciente de un requisito de la interfaz C.** La salud se administra —explorar la gasta, curar la devuelve— y un presupuesto que no se ve no se puede administrar. Decidir si una exploración merece dos puntos de piel exige ver la piel.
 
 Eso no significa que la salud deje de tener reglas: cada punto que se pierde se anuncia. El resultado de explorar dice en la terminal cuánto costó, el mapa del decrecimiento va entre los cambios de recursos de la resolución, y la fila avisa en texto a partir de 3 —`Sangrando` a 5 o menos, `A un paso de la muerte` a 2 o menos— además de latir. Lo que se invierte es la visibilidad del dato, no la obligatoriedad de comunicarlo. La desviación está declarada como `A-05` en [`docs/fidelity.md`](docs/fidelity.md).
 

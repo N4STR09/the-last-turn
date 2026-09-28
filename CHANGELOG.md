@@ -10,10 +10,10 @@
   cubre los cinco recursos sin que dos compitan por el mismo, y la comida queda
   como el único recurso con tres sumideros que compiten entre sí: **calorías,
   medicina y reserva**. Esa competencia es la decisión central de la partida.
-- **La salud es una estadística visible.** Pasa a ser la cuarta cifra, con su
-  propio color, su barra de `MAX_HEALTH` bloques —diez, no doce— y su aviso en
-  texto: `Sangrando` a 5 o menos, `A un paso de la muerte` a 2 o menos. Es una
-  inversión consciente de un requisito del prototipo C, y está declarada como
+- **La salud es una estadística visible.** Pasa a ser la primera cifra, con el
+  rojo de la sangre, su barra de `MAX_HEALTH` bloques —diez, no doce— y su aviso
+  en texto: `Sangrando` a 5 o menos, `A un paso de la muerte` a 2 o menos. Es
+  una inversión consciente de un requisito del prototipo C, y está declarada como
   desviación `A-05` en `docs/fidelity.md`. El motivo es que la salud se
   administra —explorar la gasta, curar la devuelve— y un presupuesto que no se
   ve no se puede administrar. No se invierte la obligatoriedad de comunicarla:
@@ -250,8 +250,10 @@
   un fallo recuperable; atraparlo en un diálogo sin salida, no.
 - Contraste medido sobre el fondo de página `#050706`: texto `#b9c4bd` 11.25:1,
   apagado `#93a09a` 7.44:1, pista `#7a7a7a` 4.71:1, blanco 20.20:1. Recursos:
-  hambre `#ff5f4d` 6.73:1, energía `#ffd166` 14.01:1, comida `#7ee08a` 12.43:1,
-  salud `#e0a3a3` 9.56:1, refugio `#5ec8f5` 10.64:1. Todos AA o mejor.
+  salud `#ff5f4d` 6.73:1, hambre `#b184ff` 7.32:1, energía `#ffd166` 14.01:1,
+  comida `#7ee08a` 12.43:1, refugio `#5ec8f5` 10.64:1. Todos AA o mejor. El rojo
+  pasa del hambre a la salud y el hambre se va al violeta, el único matiz que
+  quedaba libre sin pegarse a ninguno de los otros tres.
 - Geometría de la calavera comprobada numéricamente sobre el PNG rasterizado:
   0.00% de asimetría horizontal en las dos variantes, silueta dentro del lienzo, y
   en Agonía 9 px más alta por los cuernos. **No se ha visto la imagen**: el
