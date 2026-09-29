@@ -6,7 +6,6 @@ import type {
   GameResolution,
   GameState,
 } from '../game';
-import type { TurnRecord } from './breakdown';
 import { createSeededRandomInt } from './seed';
 
 export interface ReplayResult {
@@ -14,11 +13,11 @@ export interface ReplayResult {
   /** La última resolución, para que el parte final sea el de verdad. */
   readonly resolution: GameResolution | null;
   /**
-   * El registro con el turno de cada acción, reconstruido al reproducir. La URL
-   * solo lleva las letras; los turnos salen de aquí, y salen porque el motor
-   * cuenta igual que contó la partida original.
+   * Las acciones jugadas, en el orden en que salieron. La URL solo lleva una
+   * letra por turno, así que esta lista es lo que la reproducción reconstruye, y
+   * el motor cuenta igual que contó la partida original.
    */
-  readonly records: readonly TurnRecord[];
+  readonly records: readonly GameAction[];
 }
 
 /**
@@ -33,7 +32,7 @@ export interface ReplayResult {
 export interface DeadReplayResult {
   readonly state: FinishedGameState;
   readonly resolution: GameResolution;
-  readonly records: readonly TurnRecord[];
+  readonly records: readonly GameAction[];
 }
 
 /** Estrecha una reproducción al caso en que terminó. */
@@ -64,16 +63,14 @@ export function replayGame(
   const randomInt = createSeededRandomInt(seed);
   let state: GameState = createGame(difficulty);
   let resolution: GameResolution | null = null;
-  const records: TurnRecord[] = [];
+  const records: GameAction[] = [];
 
   for (const action of actions) {
     if (state.status === 'dead') {
       break;
     }
 
-    // El turno se lee antes de resolver: es el que la banner mostraba cuando el
-    // jugador pulsó, no el que deja la resolución.
-    records.push({ action, turn: state.turn });
+    records.push(action);
     resolution = resolveTurn(state, action, randomInt);
     state = resolution.state;
   }

@@ -35,21 +35,17 @@ describe('replayGame', () => {
     expect(replayed.state).toEqual(state);
   });
 
-  it('devuelve el turno en el que se jugado cada accion', () => {
+  it('devuelve las acciones jugadas, en el mismo orden', () => {
+    // El registro ya no lleva el turno. Se fue cuando el parte dejó de
+    // enseñarlo, y la cuenta no lo necesitaba nunca: lo único que se conserva es
+    // la secuencia, que es lo que alimenta el desglose y las letras del enlace.
     const records = replayGame(7, 'normal', [
       'explore',
       'rest',
       'repair',
     ]).records;
 
-    // El turno se lee antes de resolver, que es cuando el jugador pulso. Reparar
-    // gasta dos, asi que la siguiente accion despues de ella va dos mas
-    // adelante, no una.
-    expect(records).toEqual([
-      { action: 'explore', turn: 1 },
-      { action: 'rest', turn: 2 },
-      { action: 'repair', turn: 3 },
-    ]);
+    expect(records).toEqual(['explore', 'rest', 'repair']);
   });
 
   it('se detiene en la muerte y no resuelve sobre un estado muerto', () => {

@@ -123,10 +123,10 @@ export interface ThreatNoticeViewModel {
 /**
  * Cuántas veces se usó una acción.
  *
- * Solo la cuenta. El turno de la primera vez se quitó del modelo: el parte lo da
- * una vez y mejor, con `lastShift`, que es el último de esos mismos turnos y el
- * único que significa algo por sí solo. Aquí habría sido el mismo dato repetido
- * cinco veces, y cinco veces no es información: es ruido con formato.
+ * Solo la cuenta. El modelo se quedó así después de quitarle las dos cosas que
+ * también eran el turno de la acción: el «desde el turno N» de cada fila, que
+ * repetía un mismo dato cinco veces, y la frase del último estreno, que lo decía
+ * una sola vez y no añadía nada a un parte que ya dice en qué turno murió.
  */
 export interface ActionUsageViewModel {
   readonly id: GameAction;
@@ -152,12 +152,6 @@ export interface GameOverViewModel {
   readonly shelter: ShelterViewModel;
   /** Las cinco acciones, aunque no se hayan usado nunca. */
   readonly breakdown: ReadonlyArray<ActionUsageViewModel>;
-  /**
-   * Último turno en el que se usó una acción por primera vez, y cuál fue. `null`
-   * en una partida de cero turnos. Es el punto a partir del cual el jugador dejó
-   * de cambiar de estrategia.
-   */
-  readonly lastShift: { readonly turn: number; readonly label: string } | null;
   /** La semilla en base 36, tal y como va en el enlace. */
   readonly seed: string;
   /**

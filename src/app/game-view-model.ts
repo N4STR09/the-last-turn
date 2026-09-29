@@ -1,6 +1,6 @@
 import { actionCost } from '../game/action-cost';
 import { MAX_HEALTH } from '../game';
-import { createBreakdown, findLastShift, type TurnRecord } from './breakdown';
+import { createBreakdown } from './breakdown';
 import { encodeSeed } from './seed';
 import type {
   ActionOutcome,
@@ -513,7 +513,7 @@ export function createGameViewModel(
  */
 export function createGameOverViewModel(
   game: FinishedGameState,
-  records: readonly TurnRecord[],
+  records: readonly GameAction[],
   seed: number,
   replayed: boolean,
   previousBest: number | null = null,
@@ -526,7 +526,6 @@ export function createGameOverViewModel(
     stats: statIds.map((id) => createResource(id, game)),
     shelter: createShelter(game),
     breakdown: createBreakdown(records),
-    lastShift: findLastShift(records),
     seed: encodeSeed(seed),
     replayed,
   };

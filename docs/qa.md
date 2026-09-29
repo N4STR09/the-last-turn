@@ -1,6 +1,6 @@
 # Registro de QA final
 
-**Fecha:** 25 de septiembre de 2026, revisado el 28 tras el rediseño de acciones, el arreglo de colores y pantalla de muerte, y de nuevo con la tanda de semilla, enlace, parte y rival fantasma, ya en 29 con la autopsia, el «desde el turno» de cada fila, la línea de persecución y el tamaño de la insignia fuera de la pantalla de muerte
+**Fecha:** 25 de septiembre de 2026, revisado el 28 tras el rediseño de acciones, el arreglo de colores y pantalla de muerte, y de nuevo con la tanda de semilla, enlace, parte y rival fantasma, ya en 29 con la autopsia, la línea de persecución y el tamaño de la insignia fuera de la pantalla de muerte, y con el turno de cada acción fuera del parte por completo
 **Alcance:** entrega web estática de *The Last Turn Web* con las reglas de la Fase 1 de supervivencia, la Fase 2 de escalada progresiva, el rediseño completo de la interfaz, el rediseño de acciones de la Fase 5 y la tanda de memoria y determinismo
 
 ## Estado de este registro
@@ -14,18 +14,18 @@ Las tablas de la sección «Comandos automáticos» reflejan el árbol con la ta
 | `npm ci` | Pasa; instalación reproducible sin vulnerabilidades reportadas |
 | `npm run typecheck` | Pasa |
 | `npm run lint` | Pasa sin warnings |
-| `npm run test:coverage` | Pasa; 27 archivos y 449 pruebas; cobertura global 98.37% statements, 96.9% branches, 100% functions, 98.34% lines |
+| `npm run test:coverage` | Pasa; 27 archivos y 445 pruebas; cobertura global 98.33% statements, 96.82% branches, 100% functions, 98.31% lines |
 | `npm run test:coverage:scoped` | Pasa; aplica los umbrales de `src/app`, `src/ui` y `src/game` dentro de `verify` |
-| `npm run test:coverage -- src\app` | Pasa; cobertura de `src/app` 97.31% statements, 95.25% branches, 100% functions, 97.25% lines (163 pruebas) |
+| `npm run test:coverage -- src\app` | Pasa; cobertura de `src/app` 97.21% statements, 95.11% branches, 100% functions, 97.15% lines (160 pruebas) |
 | `npm run test:coverage -- src\game` | Pasa; cobertura de `src/game` 100% en las cuatro métricas (183 pruebas) |
-| `npm run test:coverage -- src\ui` | Pasa; cobertura de `src/ui` 100% en las cuatro métricas (87 pruebas) |
+| `npm run test:coverage -- src\ui` | Pasa; cobertura de `src/ui` 100% en las cuatro métricas (86 pruebas) |
 | `npm run verify` | Pasa; typecheck, lint, cobertura global, cobertura por capacidad, build, presupuestos y barrido de residuos |
 | `npm run build` | Pasa; bundle estático dentro de presupuesto |
-| `npm run check:budget` | Pasa; 78.48 KiB JS gzip (39,2 % de 200 KiB) y 4.29 KiB CSS gzip (8,6 % de 50 KiB) |
+| `npm run check:budget` | Pasa; 78.33 KiB JS gzip (39,2 % de 200 KiB) y 4.27 KiB CSS gzip (8,5 % de 50 KiB) |
 | `node scripts/residue-sweep.mjs` | Pasa; sin CJK, sin cirílico y sin `U+FFFD` en `src/`, `scripts/`, `docs/` y `dist/` |
 | `npm audit` | 0 vulnerabilidades |
 
-La puerta mide con gzip nivel 9 sobre `dist/assets/` e informa de 78.48 KiB de JavaScript y 4.29 KiB de CSS, mientras que Vite imprime otros valores para los mismos archivos. La diferencia es esperable y está explicada en `scripts/check-budget.mjs`: ambos ajustan gzip de forma distinta y la puerta aplica siempre su propia medición.
+La puerta mide con gzip nivel 9 sobre `dist/assets/` e informa de 78.33 KiB de JavaScript y 4.27 KiB de CSS, mientras que Vite imprime otros valores para los mismos archivos. La diferencia es esperable y está explicada en `scripts/check-budget.mjs`: ambos ajustan gzip de forma distinta y la puerta aplica siempre su propia medición.
 
 Las puertas se comprobaron además en su sentido de fallo, porque una comprobación que solo pasa no demuestra que bloquee:
 
@@ -558,7 +558,6 @@ declara abajo con el motivo.
 | `?seed=X&d=n&a=ece` | Reconstruye la partida entera turno a turno y enseña su pantalla de muerte tal cual. |
 | Estado final en cifras | Los cinco recursos tal cual quedaron, con la misma lectura que en partida. Es lo que explica la muerte. |
 | Parte de acciones | Lo que se hizo y lo que no se hizo. Lo segundo es lo que no se ve jugando. |
-| Turno del último estreno | El punto desde el que dejó de enseñar algo nuevo. Se rotula con esas palabras y no como «cambio de estrategia», que el dato no sostiene. |
 | Rival fantasma | Da una escala a «llegar lejos» sin persistir nada. |
 | Compartir la muerte | Convierte una partida en algo que se puede pasar. |
 | Nuevo récord | Dice que esa partida fue tu mejor, que es lo único que se puede superar aquí. Va en la pantalla de muerte y no durante la partida, porque el rival fantasma ya lo dice en vivo. |
@@ -675,12 +674,16 @@ declara abajo con el motivo.
   era un alias sin nada encima de `encodeSeed` y `seed.test.ts` ya fijaba su
   resultado —`encodeSeed(0xffffffff) === '1z141z3'`—, así que aquel test era un
   duplicado exacto.
-- **El «desde el turno N» de cada fila se borró por la misma razón que la
-  autopsia.** El turno de la primera vez de cada acción ya lo daba el parte, y
-  mejor: `lastShift` da ese mismo dato una vez, y es el único de los cinco que
-  significa algo por sí solo. Ponerlo en las cinco filas era un índice de turnos
-  que no se leía, se recorría. Con él cae `firstTurn` de `ActionUsageViewModel` y
-  el `Map` que lo llevaba en `createBreakdown`, que se queda contando.
+- **El «desde el turno N» de cada fila y el párrafo del último estreno se borraron
+  por la misma razón que la autopsia.** Los dos eran el turno de la acción, y el
+  parte ya dice en qué turno murió. El primero lo repetía cinco veces, una por
+  fila, y era un índice de turnos que no se leía, se recorría. El segundo lo decía
+  una sola vez y en forma de juicio sobre cómo se jugó. Con el primero cae
+  `firstTurn` de `ActionUsageViewModel` y el `Map` que lo llevaba en
+  `createBreakdown`; con el segundo caen `lastShift`, `findLastShift` y el
+  párrafo, y con ellos el campo `turn` de `TurnRecord`, que se queda sin lector. El
+  registro de la sesión pasa a ser la lista de acciones, que es lo que alimenta el
+  desglose y las letras del enlace.
 - **La insignia del récord se puso más pequeña y con la tipografía del cuerpo.**
   Iba en la serif de titular, en mayúsculas y con `--glow`, y con eso se leía
   como el segundo título de la pantalla. En una lápida un récord es un aval, no un
@@ -690,8 +693,8 @@ declara abajo con el motivo.
 
 ### Lo que las pruebas cubren, y lo que no
 
-449 pruebas globales; `src/game` y `src/ui` al 100 % en las cuatro métricas,
-`src/app` en 97.31 statements y 95.25 branches. Entre lo que ahora está cubierto y
+445 pruebas globales; `src/game` y `src/ui` al 100 % en las cuatro métricas,
+`src/app` en 97.21 statements y 95.11 branches. Entre lo que ahora está cubierto y
 antes no lo estaba:
 
 - El arranque con enlace: partida normal, enlace corrupto, semilla suelta, enlace
@@ -845,8 +848,12 @@ Queda pendiente, y no se afirma aquí ningún resultado hasta ejecutarlo:
 - Mirada a la pantalla de muerte después de la limpieza: que sobre el `Game Over`
   quede solo el remate y el negro respire igual que antes, que la insignia en
   dorado a `0.8rem` se lea como un aval y no compita con los turnos aguantados, y
-  que el bloque «Cómo jugaste» con solo las cuentas no deje un hueco raro al lado
-  de las etiquetas.
+  que el bloque «Cómo jugaste» con solo las cuentas, y ya sin el párrafo del
+  último estreno debajo, no deje un hueco raro al lado de las etiquetas.
+- Confirmar en el banner que la línea «Aguantados 2 de 118» no sale. Ya no sale
+  del código, pero se vio en pantalla durante esta tanda: era el build anterior
+  servido sin recargar a fondo, no el actual. Si vuelve a verse, es caché y se
+  resuelve con Ctrl+Shift+R.
 - Empuje a `origin/main` y redespliegue, que requieren autorización explícita.
 
 `D-01`, `D-02` y `D-03` ya no bloquean la publicación: los tres están resueltos,

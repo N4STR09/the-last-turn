@@ -424,11 +424,7 @@ describe('createGameOverViewModel', () => {
           turnsSurvived: 3,
         },
       },
-      [
-        { action: 'explore', turn: 1 },
-        { action: 'eat', turn: 2 },
-        { action: 'explore', turn: 3 },
-      ],
+      ['explore', 'eat', 'explore'],
       123,
       false,
     );
@@ -473,13 +469,7 @@ describe('createGameOverViewModel', () => {
           turnsSurvived: 5,
         },
       },
-      [
-        { action: 'explore', turn: 1 },
-        { action: 'rest', turn: 2 },
-        { action: 'explore', turn: 3 },
-        { action: 'repair', turn: 4 },
-        { action: 'explore', turn: 5 },
-      ],
+      ['explore', 'rest', 'explore', 'repair', 'explore'],
       1,
       false,
     );
@@ -493,8 +483,6 @@ describe('createGameOverViewModel', () => {
       ['rest', 1],
       ['repair', 1],
     ]);
-    // La última acción estrenada fue reparar, en el turno 4.
-    expect(model.lastShift).toEqual({ turn: 4, label: 'Reparar' });
   });
 
   describe('el récord de la sesión', () => {
@@ -562,7 +550,7 @@ describe('createGameOverViewModel', () => {
           turnsSurvived: 1,
         },
       },
-      [{ action: 'explore', turn: 1 }],
+      ['explore'],
       4294967295,
       true,
     );

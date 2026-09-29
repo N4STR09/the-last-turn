@@ -80,7 +80,6 @@ function makeModel(
     stats,
     shelter,
     breakdown,
-    lastShift: { turn: 5, label: 'Comer' },
     seed: '1z141z3',
     replayed: false,
     ...overrides,
@@ -268,8 +267,10 @@ describe('GameOverScreen', () => {
     expect(usage).toHaveTextContent('4 veces');
     expect(usage).toHaveTextContent('2 veces');
     expect(usage).toHaveTextContent('1 vez');
-    // El «desde el turno N» de cada fila se quitó: el turno de la primera vez ya
-    // lo dice el parte, una vez y mejor, con el de `lastShift`.
+    // El «desde el turno N» de cada fila se quitó, y con él el párrafo que decía
+    // en qué turno dejó de estrenar acciones. Los dos eran el turno de la acción:
+    // uno cinco veces y el otro una, y ninguno le decía al jugador algo que el
+    // parte no dijera ya.
     expect(usage).not.toHaveTextContent('desde el turno');
   });
 
@@ -287,28 +288,17 @@ describe('GameOverScreen', () => {
     expect(usage).toHaveTextContent('Reparar');
   });
 
-  it('no inventa un último giro cuando no hubo ninguna acción', () => {
-    render(
-      <GameOverScreen
-        model={makeModel({ lastShift: null })}
-        shareUrl={null}
-        onRestart={vi.fn()}
-      />,
-    );
-
-    expect(screen.queryByText(/Dejaste de estrenar/)).toBeNull();
-  });
-
-  it('dice cuándo dejó de estrenar acciones', () => {
+  it('no juzga cómo se jugó en un párrafo aparte', () => {
+    // Aquí debajo de «Cómo jugaste» había una línea que decía en qué turno dejaste
+    // de estrenar acciones. Se quitó por lo mismo que el «desde el turno» de las
+    // filas: era el dato del turno puesto en forma de juicio, y el parte ya dice
+    // en qué turno murió. Lo que se comprueba es que no vuelva.
     render(
       <GameOverScreen model={model} shareUrl={null} onRestart={vi.fn()} />,
     );
 
-    expect(
-      screen.getByText(
-        'Dejaste de estrenar acciones en el turno 5, con comer.',
-      ),
-    ).toBeInTheDocument();
+    expect(screen.queryByText(/Dejaste de estrenar/)).toBeNull();
+    expect(screen.queryByText(/en el turno \d+, con/)).toBeNull();
   });
 
   it('avisa de que la partida es reproducida y no del visitante', () => {

@@ -45,10 +45,10 @@
 - **El parte de cómo jugaste.** Las cinco acciones, aunque no se hayan usado
   nunca, con la cuenta y nada más. Un parte que solo listara lo que se hizo
   escondería justo lo interesante: la acción que el jugador tenía delante y no usó.
-  Y de ahí sale la única lectura de estrategia que se puede sostener con el dato:
-  el turno de la última acción estrenada, que es el punto desde el que dejó de
-  enseñar algo que no se hubiera visto antes. Se rotula con esas palabras y no con
-  «cambio de estrategia», que sería una interpretación que el dato no respalda.
+  Del turno de cada acción no queda nada, y se quitó en las dos formas en que
+  estaba: el «desde el turno N» de las filas repetía un mismo dato cinco veces, y el
+  párrafo del último estreno lo decía una sola vez y en forma de juicio sobre cómo
+  se jugó. El parte ya dice en qué turno murió.
 - **El rival fantasma.** La mejor partida de la sesión, en turnos, vive en el
   banner como tercera cifra. Aparece solo cuando ya ha muerto alguna partida,
   porque antes de eso no hay nada contra lo que medir. Al superar la marca el

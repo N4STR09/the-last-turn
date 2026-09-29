@@ -1,21 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
-import { createBreakdown, findLastShift } from '../breakdown';
-import type { TurnRecord } from '../breakdown';
+import { createBreakdown } from '../breakdown';
+import type { GameAction } from '../../game';
 
 describe('createBreakdown', () => {
-  const records: TurnRecord[] = [
-    { action: 'explore', turn: 1 },
-    { action: 'rest', turn: 2 },
-    { action: 'explore', turn: 3 },
-    { action: 'eat', turn: 4 },
-    { action: 'explore', turn: 5 },
-    { action: 'rest', turn: 6 },
+  const played: GameAction[] = [
+    'explore',
+    'rest',
+    'explore',
+    'eat',
+    'explore',
+    'rest',
   ];
 
   it('cuenta cada acción', () => {
     const counts = Object.fromEntries(
-      createBreakdown(records).map((usage) => [usage.id, usage.count]),
+      createBreakdown(played).map((usage) => [usage.id, usage.count]),
     );
 
     expect(counts).toEqual({
@@ -33,13 +33,23 @@ describe('createBreakdown', () => {
     // la primera vez; la cuenta nunca debió depender de dónde estuviera cada acción
     // en la lista, así que se comprueba.
     const counts = Object.fromEntries(
-      createBreakdown([
-        { action: 'eat', turn: 9 },
-        { action: 'eat', turn: 1 },
-      ]).map((usage) => [usage.id, usage.count]),
+      createBreakdown(['eat', 'eat', 'rest']).map((usage) => [
+        usage.id,
+        usage.count,
+      ]),
     );
 
-    expect(counts).toMatchObject({ eat: 2 });
+    expect(counts).toMatchObject({ eat: 2, rest: 1 });
+  });
+
+  it('no lleva el turno de la acción, solo la cuenta', () => {
+    // Aquí hubo un modelo con el turno de la primera vez, y con el turno de la
+    // última acción estrenada. Los dos se fueron con sus frases: el parte ya dice
+    // en qué turno murió, y «cuántas veces» es lo que de verdad describe cómo se
+    // jugó. Lo que se comprueba es que no vuelva colado.
+    for (const usage of createBreakdown(played)) {
+      expect(Object.keys(usage).sort()).toEqual(['count', 'id', 'label']);
+    }
   });
 
   it('lista siempre las cinco acciones, en el orden de la rejilla', () => {
@@ -58,49 +68,5 @@ describe('createBreakdown', () => {
     expect(
       createBreakdown([]).every((usage) => usage.count === 0),
     ).toBe(true);
-  });
-});
-
-describe('findLastShift', () => {
-  it('señala el turno de la última acción estrenada', () => {
-    const result = findLastShift([
-      { action: 'explore', turn: 1 },
-      { action: 'rest', turn: 2 },
-      { action: 'explore', turn: 3 },
-      { action: 'repair', turn: 4 },
-    ]);
-
-    expect(result).toEqual({ turn: 4, label: 'Reparar' });
-  });
-
-  it('ignora las repeticiones posteriores', () => {
-    // Lo que se busca es el último estreno, no la última vez que se usó algo. Aquí
-    // se sigue jugando hasta el turno 4, pero las dos acciones ya se habían
-    // estrenado en los turnos 1 y 2.
-    const result = findLastShift([
-      { action: 'explore', turn: 1 },
-      { action: 'rest', turn: 2 },
-      { action: 'explore', turn: 3 },
-      { action: 'rest', turn: 4 },
-    ]);
-
-    expect(result).toEqual({ turn: 2, label: 'Descansar' });
-  });
-
-  it('devuelve null cuando no se jugaron turnos', () => {
-    expect(findLastShift([])).toBeNull();
-  });
-
-  it('mira el turno y no el orden de la lista', () => {
-    // El registro llega ordenado cuando lo escribe la sesión o una reproducción,
-    // pero un enlace editado a mano puede traer las acciones en otro orden. El
-    // último estreno es el de mayor turno, no el último de la lista.
-    const result = findLastShift([
-      { action: 'repair', turn: 7 },
-      { action: 'explore', turn: 1 },
-      { action: 'rest', turn: 4 },
-    ]);
-
-    expect(result).toEqual({ turn: 7, label: 'Reparar' });
   });
 });

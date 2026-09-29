@@ -29,7 +29,6 @@ import {
   createGameViewModel,
 } from './game-view-model';
 import { createThreatNoticeViewModel } from './threat-copy';
-import type { TurnRecord } from './breakdown';
 import { useActionShortcuts } from './app-keyboard';
 import { buildShareUrl, readSeedOnly } from './seed-url';
 import { createRandomSeed, createSeededRandomInt } from './seed';
@@ -74,7 +73,7 @@ export function useGameSession(
     null,
   );
 
-  // Semilla, registro de turnos y mejor marca viven aquí y no en el reducer: son
+  // Semilla, registro de acciones y mejor marca viven aquí y no en el reducer: son
   // cosas de la sesión, no de la pantalla. La semilla decide el azar y construye
   // el enlace, el registro da el desglose y las letras del enlace, y la mejor
   // marca es el rival fantasma. El reducer sigue siendo un `switch` sobre la
@@ -84,7 +83,7 @@ export function useGameSession(
   // partida viene con su semilla y su registro, y no hay forma de que la
   // reproducible se parezca a la jugada sin ellos.
   const [seed, setSeed] = useState<number | null>(boot?.link.seed ?? null);
-  const [records, setRecords] = useState<readonly TurnRecord[]>(
+  const [records, setRecords] = useState<readonly GameAction[]>(
     boot?.result.records ?? [],
   );
   const [best, setBest] = useState<number | null>(null);
@@ -148,7 +147,7 @@ export function useGameSession(
       }
 
       setPreviousGame(state.game);
-      setRecords((previous) => [...previous, { action, turn: state.game.turn }]);
+      setRecords((previous) => [...previous, action]);
       const randomInt = injected ?? randomRef.current;
       const resolution = resolve(state.game, action, randomInt);
       if (resolution.state.status === 'dead') {
@@ -249,7 +248,7 @@ export function useGameSession(
     return buildShareUrl({
       seed,
       difficulty: state.game.difficulty,
-      actions: records.map((record) => record.action),
+      actions: records,
     });
   }, [records, seed, state]);
 

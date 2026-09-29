@@ -149,10 +149,12 @@ export function GameOverScreen({
 
         {/*
          * Solo la cuenta, y con las cinco acciones aunque no se usaran nunca. Aquí
-         * se quitó el «desde el turno N» que llevaba cada fila. La razón es que el
-         * turno de la primera vez ya lo dice el parte, pero mejor: `lastShift` da
-         * ese mismo dato una sola vez y para toda la partida. Repetido en cada
-         * fila era un índice de turnos que no se leía, se recorría.
+         * se quitaron las dos cosas que también eran el turno de la acción: el
+         * «desde el turno N» de cada fila, que repetía un mismo dato cinco veces, y
+         * el párrafo de debajo, que lo decía una vez y en forma de juicio sobre
+         * cómo se jugó. Un parte que dice cuántas veces se usó cada cosa es un
+         * parte; añadirle el cuándo lo convertía en un índice que no se leía, se
+         * recorría.
          */}
         <section
           aria-labelledby="game-over-usage"
@@ -170,17 +172,6 @@ export function GameOverScreen({
             ))}
           </dl>
         </section>
-        {/*
-         * `lastShift` es el turno de la última acción estrenada. Se rotula con lo
-         * que significa de verdad —dejar de enseñar algo que no se había visto— y
-         * no con «cambio de estrategia», que sería una interpretación del dato que
-         * este no puede respaldar.
-         */}
-        {model.lastShift === null ? null : (
-          <p className="game-over-shift">
-            {`Dejaste de estrenar acciones en el turno ${model.lastShift.turn}, con ${model.lastShift.label.toLowerCase()}.`}
-          </p>
-        )}
 
         {shareUrl === null ? null : (
           <div className="game-over-share">
