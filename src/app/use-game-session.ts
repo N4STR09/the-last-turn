@@ -1,13 +1,12 @@
 import {
   useCallback,
-  useEffect,
   useMemo,
   useReducer,
   useRef,
   useState,
 } from 'react';
 
-import { createGame, resolveTurn } from '../game';
+import { createGame, resolveTurn, surrenderGame } from '../game';
 import type {
   GameAction,
   GameResolution,
@@ -22,22 +21,18 @@ import type {
   ThreatNoticeViewModel,
 } from '../ui/view-models/ui-types';
 import { appReducer } from './app-reducer';
-import { createInitialAppState, type AppState } from './app-state';
+import type { AppState } from './app-state';
+import { bootState, readBoot } from './boot';
 import { browserRandomInt } from './browser-random';
 import {
   createGameOverViewModel,
   createGameViewModel,
 } from './game-view-model';
 import { createThreatNoticeViewModel } from './threat-copy';
+import type { TurnRecord } from './breakdown';
 import { useActionShortcuts } from './app-keyboard';
-import { readReplayLink, readSeedOnly } from './seed-url';
-import { replayGame } from './replay';
-import {
-  createRandomSeed,
-  createSeededRandomInt,
-  encodeReplayQuery,
-  isReplayLink,
-} from './seed';
+import { buildShareUrl, readSeedOnly } from './seed-url';
+import { createRandomSeed, createSeededRandomInt } from './seed';
 
 export interface GameSessionOptions {
   readonly randomInt?: RandomInt;
@@ -68,18 +63,36 @@ export function useGameSession(
 ): GameSession {
   const injected = options.randomInt;
   const resolve = options.resolveTurn ?? resolveTurn;
-  const [state, dispatch] = useReducer(appReducer, createInitialAppState());
+
+  // Lo que la URL dice al abrir se lee una vez y decide el arranque entero: o la
+  // página viene con un enlace de partida y nace ya muerta, o nace normal. No hay
+  // un efecto que lo cambie después, porque eso pintaría primero la pantalla de
+  // inicio y luego saltaría a la de muerte, y ese parpadeo se lee como un fallo.
+  const [boot] = useState(readBoot);
+  const [state, dispatch] = useReducer(appReducer, boot, bootState);
   const [previousGame, setPreviousGame] = useState<PlayingGameState | null>(
     null,
   );
 
-  // Semilla, lista de acciones y mejor marca viven aquí y no en el reducer: son
-  // cosas de la sesión, no de la pantalla. La semilla decide el azar, el registro
-  // de acciones construye el enlace de replay y el desglose, y la mejor marca es
-  // el rival fantasma. El reducer sigue siendo un `switch` sobre la pantalla.
-  const [seed, setSeed] = useState<number | null>(null);
-  const [actionLog, setActionLog] = useState<readonly GameAction[]>([]);
+  // Semilla, registro de turnos y mejor marca viven aquí y no en el reducer: son
+  // cosas de la sesión, no de la pantalla. La semilla decide el azar y construye
+  // el enlace, el registro da el desglose y las letras del enlace, y la mejor
+  // marca es el rival fantasma. El reducer sigue siendo un `switch` sobre la
+  // pantalla, que es lo que tiene que seguir siendo.
+  //
+  // Cuando la página se abre con un enlace, los tres empiezan ya puestos: la
+  // partida viene con su semilla y su registro, y no hay forma de que la
+  // reproducible se parezca a la jugada sin ellos.
+  const [seed, setSeed] = useState<number | null>(boot?.link.seed ?? null);
+  const [records, setRecords] = useState<readonly TurnRecord[]>(
+    boot?.result.records ?? [],
+  );
   const [best, setBest] = useState<number | null>(null);
+  // La mejor partida de antes de empezar la que se está jugando. Es la única que
+  // puede decir si la actual es un récord, y por eso se fija al empezar y no se
+  // toca al morir.
+  const [bestBefore, setBestBefore] = useState<number | null>(null);
+  const [replayed, setReplayed] = useState(boot !== null);
 
   // El azar de la partida viva. Es un `ref` y no un `state` a propósito: la fuente
   // sembrada lleva su propio estado interno y tiene que ser la misma instancia
@@ -87,8 +100,11 @@ export function useGameSession(
   const randomRef = useRef<RandomInt>(injected ?? browserRandomInt);
 
   // Si la URL trae una semilla suelta, esa semilla es la de la primera partida.
-  // Se lee una vez, al montar, con inicialización perezosa.
-  const [urlSeed] = useState(() => readSeedOnly());
+  // Se lee una vez, al montar, con inicialización perezosa. Un enlace de partida
+  // también trae semilla, pero esa ya está en `boot` y es de una partida muerta:
+  // abrirla en Normal daría una partida nueva con el mismo azar, que es otra
+  // cosa distinta de repetirla.
+  const [urlSeed] = useState(() => (boot === null ? readSeedOnly() : null));
 
   const showDifficulty = useCallback(() => {
     setPreviousGame(null);
@@ -98,13 +114,20 @@ export function useGameSession(
   const selectDifficulty = useCallback(
     (difficulty: GameState['difficulty']) => {
       setPreviousGame(null);
-      setActionLog([]);
+      setRecords([]);
+      // A partir de aquí la partida es del visitante. Si venía de un enlace, deja
+      // de serlo: su muerte no era suya y no puede quedarse con su marca.
+      setReplayed(false);
+      // La marca de antes de empezar. La de ahora mismo no sirve para saber si esta
+      // partida es un récord, porque al morir ya incluye a esta misma partida y
+      // saldría siempre un empate.
+      setBestBefore(best);
       const gameSeed = urlSeed ?? createRandomSeed();
       setSeed(gameSeed);
       randomRef.current = injected ?? createSeededRandomInt(gameSeed);
       dispatch({ type: 'start-game', game: createGame(difficulty) });
     },
-    [injected, urlSeed],
+    [best, injected, urlSeed],
   );
 
   const dismissThreatNotice = useCallback(() => {
@@ -125,7 +148,7 @@ export function useGameSession(
       }
 
       setPreviousGame(state.game);
-      setActionLog((previous) => [...previous, action]);
+      setRecords((previous) => [...previous, { action, turn: state.game.turn }]);
       const randomInt = injected ?? randomRef.current;
       const resolution = resolve(state.game, action, randomInt);
       if (resolution.state.status === 'dead') {
@@ -151,7 +174,11 @@ export function useGameSession(
       confirm: () => {
         dispatch({ type: 'surrender' });
         if (state.screen === 'playing') {
-          const survived = state.game.turn;
+          // La cuenta la hace el motor y no esta capa. Calcularla aquí aparte
+          // sería copiar la regla del contador, y las dos copias ya discreparon
+          // una vez: la partida se anunciaba como un turno aguantado y la marca la
+          // guardaba como dos. Preguntándoselo al motor no puede pasar.
+          const survived = surrenderGame(state.game).end.turnsSurvived;
           setBest((previous) =>
             previous === null ? survived : Math.max(previous, survived),
           );
@@ -163,7 +190,7 @@ export function useGameSession(
 
   const restart = useCallback(() => {
     setPreviousGame(null);
-    setActionLog([]);
+    setRecords([]);
     dispatch({ type: 'restart' });
   }, []);
 
@@ -180,26 +207,24 @@ export function useGameSession(
     );
   }, [best, previousGame, state]);
 
+  // `replayed` marca que esta muerte es la de otra persona, no la del visitante.
+  // Vive en la sesión porque la reproducción ocurre al montar y el estado del
+  // juego no tiene por qué saber por qué llegó a ese punto. `bestBefore` viaja
+  // aquí por lo mismo: el récord es una comparación entre partidas, y esa
+  // comparación no le corresponde al motor.
   const gameOverModel = useMemo(() => {
     if (state.screen !== 'dead' || seed === null) {
       return null;
     }
 
-    return createGameOverViewModel(state.game, seed, actionLog);
-  }, [actionLog, seed, state]);
-
-  const shareUrl = useMemo(() => {
-    if (state.screen !== 'dead' || seed === null || typeof window === 'undefined') {
-      return null;
-    }
-
-    const query = encodeReplayQuery({
+    return createGameOverViewModel(
+      state.game,
+      records,
       seed,
-      difficulty: state.game.difficulty,
-      actions: actionLog,
-    });
-    return `${window.location.origin}${window.location.pathname}?${query}`;
-  }, [actionLog, seed, state]);
+      replayed,
+      bestBefore,
+    );
+  }, [bestBefore, records, replayed, seed, state]);
 
   const threatNoticeModel = useMemo(() => {
     if (state.screen !== 'playing' || state.threatNotice === null) {
@@ -209,30 +234,24 @@ export function useGameSession(
     return createThreatNoticeViewModel(state.threatNotice);
   }, [state]);
 
-  // Reproducir una partida compartida. Se lee la URL una vez al montar y, si trae
-  // semilla, dificultad y acciones, se recorre con el mismo motor sembrado: el
-  // resultado es la partida original, con su autopsy y su parte. Se despacha la
-  // última resolución real, así que la pantalla final es la de verdad y no un
-  // resumen. Un enlace manipulado que no muere se queda en la pantalla de
-  // dificultad, porque sin muerte no hay nada que reproducir.
-  const replayed = useRef(false);
-  useEffect(() => {
-    if (replayed.current) {
-      return;
+  // El enlace de esta muerte. Se construye desde la semilla y el registro, que
+  // son las dos únicas cosas que identifican una partida. La barra de direcciones
+  // no se toca: el enlace existe, pero solo cuando alguien lo pide.
+  const shareUrl = useMemo(() => {
+    if (
+      state.screen !== 'dead' ||
+      seed === null ||
+      typeof window === 'undefined'
+    ) {
+      return null;
     }
-    const link = readReplayLink();
-    if (!isReplayLink(link)) {
-      return;
-    }
-    replayed.current = true;
 
-    const result = replayGame(link.seed, link.difficulty, link.actions);
-    if (result.state.status === 'dead' && result.resolution !== null) {
-      setSeed(link.seed);
-      setActionLog(link.actions);
-      dispatch({ type: 'resolve-action', resolution: result.resolution });
-    }
-  }, []);
+    return buildShareUrl({
+      seed,
+      difficulty: state.game.difficulty,
+      actions: records.map((record) => record.action),
+    });
+  }, [records, seed, state]);
 
   // Los atajos se desactivan con el aviso abierto y con la confirmación de
   // rendirse puesta, para que una tecla no ejecute acciones sobre una partida
@@ -240,7 +259,7 @@ export function useGameSession(
   // teclado entra.
   useActionShortcuts(
     state.screen === 'playing' &&
-      state.threatNotice !== null === false &&
+      state.threatNotice === null &&
       !state.surrenderPending,
     performAction,
   );

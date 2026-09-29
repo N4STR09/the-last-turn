@@ -20,6 +20,34 @@ export interface GameScreenProps {
  * decirlo dos veces de dos maneras, y la segunda sería solo texto.
  */
 export function GameScreen({ model, onAction, surrender }: GameScreenProps) {
+  /*
+   * El rival fantasma tiene tres estados y ninguno es el de dejarlo fuera: sin
+   * partidas muertas no hay marca con la que compararse, así que la banner no
+   * dice nada; por debajo de la marca se enseña la marca; por encima, la cifra ya
+   * es un récord de la sesión y decirlo cambia lo que significa ese número. Un
+   * jugador que acaba de batir su mejor partida necesita ver eso, y es justo el
+   * momento en que la escala invisible se vuelve visible.
+   *
+   * La comparación va sobre los turnos **ya aguantados**, no sobre `model.turn`. El
+   * contador avanza al consumir el turno, así que la ronda que se ve arriba es la
+   * que aún no se ha jugado, y `turn - 1` es lo que llevas. No es un matiz: si
+   * miráramos `turn`, el banner diría «Récord» en la ronda que iguala la marca, que
+   * es empatar, y al morir en esa misma ronda la pantalla de muerte no llevaría
+   * «Nuevo récord». El juego prometería algo y luego lo negaría en la misma
+   * partida. Las dos medidas tienen que ser la misma, y la del parte es la
+   * correcta porque es la que se imprime en el informe.
+   *
+   * Aquí no hay ninguna línea de texto que diga cuánto falta. Antes la había —
+   * «Aguantados 3 de 7»—, y se quitó porque la cifra del rival fantasma ya es el
+   * marcador: repetirlo en una frase añadía un dato derivado sin añadir
+   * información, y encima obligaba a decidir si esa frase es una pista o un reproche
+   * según lo lejos que vaya el jugador. El marcador es un número y el jugador hace
+   * con él lo que quiera.
+   */
+  const best = model.personalBest;
+  const survived = model.turn - 1;
+  const beaten = best !== null && survived > best;
+
   return (
     <main className="screen screen--game" aria-labelledby="game-title">
       <header className="banner">
@@ -35,6 +63,16 @@ export function GameScreen({ model, onAction, surrender }: GameScreenProps) {
             <span className="banner__stat-label">Nivel</span>
             <span className="banner__stat-value">{model.threat}</span>
           </span>
+          {best === null ? null : (
+            <span className="banner__stat banner__stat--ghost">
+              <span className="banner__stat-label">
+                {beaten ? 'Récord' : 'Tu mejor'}
+              </span>
+              <span className="banner__stat-value">
+                {beaten ? survived : best}
+              </span>
+            </span>
+          )}
         </p>
       </header>
       <ResourcePanel stats={model.stats} shelter={model.shelter} />

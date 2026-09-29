@@ -54,3 +54,28 @@ export function createInitialAppState(): AppState {
     threatNotice: null,
   };
 }
+
+/**
+ * El estado de arranque cuando la página se abre con un enlace de partida.
+ *
+ * La partida reproducida no arranca en la pantalla de inicio y salta a la muerte
+ * después: nace ya muerta. Hacerlo de otra forma obligaría a pasar por el inicio
+ * un instante, y ese instante se ve como un parpadeo de una pantalla que el
+ * visitante no pidió. Además, reproducir en un efecto obligaría a pedir tres
+ * cambios de estado seguidos, que es un render en cascada por el mismo motivo.
+ *
+ * La resolución que se guarda es la de verdad, la que cerró la partida. Por eso
+ * la pantalla final no es un resumen: es exactamente la que habría visto quien
+ * Jugó, con su última tirada y su último evento.
+ */
+export function createReplayedAppState(
+  game: FinishedGameState,
+  resolution: GameResolution,
+): AppState {
+  return {
+    screen: 'dead',
+    game,
+    resolution,
+    threatNotice: null,
+  };
+}

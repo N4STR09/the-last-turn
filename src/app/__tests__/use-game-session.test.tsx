@@ -10,15 +10,28 @@ import { GameScreen } from '../../ui/screens/GameScreen';
 import { StartScreen } from '../../ui/screens/StartScreen';
 import {
   useGameSession,
+  type GameSession,
   type GameSessionOptions,
 } from '../use-game-session';
 
+/**
+ * Arnés que pinta la pantalla real y deja además la sesión a la vista.
+ *
+ * `onSession` se llama durante el render, y por eso la salida de un test no puede
+ * ser un `let` de este archivo reasignado desde dentro del componente: la regla de
+ * hooks lo prohíbe, y con razón, porque un render puede no llegar a confirmarse.
+ * Se resuelve con un callback recibido por props, igual que en
+ * `session-seed.test.tsx`.
+ */
 function SessionHarness({
   options = {},
+  onSession,
 }: {
   readonly options?: GameSessionOptions;
+  readonly onSession?: (session: GameSession) => void;
 }) {
   const session = useGameSession(options);
+  onSession?.(session);
 
   if (session.state.screen === 'start') {
     return <StartScreen onBegin={session.showDifficulty} />;
@@ -32,6 +45,7 @@ function SessionHarness({
     return (
       <GameOverScreen
         model={session.gameOverModel!}
+        shareUrl={session.shareUrl}
         onRestart={session.restart}
       />
     );
@@ -55,6 +69,48 @@ function SessionHarness({
 }
 
 describe('useGameSession', () => {
+  it('la marca de una rendición es la misma cifra que anuncia su informe', async () => {
+    const user = userEvent.setup();
+    let reported: number | undefined;
+    let best: number | null | undefined;
+
+    const read = (session: GameSession) => {
+      // El informe de la partida que acaba de morir.
+      reported ??= session.gameOverModel?.turnsSurvived;
+
+      // La marca vive en el modelo de partida, así que solo se ve desde dentro de
+      // una partida. Por eso hace falta entrar en otra.
+      if (session.state.screen === 'playing') {
+        best = session.gameModel?.personalBest;
+      }
+    };
+
+    render(
+      <SessionHarness
+        onSession={(session) => {
+          read(session);
+        }}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Comenzar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Agonía' }));
+    await user.click(screen.getByRole('button', { name: /Rendirse/ }));
+    await user.click(screen.getByRole('button', { name: 'Rendirme' }));
+
+    // La partida se rindió en el turno 1 sin jugar nada, así que su informe dice
+    // cero turnos aguantados. La marca de esa misma partida tiene que decir cero
+    // también: si dijeran cosas distintas, el jugador vería dos cifras sobre la
+    // misma partida y solo una sería cierta. La cuenta la pide el motor y no la
+    // repite esta capa, y por eso no pueden separarse.
+    expect(reported).toBe(0);
+
+    await user.click(screen.getByRole('button', { name: 'Volver a jugar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+
+    expect(best).toBe(0);
+  });
+
   it('recorre inicio, dificultad y partida con un estado nuevo', async () => {
     const user = userEvent.setup();
     render(<SessionHarness options={{ randomInt: () => 4 }} />);

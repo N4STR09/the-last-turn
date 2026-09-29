@@ -130,10 +130,12 @@ describe('App', () => {
         name: 'Game Over',
       }),
     ).toHaveFocus();
-    expect(screen.getByText('Fin voluntario')).toBeInTheDocument();
+    // La rendición se reconoce en el mensaje de derrota. Ya no hay rótulo sobre
+    // el título, así que esto es lo único que lo dice.
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Te has autoeliminado con un botón. El refugio queda intacto y tú, desinstalado.',
     );
+    expect(screen.queryByText('Fin voluntario')).toBeNull();
   });
 
   it('una nueva.renderización de la aplicación comienza en Inicio', () => {

@@ -50,6 +50,19 @@
   --color-blood: #8b0000;
 
   /*
+   * Dorado del «nuevo récord». 9.16:1 sobre negro puro, que es el fondo de la
+   * pantalla de muerte, así que cumple AA con holgura para texto pequeño.
+   *
+   * No es un `--stat-*` y no puede convertirse en uno: el récord no es un recurso
+   * de nadie. Y no puede tomar el amarillo de la energía, que es el `--stat-*` que
+   * más se le parece; por eso se oscurece en vez de aclararse, para que en una
+   * pantalla llena de cifras propias se lea como oro y no como un recurso más.
+   * Es el único color de la interfaz que no es ni texto ni alarma: lo que
+   * corresponde a una única cosa, y esa cosa aparece una vez por partida.
+   */
+  --color-gold: #d4a437;
+
+  /*
    * El brillo va en `text-shadow`, nunca en el color del texto: el relleno del
    * glifo sigue siendo sólido, así que el contraste no depende del halo. Dos
    * capas, una ceñida al glifo y otra ancha y difusa. `currentColor` deja que

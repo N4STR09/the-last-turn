@@ -9,6 +9,7 @@ import type { GameViewModel } from '../view-models/ui-types';
 const model: GameViewModel = {
   difficulty: 'agony',
   turn: 3,
+  personalBest: null,
   threat: 1,
   stats: [
     {
@@ -100,12 +101,21 @@ function createSurrender(
   };
 }
 
-function renderScreen(props: Partial<GameScreenProps> = {}) {
+/**
+ * Los props de la pantalla y, además, trozos sueltos del modelo. Se mezclan sobre
+ * el modelo de referencia para que un test del rival fantasma pueda decir
+ * `renderScreen({ personalBest: 118 })` sin reescribir las cuatro barras.
+ */
+function renderScreen(
+  props: Omit<Partial<GameScreenProps>, 'model'> & {
+    model?: Partial<GameViewModel>;
+  } = {},
+) {
   const onAction = props.onAction ?? vi.fn();
   const surrender = props.surrender ?? createSurrender();
   const view = render(
     <GameScreen
-      model={props.model ?? model}
+      model={{ ...model, ...props.model }}
       onAction={onAction}
       surrender={surrender}
     />,
@@ -131,6 +141,65 @@ describe('GameScreen', () => {
     expect(within(banner).getByText('1')).toBeInTheDocument();
     expect(within(banner).getByText('Ronda')).toBeInTheDocument();
     expect(within(banner).getByText('Nivel')).toBeInTheDocument();
+  });
+
+  it('no enseña el rival fantasma cuando todavía no ha muerto nada', () => {
+    // Antes de la primera muerte no hay marca con la que compararse. Una cifra
+    // con «Tu mejor: —» no sería información, sería ruido en el banner.
+    renderScreen({ model: { personalBest: null } });
+
+    expect(screen.queryByText('Tu mejor')).toBeNull();
+    expect(screen.queryByText('Récord')).toBeNull();
+  });
+
+  it('compone con la mejor partida mientras vas por detrás', () => {
+    renderScreen({ model: { personalBest: 118 } });
+
+    expect(screen.getByText('Tu mejor')).toBeInTheDocument();
+    expect(screen.getByText('118')).toBeInTheDocument();
+  });
+
+  it('no dice cuánto falta para el récord: el marcador es la cifra', () => {
+    // Hubo aquí una línea —«Aguantados 2 de 118»— que repetía el marcador en una
+    // frase. Se quitó porque el «Tu mejor» del banner ya es el marcador, y encima
+    // esa frase tenía que decidir si era una pista o un reproche según lo lejos
+    // que fuera el jugador. Lo que no puede ser es que el jugador tenga que
+    // traducir dos veces la misma distancia.
+    renderScreen({ model: { personalBest: 118, turn: 3 } });
+
+    expect(screen.queryByText(/Aguantados/)).toBeNull();
+    expect(screen.queryByText(/118\./)).toBeNull();
+    expect(screen.queryByText(/Te faltan/)).toBeNull();
+  });
+
+  it('cambia a récord en cuanto lo superas', () => {
+    // El momento de batir tu mejor partida es justo cuando la escala invisible se
+    // vuelve visible, así que el rótulo de la cifra cambia en vez de desaparecer.
+    // Marca 2, y 3 turnos aguantados la pasan.
+    renderScreen({ model: { personalBest: 2, turn: 4 } });
+
+    expect(screen.getByText('Récord')).toBeInTheDocument();
+    expect(screen.queryByText('Tu mejor')).toBeNull();
+    // La cifra pasa a ser la marca nueva, que es lo que acabas de hacer: 3 turnos
+    // aguantados, y no la antigua marca de 2.
+    expect(within(screen.getByRole('banner')).getByText('3')).toBeInTheDocument();
+  });
+
+  it('sigue contando cuando empatas con la marca', () => {
+    // Haber aguantado los mismos turnos que tu mejor partida es haberla igualado,
+    // no haberla superado: sigues compitiendo contra ella. Y no da juego a la
+    // pantalla de muerte, que solo dice «Nuevo récord» al pasar de verdad.
+    //
+    // El caso límite importa más que los otros. Aquí el modelo va por la ronda 3,
+    // o sea 2 turnos aguantados, contra una marca de 2. La versión anterior
+    // comparaba contra el número de ronda y declaraba «Récord» en este mismo
+    // momento, que es empatar; y como en la pantalla de muerte el dato es
+    // `turn - 1`, esa partida terminaba con «Récord» en el banner y sin «Nuevo
+    // récord» en el parte. La misma partida, dos veredictos opuestos.
+    renderScreen({ model: { personalBest: 2, turn: 3 } });
+
+    expect(screen.getByText('Tu mejor')).toBeInTheDocument();
+    expect(screen.queryByText('Récord')).toBeNull();
   });
 
   it('muestra las cuatro cifras y el refugio, con la salud entre ellas', () => {

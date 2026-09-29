@@ -1,10 +1,4 @@
-import {
-  decodeSeed,
-  encodeReplayQuery,
-  isReplayLink,
-  parseReplayQuery,
-  type ReplayLink,
-} from './seed';
+import { decodeSeed, encodeReplayQuery, parseReplayQuery, type ReplayLink } from './seed';
 
 /**
  * Puente entre la semilla y la URL del navegador.
@@ -34,24 +28,15 @@ export function readSeedOnly(): number | null {
 }
 
 /**
- * Escribe una partida en la barra de direcciones sin recargar y devuelve el
- * enlace completo, para poder copiarlo o compartirlo.
+ * Monta el enlace completo que reproduce una partida.
  *
- * `replaceState` y no `pushState`: cambiar de semilla es cambiar la partida que
- * se está jugando, no navegar a otra página, así que el botón de atrás del
- * navegador no debería deshacer el juego turno a turno.
+ * Esta función no toca `history`. La barra de direcciones se deja como está: si
+ * la partida muerta metiera su enlace en la URL, recargar la página reventaría
+ * la muerte en vez de empezar otra, y el jugador no ha pedido eso. El enlace sale
+ * del botón de compartir, que es donde tiene sentido escribirlo, y se queda en un
+ * `<details>` para poder leerlo aunque el portapapeles esté bloqueado.
  */
-export function writeReplayLink(link: ReplayLink): string {
+export function buildShareUrl(link: ReplayLink): string {
   const query = encodeReplayQuery(link);
-
-  if (typeof window !== 'undefined' && window.history !== undefined) {
-    window.history.replaceState(null, '', `?${query}`);
-  }
-
   return `${window.location.origin}${window.location.pathname}?${query}`;
-}
-
-/** Si la URL actual es un enlace de partida reproducible y no solo una semilla. */
-export function currentLinkIsReplay(): boolean {
-  return isReplayLink(readReplayLink());
 }

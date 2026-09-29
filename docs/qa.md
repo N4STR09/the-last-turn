@@ -1,11 +1,11 @@
 # Registro de QA final
 
-**Fecha:** 25 de septiembre de 2026, revisado el 28 tras el rediseño de acciones y el arreglo de colores y pantalla de muerte
-**Alcance:** entrega web estática de *The Last Turn Web* con las reglas de la Fase 1 de supervivencia, la Fase 2 de escalada progresiva, el rediseño completo de la interfaz y el rediseño de acciones de la Fase 5
+**Fecha:** 25 de septiembre de 2026, revisado el 28 tras el rediseño de acciones, el arreglo de colores y pantalla de muerte, y de nuevo con la tanda de semilla, enlace, parte y rival fantasma, ya en 29 con la autopsia, el «desde el turno» de cada fila, la línea de persecución y el tamaño de la insignia fuera de la pantalla de muerte
+**Alcance:** entrega web estática de *The Last Turn Web* con las reglas de la Fase 1 de supervivencia, la Fase 2 de escalada progresiva, el rediseño completo de la interfaz, el rediseño de acciones de la Fase 5 y la tanda de memoria y determinismo
 
 ## Estado de este registro
 
-Las tablas de la sección «Comandos automáticos» reflejan el árbol con el rediseño de acciones. Las secciones de navegador real y de aceptación pública se realizaron sobre el build `0.1.0`, publicado antes de la Fase 1, y están etiquetadas como tales; la repetición en navegador con el build actual queda registrada como pendiente porque no hay navegador de escritorio conectado a esta sesión. El rediseño agrava esa limitación: su objeto de entrega es visual, así que ninguna prueba automática dice si la interfaz queda bien. La Fase 5 agrava la limitación en el otro sentido: cambió el motor, y ninguna prueba automática dice si el endless se siente endless.
+Las tablas de la sección «Comandos automáticos» reflejan el árbol con la tanda de semilla y enlace, y con la limpieza de la pantalla de muerte. Las secciones de navegador real y de aceptación pública se realizaron sobre el build `0.1.0`, publicado antes de la Fase 1, y están etiquetadas como tales; la repetición en navegador con el build actual queda registrada como pendiente porque no hay navegador de escritorio conectado a esta sesión. El rediseño agrava esa limitación: su objeto de entrega es visual, así que ninguna prueba automática dice si la interfaz queda bien. La Fase 5 agrava la limitación en el otro sentido: cambió el motor, y ninguna prueba automática dice si el endless se siente endless. La tanda de semilla la agrava en un tercer sentido: añadió una superficie que solo se puede probar abriendo la página con un enlace en la barra de direcciones, y no hay barra de direcciones que probar. La limpieza de la pantalla de muerte la agrava en un cuarto, y es el más fino: quitar texto de una pantalla es fácil de comprobar en el árbol y difícil de comprobar en la vista, porque lo que hay que ver es que no falta.
 
 ## Comandos automáticos
 
@@ -14,17 +14,18 @@ Las tablas de la sección «Comandos automáticos» reflejan el árbol con el re
 | `npm ci` | Pasa; instalación reproducible sin vulnerabilidades reportadas |
 | `npm run typecheck` | Pasa |
 | `npm run lint` | Pasa sin warnings |
-| `npm run test:coverage` | Pasa; 20 archivos y 337 pruebas; cobertura global 97.14% statements, 95.73% branches, 100% functions, 97.12% lines |
+| `npm run test:coverage` | Pasa; 27 archivos y 449 pruebas; cobertura global 98.37% statements, 96.9% branches, 100% functions, 98.34% lines |
 | `npm run test:coverage:scoped` | Pasa; aplica los umbrales de `src/app`, `src/ui` y `src/game` dentro de `verify` |
-| `npm run test:coverage -- src\app` | Pasa; cobertura de `src/app` 94.27% statements, 93.04% branches, 100% functions, 94.24% lines (81 pruebas) |
-| `npm run test:coverage -- src\game` | Pasa; cobertura de `src/game` 100% en las cuatro métricas (177 pruebas) |
-| `npm run test:coverage -- src\ui` | Pasa; cobertura de `src/ui` 100% en las cuatro métricas (63 pruebas) |
-| `npm run verify` | Pasa; typecheck, lint, cobertura global, cobertura por capacidad, build y presupuestos |
+| `npm run test:coverage -- src\app` | Pasa; cobertura de `src/app` 97.31% statements, 95.25% branches, 100% functions, 97.25% lines (163 pruebas) |
+| `npm run test:coverage -- src\game` | Pasa; cobertura de `src/game` 100% en las cuatro métricas (183 pruebas) |
+| `npm run test:coverage -- src\ui` | Pasa; cobertura de `src/ui` 100% en las cuatro métricas (87 pruebas) |
+| `npm run verify` | Pasa; typecheck, lint, cobertura global, cobertura por capacidad, build, presupuestos y barrido de residuos |
 | `npm run build` | Pasa; bundle estático dentro de presupuesto |
-| `npm run check:budget` | Pasa; 76.47 KiB JS gzip (38,2 % de 200 KiB) y 3.85 KiB CSS gzip (7,7 % de 50 KiB) |
+| `npm run check:budget` | Pasa; 78.48 KiB JS gzip (39,2 % de 200 KiB) y 4.29 KiB CSS gzip (8,6 % de 50 KiB) |
+| `node scripts/residue-sweep.mjs` | Pasa; sin CJK, sin cirílico y sin `U+FFFD` en `src/`, `scripts/`, `docs/` y `dist/` |
 | `npm audit` | 0 vulnerabilidades |
 
-La puerta mide con gzip nivel 9 sobre `dist/assets/` e informa de 76.47 KiB de JavaScript y 3.85 KiB de CSS, mientras que Vite imprime 79.28 y 3.95 para los mismos archivos. La diferencia es esperable y está explicada en `scripts/check-budget.mjs`: ambos ajustan gzip de forma distinta y la puerta aplica siempre su propia medición.
+La puerta mide con gzip nivel 9 sobre `dist/assets/` e informa de 78.48 KiB de JavaScript y 4.29 KiB de CSS, mientras que Vite imprime otros valores para los mismos archivos. La diferencia es esperable y está explicada en `scripts/check-budget.mjs`: ambos ajustan gzip de forma distinta y la puerta aplica siempre su propia medición.
 
 Las puertas se comprobaron además en su sentido de fallo, porque una comprobación que solo pasa no demuestra que bloquee:
 
@@ -35,6 +36,7 @@ Las puertas se comprobaron además en su sentido de fallo, porque una comprobaci
 | `check:budget` | JavaScript de 250 KiB | Falla con `exit=1` nombrando el recurso y el límite superado |
 | `check:budget` | `dist/` ausente | Falla con `exit=1` con un mensaje accionable |
 | `check:budget` | `dist/assets/` sin `.js` ni `.css` | Falla con `exit=1` en vez de aprobar un presupuesto de 0 bytes |
+| `check:residues` | Un `.md` de prueba con un ideograma | Falla con `exit=1` y señala `docs/…md:2 [CJK] U+540C — …` |
 
 En todos los casos se restauró el estado y se volvió a comprobar que la puerta pasa con el árbol real.
 
@@ -356,7 +358,7 @@ eso no significa que no fueran verificables: se comprueban igual.
 | `src/app/__tests__/use-game-session.test.tsx` | La partida queda congelada y sin atajos con la confirmación puesta, y los atajos vuelven a funcionar al cancelar en cuanto el foco sale del botón. |
 | `src/App.test.tsx` | El flujo entero: pedir, arrepentirse, volver a pedir, confirmar, y que la pantalla final enfoque su encabezado. |
 | `src/ui/__tests__/game-screen.test.tsx` | Cuatro filas de cifras con la salud entre ellas, la barra de salud con diez bloques y no con doce, el refugio fuera de la lista, su bloque encendido solo cuando hay techo, y las cinco acciones más la salida. La geometría de la fila del refugio se fija aquí: comparte rejilla con las cifras y se cuadra con ellas. |
-| `src/ui/__tests__/game-over.test.tsx` | «Fin voluntario» frente a «El último aliento», y el mensaje de la rendición. |
+| `src/ui/__tests__/game-over.test.tsx` | El mensaje de la rendición, y que sobre el `Game Over` no quede rótulo ni en una muerte ni en una rendición. |
 | `src/ui/__tests__/screens.test.tsx` | «Sobrevive» y no «Overvive», y que las tarjetas no rotulen un modo que no distingue nada. |
 
 ### Dos ramas muertas que las pruebas encontraron
@@ -542,6 +544,202 @@ Cambian cuatro `expect` de nombre de encabezado: dos en `src/App.test.tsx`, uno 
   `src/`, y sobre `dist/` solo se miraron las tres reglas concretas. Un barrido de
   color sobre el bundle completo, no solo de `--stat-hunger`, sigue pendiente.
 
+## Semilla, enlace, parte y rival fantasma
+
+La tanda que da memoria a la partida y expone el determinismo del motor. Cinco de
+los seis puntos pedidos; el sexto, el mapa acumulativo, sigue sin empezar y se
+declara abajo con el motivo.
+
+### Lo que se añadió, y por qué cada cosa existe
+
+| Pieza | Por qué existe, en una línea |
+|---|---|
+| `?seed=X` | Abre una partida con ese azar concreto, para volver a una situación determinada sin escribir un historial. |
+| `?seed=X&d=n&a=ece` | Reconstruye la partida entera turno a turno y enseña su pantalla de muerte tal cual. |
+| Estado final en cifras | Los cinco recursos tal cual quedaron, con la misma lectura que en partida. Es lo que explica la muerte. |
+| Parte de acciones | Lo que se hizo y lo que no se hizo. Lo segundo es lo que no se ve jugando. |
+| Turno del último estreno | El punto desde el que dejó de enseñar algo nuevo. Se rotula con esas palabras y no como «cambio de estrategia», que el dato no sostiene. |
+| Rival fantasma | Da una escala a «llegar lejos» sin persistir nada. |
+| Compartir la muerte | Convierte una partida en algo que se puede pasar. |
+| Nuevo récord | Dice que esa partida fue tu mejor, que es lo único que se puede superar aquí. Va en la pantalla de muerte y no durante la partida, porque el rival fantasma ya lo dice en vivo. |
+
+### Decisiones que se tomaron midiendo o por criterio, no por gusto
+
+- **El turno de muerte y los turnos aguantados son el mismo número.** El motor
+  avanza el contador al consumir el turno, así que el último turno jugado es
+  exactamente el que acabó con la partida. Un segundo campo habría sido un número
+  que dice lo mismo con otro nombre.
+- **La reproducción ocurre al arrancar, no en un efecto.** La primera versión
+  repetía en un `useEffect` y ESLint lo marcó: `Calling setState synchronously
+  within an effect can trigger cascading renders`. No era un aviso de estilo sino
+  el síntoma de tres cambios de estado seguidos para llegar a la pantalla de
+  muerte. Movido al inicializador perezoso, el error desaparece y con él el
+  parpadeo de la pantalla de inicio, que era el defecto visible.
+- **La barra de direcciones no se toca al morir.** Escribir el enlace de la
+  partida muerta en la URL haría que recargar la reventara en vez de empezar
+  otra. `buildShareUrl` es puro y no llama a `history`.
+- **Una partida reproducida no se convierte en tu marca.** El rival fantasma mide
+  al visitante contra sí mismo; una muerte que no es suya no compite con él. Se
+  limpia en `selectDifficulty`, que es donde empieza toda partida propia.
+- **El «nuevo récord» compara contra la marca de antes de empezar, no contra la
+  de ahora.** Al morir, la marca de la sesión ya se ha actualizado con esa misma
+  partida, así que preguntarle por la marca actual daría siempre un empate y la
+  insignia nunca aparecería. Por eso `createGameOverViewModel` recibe un quinto
+  argumento, `previousBest`, que la sesión fija en `selectDifficulty` y no toca
+  al morir. Y hay tres condiciones, no una: no sale en la primera partida de la
+  sesión, el empate no cuenta, y una partida reproducida nunca lo es. La segunda
+  importa por una razón que no es del récord: el rival fantasma usa la misma
+  regla, y si uno dijera «récord» en un empate y el otro no, los dos se
+  contradirían en la misma partida. Por eso el banner del rival fantasma también
+  mide turnos aguantados y no número de ronda.
+- **Las cinco acciones se listan siempre, usadas o no.** Un parte que solo
+  listara lo hecho escondería la acción que el jugador tenía delante y no usó.
+- **Los recursos finales van en cifra, no en barra.** Las barras sirven mientras
+  se decide; en una lápida serían adorno, y el panel es estrecho.
+
+### Bugs y trampas que aparecieron al escribirlo
+
+- **El enlace se parsesó sin dificultad y colaba.** `?seed=X&a=ece` no puede
+  reconstruir una partida, así que la dificultad es obligatoria y un enlace sin
+  ella no es un enlace. Escrito al revés, el enlace se aceptaba y reproducía con
+  Normal una partida que se había jugado en Agonía.
+- **El banner y el parte medían el récord de dos maneras y se contradecían.** El
+  banner comparaba `model.turn` contra la marca y la insignia comparaba
+  `turnsSurvived`, que es esa misma cifra menos uno. En la partida que igualaba la
+  marca, el juego decía «Récord» en el banner y al morir no llevaba «Nuevo récord»:
+  dos veredictos opuestos sobre la misma partida, y solo uno cierto. El arreglo no
+  es elegir una de las dos medidas, es reconocer que la del parte es la buena —
+  es la que se imprime en el informe— y que el banner tenía que adaptarse. Ese
+  arreglo tuvo después un segundo paso: la línea de persecución que quedaba se
+  quitó entera. Aunque midiera lo correcto, repetía en una frase la cifra que ya
+  estaba al lado, y encima obligaba a decidir si esa frase era una pista o un
+  reproche según lo lejos que fuera el jugador. El marcador se queda en la cifra
+  del banner y la frase desaparece.
+- **Un test de la insignia pasó sin probarla.** El primer esbozo del test de
+  sesión pedía la insignia en un caso en el que no podía aparecer, y como
+  `queryByText` sobre algo ausente también «pasa», el test no miraba nada. Se
+  reescribió para recorrer cuatro muertes seguidas —primera partida, una peor, una
+  mejor y otra que ya no mejora— y comprobar la insignia en cada punto. Ese
+  recorrido es el que además importa por la cuarta muerte: es la que demuestra que
+  la insignia se apaga cuando dejas de mejorar, y no solo que aparece una vez.
+- **La mejor partida se guardaba un turno por encima de la partida que la
+  produjo.** La marca usaba `state.turn` y el motor anuncia `turn - 1`. Rendirse en
+  el turno 1 se anunciaba como «1 turno aguantado» y se guardaba como rival de 2.
+  Lo encontraron dos cosas a la vez, y las dos son el argumento de por qué se
+  arregló así: un test del rival fantasma que comparaba la marca con el informe de
+  la propia partida, y el argumento de que la cuenta la pregunte al motor con
+  `surrenderGame(...).end.turnsSurvived` en vez de repetir la regla en la capa de
+  aplicación. Dos copias de una regla que deben coincidir son dos cosas que pueden
+  no coincidir.
+- **Los tests de esta tanda jugaban partidas enteras y lo pagaba el archivo.**
+  `verify` corre los 27 archivos en paralelo, y cuatro tests que llegaban a la
+  muerte explorando cuarenta turnos empujaron el archivo entero contra el límite de
+  cinco segundos: uno estaba en 4160 ms sin cobertura. Se sustituyeron por muertes
+  por rendición, que producen la misma pantalla final con dos clics, y el más
+  lento pasó a 1521 ms. Al hacerlo, el test del rival fantasma se volvió además
+  determinista: antes jugaba dos partidas al azar y comparaba contra
+  `Math.max(...)`, lo que solo detectaba el error cuando la primera salía mejor,
+  es decir, la mitad de las veces. Ahora juega una partida con un turno y se rinde
+  en la segunda, así que la última es siempre peor y el error se ve siempre.
+- **`replayGame` sobre un estado muerto.** Un enlace escrito a mano con acciones
+  de más llama a `resolveTurn` sobre una partida que ya terminó. Se corta el
+  bucle en cuanto `state.status === 'dead'`.
+- **El tipo no decía que una partida muerta trae resolución.** Se añadió
+  `DeadReplayResult` y el guardián `isDeadReplay` para que las dos cosas no
+  puedan separarse; sin eso, TypeScript protestaba al construir el estado de
+  arranque y la única forma de callarlo era un `as`.
+- **Las guardas `typeof window === 'undefined'` de `seed-url.ts` parecían
+  incobribles, y no lo eran.** En jsdom `window` existe siempre, y el comentario
+  del archivo de pruebas afirmaba que esas guardas se cubrían «en `App.test.tsx`
+  borrando `window`», cosa que allí no ocurre: `App.test.tsx` no menciona `window`
+  en ninguna línea. El comentario era una excusa para no cubrirlas. Se resolvieron
+  con un archivo de pruebas propio bajo el entorno `node` de Vitest, que no tiene
+  `window` de verdad: `seed-url-sin-navegador.test.ts`. Borrar `window` a mano desde
+  un test de jsdom habría sido montar un escenario falso para que la cobertura
+  saliera. Ahora `seed-url.ts` está al 100 % y lo que se comprueba es real: importar
+  la capa de URL fuera de un navegador no revienta y no lee nada.
+- **Residuos de escritura.** Esta tanda coló caracteres CJK y cirílicos en
+  comentarios al escribir rápido. `scripts/residue-sweep.mjs` los busca en `src/`,
+  `scripts/`, `docs/` y `dist/`, y en la primera ejecución se detectó a sí mismo,
+  lo que confirma que funciona. Resultado actual: cero.
+- **La autopsia se borró, y con ella su código entero.** La frase que decía de
+  qué moriste, en qué turno y con qué te quedaste estaba debajo del `Game Over`, y
+  los tres datos ya estaban en el parte: la causa en el mensaje de derrota, el
+  turno en «Supervivencia» y la comida en «Cómo terminaste». Encima del título lo
+  que funciona es el remate, y repetir los datos dos veces con dos redacciones no
+  es énfasis. Al quitarla se va `src/app/autopsy.ts` entero y el campo `autopsy`
+  del modelo, porque dejarlos sería código muerto con tests que no vigilan nada. El
+  archivo de pruebas que los cubría, `autopsy.test.ts`, además ya no tenía sentido
+  como nombre: probaba también `breakdown.ts`, así que se partió en
+  `breakdown.test.ts` y su parte de semilla se fue con el resto, porque `seedLabel`
+  era un alias sin nada encima de `encodeSeed` y `seed.test.ts` ya fijaba su
+  resultado —`encodeSeed(0xffffffff) === '1z141z3'`—, así que aquel test era un
+  duplicado exacto.
+- **El «desde el turno N» de cada fila se borró por la misma razón que la
+  autopsia.** El turno de la primera vez de cada acción ya lo daba el parte, y
+  mejor: `lastShift` da ese mismo dato una vez, y es el único de los cinco que
+  significa algo por sí solo. Ponerlo en las cinco filas era un índice de turnos
+  que no se leía, se recorría. Con él cae `firstTurn` de `ActionUsageViewModel` y
+  el `Map` que lo llevaba en `createBreakdown`, que se queda contando.
+- **La insignia del récord se puso más pequeña y con la tipografía del cuerpo.**
+  Iba en la serif de titular, en mayúsculas y con `--glow`, y con eso se leía
+  como el segundo título de la pantalla. En una lápida un récord es un aval, no un
+  titular. Se quitaron la gótica, las mayúsculas y el halo, y se bajó a `0.8rem`,
+  por debajo de la cifra que califica. El dorado se queda: no hay otra forma de
+  decir «esto fue bueno» sin añadir un color más.
+
+### Lo que las pruebas cubren, y lo que no
+
+449 pruebas globales; `src/game` y `src/ui` al 100 % en las cuatro métricas,
+`src/app` en 97.31 statements y 95.25 branches. Entre lo que ahora está cubierto y
+antes no lo estaba:
+
+- El arranque con enlace: partida normal, enlace corrupto, semilla suelta, enlace
+  que no muere, y enlace que sí reconstruye la partida con su registro.
+- Que la muerte reproducida no se marca como reproducida en cuanto juegas tú, y que
+  tampoco se convierte en tu mejor partida.
+- Que dos partidas con la misma semilla y las mismas acciones dan el mismo estado
+  final y la misma causa.
+- Los tres estados del rival fantasma y el caso de empatar, que sigue contando
+  como competir.
+- Que el banner no dice cuánto falta para el récord. El marcador es la cifra.
+- La insignia de récord, por las cuatro partes: la primera partida no la lleva, la
+  segunda más corta tampoco, la tercera que pasa la marca sí, y la cuarta que ya
+  no mejora se la quita. Y que una partida reproducida no la lleva por muy larga
+  que sea.
+- Que el banner y el parte no se contradigan: se recorre la frontera del empate
+  completa, con la marca en 1 y una partida que pasa por 0, por 1 —empate— y por 2.
+  El caso que falla con el código anterior es el del empate.
+- Que la pantalla de muerte no explica la muerte por su cuenta: ni «Moriste de…»
+  ni «Te rendiste…» ni el turno con la causa. Los tres datos están en el parte.
+- La distancia entre el informe y la marca: rendirse en el turno 1 dice cero
+  turnos aguantados y guarda cero como marca, y no uno y dos.
+
+### Lo que sigue sin comprobarse
+
+- **En navegador, toda esta tanda.** El parte, el desplegable de compartir, el
+  marcador del rival fantasma, que la insignia en dorado se lea discreta y, sobre
+  todo, que abrir un enlace no enseñe un parpadeo de la pantalla de inicio. Las
+  pruebas comprueban el árbol de accesibilidad y los modelos; ninguna comprueba que
+  la pantalla se lea bien ni que el enlace open no parpadee. Sigue sin haber
+  navegador de escritorio conectado.
+- **Que la insignia en dorado se lea como un aval y no como un rótulo.** Que dos
+  dorados no se confundan a ojo con el amarillo de la energía, y que a `0.8rem` con
+  la tipografía del cuerpo siga siendo legible sin pelearse con la cifra que
+  califica. El contraste está medido, 9.16:1 sobre negro puro, y el color está
+  elegido para que sea claramente más apagado que el `--stat-energy`, pero que se
+  lea como se quiere leer es una decisión visual, y eso solo se decide mirándola.
+- **Que el enlace cabga de verdad en un mensaje de un móvil.** Con 150 turnos son
+  unas 150 letras y el enlace completo ronda los 260 caracteres. Hay margen, pero
+  no se ha medido en un canal real con un límite real.
+- **Que `?seed=X` con la URL suelta abra la partida con ese azar.** Está cubierto
+  en pruebas, pero no se ha abierto en un navegador.
+- **La longitud del enlace en la partida más larga alcanzable.** El techo medido
+  son 152 turnos, así que 152 letras es el peor caso honesto; no se ha generado un
+  enlace de 152 turnos y copiado a mano.
+- **El mapa acumulativo, el punto 2, entero.** Sin empezar, a la espera de
+  medición previa y de permiso explícito antes de meter reglas nuevas.
+
 ## Aceptación en la URL pública (Fase 2, desplegada)
 
 La publicación accesible está en `https://the-last-turn.erpro-ferru.workers.dev`.
@@ -639,6 +837,16 @@ Queda pendiente, y no se afirma aquí ningún resultado hasta ejecutarlo:
   `Ayuda`, `Hito` ni los textos de los hitos de los turnos 15 y 30.
 - Confirmación de infraestructura en el dashboard de Cloudflare: si el proyecto
   es Pages clásico o Workers con Static Assets, y qué rama produce despliegues.
+- Recorrido de la tanda nueva en navegador real: abrir un enlace de partida y
+  confirmar que aparece directamente su pantalla de muerte sin parpadeo de la de
+  inicio, que el parte se lee, que el desplegable de compartir enseña la URL
+  entera y que el marcador del rival fantasma aparece en la segunda partida y
+  cambia de rótulo al superar la marca.
+- Mirada a la pantalla de muerte después de la limpieza: que sobre el `Game Over`
+  quede solo el remate y el negro respire igual que antes, que la insignia en
+  dorado a `0.8rem` se lea como un aval y no compita con los turnos aguantados, y
+  que el bloque «Cómo jugaste» con solo las cuentas no deje un hueco raro al lado
+  de las etiquetas.
 - Empuje a `origin/main` y redespliegue, que requieren autorización explícita.
 
 `D-01`, `D-02` y `D-03` ya no bloquean la publicación: los tres están resueltos,

@@ -90,6 +90,12 @@ export interface ActionViewModel {
 export interface GameViewModel {
   readonly difficulty: Difficulty;
   readonly turn: number;
+  /**
+   * El rival fantasma: la mejor partida de esta sesión, en turnos, o `null` si
+   * todavía no ha muerto ninguna. Vive solo en memoria y se pierde al recargar,
+   * que es justo lo que lo hace un rival y no un récord.
+   */
+  readonly personalBest: number | null;
   /** Nivel de escalada vigente. La dificultad la comunica la calavera. */
   readonly threat: number;
   /** Hambre, energía, comida y salud, en ese orden. */
@@ -114,8 +120,50 @@ export interface ThreatNoticeViewModel {
   readonly hint: string;
 }
 
+/**
+ * Cuántas veces se usó una acción.
+ *
+ * Solo la cuenta. El turno de la primera vez se quitó del modelo: el parte lo da
+ * una vez y mejor, con `lastShift`, que es el último de esos mismos turnos y el
+ * único que significa algo por sí solo. Aquí habría sido el mismo dato repetido
+ * cinco veces, y cinco veces no es información: es ruido con formato.
+ */
+export interface ActionUsageViewModel {
+  readonly id: GameAction;
+  readonly label: string;
+  readonly count: number;
+}
+
 export interface GameOverViewModel {
   readonly difficulty: Difficulty;
   readonly reportedCause: DeathCause;
   readonly turnsSurvived: number;
+  /**
+   * `true` cuando esta partida dejó la marca de la sesión más alta. Va en la
+   * pantalla de muerte y solo en ella: durante la partida lo dice el rival
+   * fantasma en vivo, y al morir ya no hace falta que lo diga dos veces.
+   *
+   * No es una victoria. En este juego siempre se muere, así que lo único que se
+   * puede superar es la propia marca anterior.
+   */
+  readonly newRecord: boolean;
+  /** Los cinco recursos en su valor final, con la misma lectura que en partida. */
+  readonly stats: ReadonlyArray<ResourceViewModel>;
+  readonly shelter: ShelterViewModel;
+  /** Las cinco acciones, aunque no se hayan usado nunca. */
+  readonly breakdown: ReadonlyArray<ActionUsageViewModel>;
+  /**
+   * Último turno en el que se usó una acción por primera vez, y cuál fue. `null`
+   * en una partida de cero turnos. Es el punto a partir del cual el jugador dejó
+   * de cambiar de estrategia.
+   */
+  readonly lastShift: { readonly turn: number; readonly label: string } | null;
+  /** La semilla en base 36, tal y como va en el enlace. */
+  readonly seed: string;
+  /**
+   * `true` cuando esta muerte viene de un enlace y es la partida de otra persona.
+   * La pantalla lo dice porque, sin decirlo, sería la partida del visitante y
+   * mentiría sobre quién murió.
+   */
+  readonly replayed: boolean;
 }

@@ -163,6 +163,19 @@
   text-shadow: var(--glow-far);
 }
 
+/*
+ * El rival fantasma es la tercera cifra del banner, y no se lee igual que las
+ * otras dos. «Ronda» y «Nivel» son datos de esta partida; la mejor marca es una
+ * cifra de otra partida, y por eso va en `--color-muted` y un punto más pequeña:
+ * acompaña, no compite con el turno en el que estás. El brillo lo tienen el turno
+ * y el nivel, que son los dos números por los que se decide.
+ */
+.banner__stat--ghost .banner__stat-value {
+  color: var(--color-muted);
+  font-size: clamp(1.2rem, 4vw, 1.75rem);
+  text-shadow: none;
+}
+
 /* -------------------------------------------------------------- recursos -- */
 
 .stats {

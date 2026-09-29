@@ -40,12 +40,15 @@ npm test                # Suite Vitest + Testing Library
 npm run test:coverage   # Cobertura global y umbrales de verify
 npm run build           # Build estático de producción
 npm run check:budget    # Presupuestos de bundle sobre dist/
-npm run verify          # typecheck → lint → cobertura → build → presupuestos
+npm run check:residues  # Barrido de caracteres fuera del alfabeto
+npm run verify          # typecheck → lint → cobertura → build → presupuestos → residuos
 ```
 
 `npm run test:coverage -- src/app` ejecuta la cobertura centrada en `src/app`; el wrapper de `scripts/run-coverage.mjs` limita el alcance para que los umbrales de esa tarea midan la capacidad indicada. Sin argumentos, `npm run test:coverage` mide todo `src/` y es el comando que usa `verify`.
 
 `npm run check:budget` mide los archivos de `dist/assets/` ya comprimidos con gzip y falla si se superan los presupuestos de 200 KiB de JavaScript y 50 KiB de CSS. Se ejecuta al final de `verify`, de modo que un bundle que crezca sin control detiene la entrega.
+
+`npm run check:residues` recorre `src/`, `scripts/`, `docs/` y `dist/` buscando caracteres CJK, cirílicos y el carácter de reemplazo `U+FFFD`, que aparece cuando un texto se escribe en una codificación que no lo soporta. Es una puerta contra un defecto que se ha repetido en varias tandas —escribir en otro alfabeto dentro de comentarios en español— y que ni el typecheck ni las pruebas ven. Falla con `exit=1` y señala archivo, línea y el tipo de carácter.
 
 Para servir el resultado de producción:
 
@@ -72,9 +75,26 @@ La guía completa para integración Git, carga directa, aceptación, rollback y 
 4. Cada acción actualiza la resolución y, cuando corresponde, el turno y los recursos.
 5. Al subir la dificultad, la partida se congela a negro con un aviso de escalada. Un click, `Enter` o `Espacio` lo descarta y la partida continúa desde el turno en que estaba, ya con el incremento aplicado.
 6. **Rendirse** es la última fila de la rejilla, y no es una acción: no gasta turnos ni tira dados. Pide confirmación, y al confirmar termina la partida. El diálogo cierra con `Escape` o con «Seguir jugando», nunca con un click fuera. No tiene atajo de teclado, a propósito.
-7. Al terminar, la pantalla se queda **negra de punta a punta**, sin tarjeta: solo un **Game Over** en rojo brillante, el mensaje jocoso de la causa de muerte debajo y los datos de la partida —dificultad y turnos aguantados— en monoespaciada. Si te rendiste, el rótulo de arriba dice «Fin voluntario» en lugar de «El último aliento». **Volver a jugar** regresa a la selección de dificultad.
+7. Al terminar, la pantalla se queda **negra de punta a punta**, sin tarjeta: un **Game Over** en rojo brillante y, debajo, solo el **mensaje jocoso de la causa**. No hay una frase que explique la muerte: lo que explica es el parte. Siguen los datos de la partida —dificultad, turnos aguantados y la semilla— y dos bloques: **cómo terminaste**, con los cinco recursos en su valor final, y **cómo jugaste**, con las cinco acciones y cuántas veces se usó cada una. Debajo, el turno en el que dejaste de estrenar acciones y un botón para compartir la muerte. Si esa partida dejó tu mejor marca de la sesión, aparece **Nuevo récord** en dorado, en pequeño y con la tipografía del resto, justo debajo de los turnos aguantados. No sale en tu primera partida —sin marca previa no hay nada que batir—, el empate no cuenta, y una partida reproducida no puede ser récord porque la muerte es de otra persona. Rendirse no tiene rótulo propio: es una de las cuatro causas, y el mensaje de derrota la reconoce igual. **Volver a jugar** regresa a la selección de dificultad.
 
 Durante la partida también funcionan los atajos `E` (explorar), `C` (comer), `S` (curarse), `D` (descansar) y `R` (reparar), que son las iniciales de los verbos. Los atajos se desactivan fuera de la partida, no interfieren con controles interactivos y quedan inactivos mientras el aviso de escalada o la confirmación de rendirse están abiertos.
+
+## El rival fantasma
+
+El banner lleva una tercera cifra: la mejor partida de esta sesión, en turnos aguantados. Solo aparece cuando ya ha muerto alguna, porque antes de eso no hay nada contra lo que medir. Mientras vas por detrás dice «Tu mejor» y enseña la marca; en cuanto lo superas la cifra pasa a decir «Récord» y enseña la nueva. No hay ninguna frase que te diga cuántos turnos te faltan: el marcador es un número y restar es cosa del jugador. La cuenta va sobre los turnos ya aguantados y no sobre la ronda del banner, que es la que aún no has jugado, porque es la misma medida que usa el «Nuevo récord» del parte de muerte.
+
+Vive solo en memoria: recargar la página lo borra. Es lo que lo hace un rival y no un récord, y es lo que permite no guardar nada. Una partida abierta desde un enlace ajeno no cuenta como tu marca.
+
+## Semillas y enlaces
+
+La barra de direcciones admite tres parámetros:
+
+- `?seed=X` arranca una partida nueva con ese azar, sin más.
+- `?seed=X&d=<n|a>&a=<letras>` reproduce una partida entera: semilla en base 36, dificultad (`n` Normal, `a` Agonía) y una letra por turno. Las letras son las de los atajos, en minúscula: `e` explorar, `c` comer, `s` curar, `d` descansar, `r` reparar. Una partida larga son unas 150 letras.
+
+Al morir, la pantalla ofrece **Compartir mi muerte**: un botón que copia el enlace al portapapeles y un desplegable con la URL escrita, por si el portapapeles está bloqueado. Al abrir un enlace, la partida se reproduce de golpe y aparece su pantalla de muerte tal cual, con un aviso de que no la has jugado tú.
+
+Dos partidas con la misma semilla y las mismas acciones producen exactamente la misma partida, con los mismos dados. Un enlace corrupto, o cuya partida no muere, arranca una partida normal: no hay nada que reproducir.
 
 ## Escalada de dificultad
 
@@ -149,7 +169,7 @@ La pantalla de escalada usa rojo sangre `#8b0000` sobre negro puro, con 2.10:1 d
 
 ## Build web estático
 
-El build se genera en `dist/` y se publica directamente como contenido estático, sin backend ni Pages Functions. La puerta `npm run check:budget` vuelve a comprimir cada archivo de `dist/assets/` con gzip nivel 9 y confirma que el total está dentro de los presupuestos: **76.47 KiB de JavaScript** (38,2 % de 200 KiB) y **3.85 KiB de CSS** (7,7 % de 50 KiB). Vite imprime cifras propias que difieren en unos pocos KiB porque ajusta gzip de forma distinta —para el mismo bundle, 79.28 y 3.95— y la puerta aplica siempre su propia medición. El favicon y todos los recursos visuales se incluyen en el artefacto.
+El build se genera en `dist/` y se publica directamente como contenido estático, sin backend ni Pages Functions. La puerta `npm run check:budget` vuelve a comprimir cada archivo de `dist/assets/` con gzip nivel 9 y confirma que el total está dentro de los presupuestos: **78.77 KiB de JavaScript** (39,4 % de 200 KiB) y **4.37 KiB de CSS** (8,7 % de 50 KiB). Vite imprime cifras propias que difieren en unos pocos KiB porque ajusta gzip de forma distinta, y la puerta aplica siempre su propia medición. El favicon y todos los recursos visuales se incluyen en el artefacto.
 
 ## Alcance de QA
 

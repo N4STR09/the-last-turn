@@ -31,6 +31,7 @@ export function App() {
       {session.state.screen === 'dead' ? (
         <GameOverScreen
           model={session.gameOverModel!}
+          shareUrl={session.shareUrl}
           onRestart={session.restart}
         />
       ) : null}

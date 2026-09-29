@@ -6,7 +6,7 @@ import {
   createGameViewModel,
 } from '../game-view-model';
 import { createGame, MAX_HEALTH, resolveTurn } from '../../game';
-import type { GameCoreState } from '../../game';
+import type { FinishedGameState, GameCoreState } from '../../game';
 
 function createCoreState(overrides: Partial<GameCoreState> = {}): GameCoreState {
   return {
@@ -409,24 +409,166 @@ describe('createGameViewModel', () => {
 
 describe('createGameOverViewModel', () => {
   it('usa la causa comunicada aunque la condición interna sea otra', () => {
-    const model = createGameOverViewModel({
-      ...createCoreState({
-        turn: 4,
-        hunger: 10,
-        energy: 0,
-      }),
+    const model = createGameOverViewModel(
+      {
+        ...createCoreState({
+          turn: 4,
+          hunger: 10,
+          energy: 0,
+          food: 2,
+        }),
+        status: 'dead',
+        end: {
+          condition: 'energy',
+          reportedCause: 'hunger',
+          turnsSurvived: 3,
+        },
+      },
+      [
+        { action: 'explore', turn: 1 },
+        { action: 'eat', turn: 2 },
+        { action: 'explore', turn: 3 },
+      ],
+      123,
+      false,
+    );
+
+    expect(model.reportedCause).toBe('hunger');
+    expect(model.turnsSurvived).toBe(3);
+  });
+
+  it('cierra los cinco recursos del final, refugio incluido', () => {
+    const model = createGameOverViewModel(
+      {
+        ...createCoreState({ turn: 5, health: 0, food: 0, hasShelter: true }),
+        status: 'dead',
+        end: {
+          condition: 'health',
+          reportedCause: 'health',
+          turnsSurvived: 4,
+        },
+      },
+      [],
+      1,
+      false,
+    );
+
+    expect(model.stats.map((stat) => stat.id)).toEqual([
+      'health',
+      'hunger',
+      'energy',
+      'food',
+    ]);
+    expect(model.shelter.hasShelter).toBe(true);
+  });
+
+  it('desglosa las cinco acciones con su cuenta', () => {
+    const model = createGameOverViewModel(
+      {
+        ...createCoreState({ turn: 6 }),
+        status: 'dead',
+        end: {
+          condition: 'hunger',
+          reportedCause: 'hunger',
+          turnsSurvived: 5,
+        },
+      },
+      [
+        { action: 'explore', turn: 1 },
+        { action: 'rest', turn: 2 },
+        { action: 'explore', turn: 3 },
+        { action: 'repair', turn: 4 },
+        { action: 'explore', turn: 5 },
+      ],
+      1,
+      false,
+    );
+
+    expect(
+      model.breakdown.map((usage) => [usage.id, usage.count]),
+    ).toEqual([
+      ['explore', 3],
+      ['eat', 0],
+      ['cure', 0],
+      ['rest', 1],
+      ['repair', 1],
+    ]);
+    // La última acción estrenada fue reparar, en el turno 4.
+    expect(model.lastShift).toEqual({ turn: 4, label: 'Reparar' });
+  });
+
+  describe('el récord de la sesión', () => {
+    const dead = (turnsSurvived: number): FinishedGameState => ({
+      ...createCoreState({ turn: turnsSurvived + 1 }),
       status: 'dead',
       end: {
-        condition: 'energy',
+        condition: 'hunger',
         reportedCause: 'hunger',
-        turnsSurvived: 3,
+        turnsSurvived,
       },
     });
 
-    expect(model).toEqual({
-      difficulty: 'normal',
-      reportedCause: 'hunger',
-      turnsSurvived: 3,
+    const record = (
+      turnsSurvived: number,
+      previousBest: number | null,
+      replayed = false,
+    ) =>
+      createGameOverViewModel(dead(turnsSurvived), [], 1, replayed, previousBest)
+        .newRecord;
+
+    it('lo es cuando la partida pasa la marca anterior', () => {
+      expect(record(12, 7)).toBe(true);
+      expect(record(8, 7)).toBe(true);
     });
+
+    it('no lo es en la primera partida de la sesión', () => {
+      // Sin marca previa no hay récord que batir. Decirle «nuevo récord» a
+      // alguien en su primera muerte sería felicitarlo por perder, y además el
+      // rival fantasma no dice nada en ese mismo momento.
+      expect(record(120, null)).toBe(false);
+    });
+
+    it('empate no es superar', () => {
+      // Quedarse exactamente en la marca es haber igualado. El rival fantasma
+      // juega con la misma regla, y los dos tienen que coincidir.
+      expect(record(7, 7)).toBe(false);
+      expect(record(6, 7)).toBe(false);
+    });
+
+    it('nunca lo es en una partida reproducida', () => {
+      // La muerte es de otra persona. Aunque durable, no compite contigo ni puede
+      // ocupar tu récord.
+      expect(record(150, 7, true)).toBe(false);
+    });
+
+    it('sin marca previa, el quinto argumento no se puede confundir con la marca actual', () => {
+      // La marca de la sesión se actualiza al morir, así que al construir el
+      // informe ya incluye esta partida. Si el modelo leyera esa marca en vez de
+      // la de antes de empezar, compararía consigo mismo y nunca habría récord.
+      const model = createGameOverViewModel(dead(12), [], 1, false, 7);
+      expect(model.turnsSurvived).toBe(12);
+      expect(model.newRecord).toBe(true);
+    });
+  });
+
+  it('marca una partida que viene de un enlace', () => {
+    const model = createGameOverViewModel(
+      {
+        ...createCoreState({ turn: 2 }),
+        status: 'dead',
+        end: {
+          condition: 'hunger',
+          reportedCause: 'hunger',
+          turnsSurvived: 1,
+        },
+      },
+      [{ action: 'explore', turn: 1 }],
+      4294967295,
+      true,
+    );
+
+    expect(model.replayed).toBe(true);
+    // La semilla se escribe en base 36, tal y como viaja en el enlace.
+    expect(model.seed).toBe('1z141z3');
   });
 });

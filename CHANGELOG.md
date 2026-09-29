@@ -4,6 +4,63 @@
 
 ### Added
 
+- **El «nuevo récord» en la pantalla de muerte.** En dorado, justo debajo de los
+  turnos aguantados, porque es lo que califica a esa cifra y no un dato más de la
+  partida. No es una victoria: en este juego siempre se muere, así que lo único
+  que se puede superar es la marca propia. Y hay tres condiciones, porque las tres
+  importan: **no aparece en la primera partida** de la sesión —sin marca previa no
+  hay récord que batir, y felicitar a alguien por su primera muerte sería absurdo—;
+  **empate no es superar**, con `>` y no con `>=`, igual que el rival fantasma, para
+  que las dos reglas no se contradigan; y **una partida reproducida nunca lo es**,
+  porque la muerte es de otra persona. El color es un token nuevo, `--color-gold`,
+  que da 9.16:1 sobre el negro puro de esa pantalla, y no es un `--stat-*` porque
+  un récord no es un recurso de nadie. Se dice bajito: tipografía del cuerpo, sin
+  halo y en `0.8rem`, más pequeña que la cifra que califica. En una lápida un
+  récord es un aval, no un titular.
+- **La partida tiene semilla, y la semilla viaja en la URL.** Toda partida nace de
+  un entero de 32 bits sin signo que se escribe en base 36, y ese entero decide el
+  azar a través de un `mulberry32` sembrado. Abrir `?seed=X` sin más parámetros
+  arranca una partida con ese azar; abrir `?seed=X&d=n&a=ece` recorre la partida
+  entera. `Math.random` queda confinado a un único sitio, `createRandomSeed`, y el
+  motor sigue sin verlo: recibe un `RandomInt` y no sabe de dónde sale. Es el
+  mismo generador con el que se midió el endgame, así que una partida sembrada es
+  comparable con la línea base de 400 semillas.
+- **El enlace reproduce la partida, no un resumen.** `?seed=<base36>&d=<n|a>&a=<letras>`
+  lleva semilla, dificultad y una letra por turno, y las letras son las de los
+  atajos de teclado: `e` explorar, `c` comer, `s` curar, `d` descansar, `r` reparar.
+  Un enlace se lee con el mismo alfabeto con el que se juega. La reproducción pasa
+  por el mismo `createGame` y el mismo `resolveTurn` con la fuente sembrada, así
+  que la pantalla final es la de verdad —con la resolución real que cerró la
+  partida— y no un parte hecho a mano. El bucle corta en cuanto la partida muere,
+  de modo que un enlace con acciones de más no puede romper la aplicación, y un
+  enlace manipulado que no muere arranca una partida normal porque sin muerte no
+  hay nada que reproducir. Una partida larga son unas 150 letras y el enlace
+  completo se queda por debajo de los 260 caracteres.
+- **El parte final de la pantalla de muerte.** Encima del mensaje de causa no hay
+  ninguna frase que explique la muerte: lo que la explica es el parte. Debajo van
+  los cinco recursos en su valor final, con la misma lectura que durante la
+  partida: mismo orden, mismas etiquetas, mismo tono. El turno de muerte y los
+  turnos aguantados son el mismo número, porque el motor avanza el contador al
+  consumir el turno y el último turno jugado es el que acabó con la partida.
+- **El parte de cómo jugaste.** Las cinco acciones, aunque no se hayan usado
+  nunca, con la cuenta y nada más. Un parte que solo listara lo que se hizo
+  escondería justo lo interesante: la acción que el jugador tenía delante y no usó.
+  Y de ahí sale la única lectura de estrategia que se puede sostener con el dato:
+  el turno de la última acción estrenada, que es el punto desde el que dejó de
+  enseñar algo que no se hubiera visto antes. Se rotula con esas palabras y no con
+  «cambio de estrategia», que sería una interpretación que el dato no respalda.
+- **El rival fantasma.** La mejor partida de la sesión, en turnos, vive en el
+  banner como tercera cifra. Aparece solo cuando ya ha muerto alguna partida,
+  porque antes de eso no hay nada contra lo que medir. Al superar la marca el
+  rótulo de la cifra pasa de `Tu mejor` a `Récord`: ese es el momento en que la
+  escala invisible se vuelve visible. La marca vive solo en memoria y se pierde al
+  recargar, que es justo lo que la hace un rival y no un récord. Una partida
+  reproducida no se convierte en tu marca: no es tuya.
+- **La partida se puede compartir.** El enlace aparece en la pantalla de muerte,
+  junto a un botón que lo copia al portapapeles y a un desplegable que lo escribe
+  entero para poder leerlo y copiarlo a mano cuando el portapapeles está bloqueado.
+  La barra de direcciones no se toca: si la partida muerta metiera su enlace en la
+  URL, recargar reventaría la muerte en vez de empezar otra, y nadie ha pedido eso.
 - **El evento se telegrafía un turno antes de caer.** Es el cambio de mayor valor de
   esta tanda. El azar del evento se tira al cerrar el turno y se guarda en
   `GameCoreState.pendingEvents`; al empezar el siguiente se aplica y además se
@@ -24,7 +81,40 @@
   modificador. Es la única regla de meseta que sale gratis: solo puede dispararse
   sobre una tirada que ya era un fallo, y la medición de 400 semillas deja la
   mediana de Normal en 119 y el techo en 152, los de antes.
+### Removed
+- **El rótulo sobre el `Game Over`.** Decía `El último aliento`, o `Fin voluntario`
+  si te habías rendido. Se borró al ampliar la pantalla de muerte con el parte: la
+  causa y el turno ya estaban dichos más abajo y con más precisión, y rendirse es
+  una de las cuatro, así que el dato no hacía falta dos veces. El gesto de rendirse
+  se sigue reconociendo, en el mensaje de derrota, que es donde se lee. Encima del
+  título solo quedaba una frase que repetía de otra manera lo que ya estaba a la
+  vista.
+- **La frase de autopsia.** Decía de qué moriste, en qué turno y con qué te
+  quedaste, y estaba debajo del `Game Over`. Los tres datos ya están en el parte —
+  la causa en el mensaje de derrota, el turno en «Supervivencia» y la comida en
+  «Cómo terminaste»— y encima del título lo que funciona es el remate. Se va con
+  ella `createAutopsy` entero y el campo `autopsy` del modelo, porque dejarlos
+  sería código muerto con tests que no vigilan nada. Lo que explica la muerte es el
+  parte.
+- **La línea de persecución del banner.** Decía `Aguantados 2 de 118.` o
+  `Récord de la sesión superado. Antes morías en el turno 118.`. Se quitó porque
+  la tercera cifra del banner **es** el marcador: repetirlo en una frase añadía un
+  dato derivado sin información nueva, y encima obligaba a decidir si esa frase
+  era una pista o un reproche según lo lejos que fuera el jugador. La cifra se
+  queda; la frase no.
+- **El turno de la primera vez en cada fila de «Cómo jugaste».** Cada acción
+  decía `4 veces · desde el turno 1`. El turno ya lo da el parte, una vez y mejor,
+  con el de la última acción estrenada. Repetido en las cinco filas era un índice
+  de turnos que no se leía, se recorría. Con él cae `firstTurn` del modelo de uso
+  y el `Map` que lo calculaba en `createBreakdown`.
+
 ### Changed
+- **El rival fantasma cuenta turnos aguantados, no rondas.** El banner comparaba
+  `model.turn` contra la marca y la insignia de récord del parte comparaba
+  `turnsSurvived`, que es esa misma cifra menos uno. En la partida que igualaba la
+  marca el juego decía «Récord» en el banner y al morir no llevaba «Nuevo récord»:
+  dos veredictos opuestos sobre la misma partida, y solo uno cierto. Ahora los dos
+  miden lo mismo, que es la medida que se imprime en el informe.
 - **La tormenta baja del 10 % al 4 %**, sin tocar el coste de reparación. Apagarla
   entera sacaba la mediana de Agonía de 29 a 44, y el 4 % se queda cerca de ese
   techo. Subir el coste de reparación habría castigado justo a quien ya moría por
@@ -43,6 +133,14 @@
   grande necesita 3:1, así que en sangre se leería por el halo y no por las
   letras.
 ### Fixed
+- **La mejor partida se guardaba un turno por encima de lo que decía la partida.**
+  La marca se calculaba con `state.turn` mientras que el motor announce
+  `turn - 1`, así que rendirse en el turno 1 se anunciaba como un turno aguantado
+  y a la vez se guardaba como rival de dos. Para el jugador eran dos cifras
+  distintas sobre la misma partida, y solo una era cierta. Ahora la cuenta la
+  pregunta al motor con `surrenderGame(...).end.turnsSurvived` en vez de repetir la
+  regla del contador en la capa de aplicación, que es donde puede volver a
+  separarse. Lo encontró un test del rival fantasma.
 - **El violeta del hambre se había comido media interfaz.** Al mover el hambre de
   rojo a violeta en `93d4176`, tres cosas que tomaban `--stat-hunger` por ser el
   único rojo que no era `--color-alarm` se llevaron el violeta con ella: el botón
@@ -58,6 +156,21 @@
   es el mismo, 152. Apagando los eventos, Agonía da 121 y Normal 119: el hueco
   entero son los eventos.
 ### Known issues
+- **El mapa acumulativo no está.** Es el punto grande de la tanda y el único que
+  toca el motor, así que va con medición previa y con permiso explícito antes de
+  meter reglas nuevas. Los datos para decidirlo ya están medidos: en Normal no hay
+  tormentas, el refugio nunca se pierde y el piloto de referencia jamás repara; en
+  Agonía la mediana es el turno 38, muy antes de que la carga 5 llegue en el turno
+  70. Es decir, cualquier regla que solo afecte a la carga 5 o superior es código
+  muerto para la mitad de las partidas, y ese es el coste de escribirlas.
+- **La reproducción no se ve turno a turno.** La fold resuelve la partida entera de
+  una vez y aterriza en la pantalla final. Es una limitación consciente: lo que se
+  muestra es la partida de verdad, con su parte, pero no se reproduce
+  el ritmo. Verla con su ritmo exigiría llevar el estado de cada turno en el
+  enlace, y el enlace tiene que ser corto.
+- **El rival fantasma se pierde al recargar.** Es lo que lo hace un rival y no un
+  récord, y es lo que permite no usar Web Storage. Aun así, quien recargue la
+  página pierde la referencia, y no hay forma de recuperarla sin persistir algo.
 - **L9 y L10 no son alcanzables, y L5 y L7 no cambian ningún modificador.** No es
   una omisión: la carga es el propio nivel y todos los modificadores son
   `⌊load / k⌋`, así que dividir enteros produce mesetas —con `k = 3`, los niveles
@@ -140,6 +253,38 @@
 - Reequilibrio de la economía de comida: comer quita `4 + hambreExtraPorTurno`
   en lugar de 4 fijos. Con carga 0 y 1 no cambia nada, así que la Fase 1 queda
   intacta, y a partir de ahí la ración vuelve a tapar el gasto del turno.
+
+### Verification de la tanda de semilla y muerte
+
+- 459 pruebas en verde en 27 archivos. Cobertura global 98.42% statements, 97.04%
+  branches, 100% functions y 98.39% lines. `src/game` al 100% en las cuatro
+  métricas con 183 pruebas, `src/ui` al 100% con 85, y `src/app` en 97.44/95.48 con
+  175. Bundle de 78.77 KiB JS gzip y 4.37 KiB CSS gzip.
+- Puerta nueva `npm run check:residues`, dentro de `verify`: busca CJK, kana,
+  hangul, cirílico y `U+FFFD` en `src/`, `scripts/`, `docs/` y `dist/`. Existe
+  porque es un defecto que se ha repetido en varias tandas —escribir en otro
+  alfabeto dentro de comentarios en español— y que ni el typecheck ni las pruebas
+  ven. Probada en su sentido de fallo: con un ideograma en un `.md` temporal
+  devuelve `exit=1` y señala `docs/…md:2 [CJK] U+540C`.
+- `seed-url.ts` pasó de 77.77% a 100%. Sus dos guardas `typeof window` no eran
+  incobribles: el comentario del archivo de pruebas remitía a una cobertura en
+  `App.test.tsx` que allí no existe. Ahora se cubren en su propio archivo bajo el
+  entorno `node` de Vitest, que no tiene `window` de verdad, en vez de borrar
+  `window` a mano para que la cobertura saliera.
+- La insignia de récord se comprobó en su sentido de fallo: sustituida la regla
+  por `true`, cinco tests la detectan. El desfase entre banner y parte se comprobó
+  volviendo el banner a comparar contra el número de ronda, y lo pillan dos tests
+  de dos archivos. Y el error de la marca —un turno de discrepancia entre el
+  informe y el rival fantasma— se comprobó deshaciendo el arreglo, y también lo
+  pillan dos tests de archivos distintos.
+- `?seed=X&d=n&a=<letras>` se comprobó extremo a extremo en el arranque, no solo en
+  el códec: enlace completo, semilla suelta, enlace corrupto y enlace que no muere.
+- El enlace más largo posible son 152 letras por el techo medido de turnos, más
+  unos 30 de parámetros. **No se ha copiado a mano ni enviado por un canal real.**
+- Todo lo visual sigue sin comprobarse: no hay navegador de escritorio conectado a
+  esta sesión. El parte, el desplegable de compartir, el marcador del rival fantasma,
+  que la insignia en dorado se lea discreta y que abrir un enlace no parpadee son
+  afirmaciones sobre el árbol y los modelos, no sobre lo que se ve.
 
 ### Changed
 

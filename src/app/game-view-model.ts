@@ -1,5 +1,7 @@
 import { actionCost } from '../game/action-cost';
 import { MAX_HEALTH } from '../game';
+import { createBreakdown, findLastShift, type TurnRecord } from './breakdown';
+import { encodeSeed } from './seed';
 import type {
   ActionOutcome,
   FinishedGameState,
@@ -471,10 +473,12 @@ export function createGameViewModel(
   game: GameState,
   resolution: GameResolution | null,
   previousState?: GameCoreState,
+  personalBest: number | null = null,
 ): GameViewModel {
   return {
     difficulty: game.difficulty,
     turn: game.turn,
+    personalBest,
     threat: game.threat,
     stats: statIds.map((id) => createResource(id, game)),
     shelter: createShelter(game),
@@ -487,12 +491,68 @@ export function createGameViewModel(
   };
 }
 
+/**
+ * El parte final.
+ *
+ * Reutiliza `createResource` y `createShelter` a propósito: el estado final se
+ * muestra con exactamente la misma lectura que durante la partida, porque un
+ * jugador que acaba de perder está mirando los mismos cuatro bloques que una
+ * pantalla antes. Si el parte los dibujara de otra manera, el jugador tendría
+ * que traducir entre dos sistemas para entender por qué perdió.
+ *
+ * El orden de los recursos es el de `statIds`: salud, hambre, energía y comida.
+ * La salud va la primera porque es la única de las cuatro que puede haber
+ * terminado la partida.
+ *
+ * `previousBest` es la mejor partida **anterior** a esta, no la mejor de la
+ * sesión incluyendo esta. La diferencia importa: al morir, la marca ya se ha
+ * actualizado con esta misma partida, así que preguntarle por la marca actual
+ * daría siempre un empate y el aviso nunca aparecería. Y es el mejor de antes de
+ * empezar, no el mejor de antes de morir, porque solo eso distingue «batiste tu
+ * récord» de «esta fue tu primera partida y por lo tanto es la mejor».
+ */
 export function createGameOverViewModel(
   game: FinishedGameState,
+  records: readonly TurnRecord[],
+  seed: number,
+  replayed: boolean,
+  previousBest: number | null = null,
 ): GameOverViewModel {
   return {
     difficulty: game.difficulty,
     reportedCause: game.end.reportedCause,
     turnsSurvived: game.end.turnsSurvived,
+    newRecord: isNewRecord(game, replayed, previousBest),
+    stats: statIds.map((id) => createResource(id, game)),
+    shelter: createShelter(game),
+    breakdown: createBreakdown(records),
+    lastShift: findLastShift(records),
+    seed: encodeSeed(seed),
+    replayed,
   };
+}
+
+/**
+ * Si esta partida bate la marca que había antes de jugarla.
+ *
+ * Tres condiciones, y las tres importan:
+ *
+ * - **No puede ser la primera partida de la sesión.** Sin marca previa no hay
+ *   récord que batir, y llamarlo «nuevo récord» en la primera muerte sería
+ *   felicitar a alguien por perder. Es la misma razón por la que el rival fantasma
+ *   no dice nada hasta que ha muerto alguna partida.
+ * - **Empate no es superar.** `>` y no `>=`, porque quedarse exactamente en la
+ *   marca es haber igualado, no haber pasado. El rival fantasma juega con la
+ *   misma regla, y por eso llegar a tu mejor turno no te convierte en récord.
+ * - **Una partida reproducida no bate nada.** La muerte es de otra persona, así
+ *   que no compite contigo y no puede ocupar tu récord.
+ */
+function isNewRecord(
+  game: FinishedGameState,
+  replayed: boolean,
+  previousBest: number | null,
+): boolean {
+  return (
+    !replayed && previousBest !== null && game.end.turnsSurvived > previousBest
+  );
 }

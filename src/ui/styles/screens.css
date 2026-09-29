@@ -246,6 +246,176 @@
   text-align: center;
 }
 
+/*
+ * El «nuevo récord» va pegado a los turnos aguantados porque es lo que califica a
+ * esa cifra. Y va en dorado, que es lo único que en esta pantalla significa
+ * «buena noticia», pero deliberadamente con la tipografía del cuerpo, sin halo y
+ * más pequeño que la cifra que califica. Antes iba en la gótica, en mayúsculas y
+ * con `--glow`, y eso lo convertía en el segundo título de la pantalla: en una
+ * lápida, un récord es un aval, no un titular. El dorado se queda porque no hay
+ * otra forma de decir «esto fue bueno» sin añadir un color más; el peso se
+ * reparte entre el tamaño y el brillo, que son los que gritaban.
+ *
+ * El texto va en `--color-gold`, que da 9.16:1 sobre el negro puro de aquí, y no
+ * en un `--stat-*`: el récord no es un recurso de nadie, y en una pantalla llena
+ * de cifras propias un color de recurso se leería como uno más. Sin
+ * `font-family` ni `text-transform` a propósito: se hereda el cuerpo de la
+ * aplicación y se escribe como está escrito, que es lo que lo hace discretos en
+ * vez de un rótulo.
+ */
+.game-over-record {
+  margin: var(--space-1) 0 0;
+  color: var(--color-gold);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+}
+
+/*
+ * Una partida reproducida lo dice, porque sin decirlo el visitante leería un
+ * parte que no es suyo como si lo fuera. Va en alarma y en cuerpo pequeño: es
+ * una advertencia sobre el parte, no el titular.
+ */
+.game-over-replay {
+  margin: 0;
+  color: var(--color-alarm);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/*
+ * Los dos bloques de datos van a lo ancho del panel, no centrados como el
+ * encabezado. Son tablas, y una tabla centrada con etiquetas cortas se lee peor
+ * que alineada a la izquierda: el ojo necesita el borde de las etiquetas para
+ * encontrar a quién pertenece cada cifra.
+ */
+.game-over-block {
+  width: 100%;
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-track);
+}
+
+.game-over-subtitle {
+  margin: 0;
+  color: var(--color-hint);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.game-over-stats,
+.game-over-breakdown {
+  display: grid;
+  gap: var(--space-1) var(--space-5);
+  margin: 0;
+  text-align: left;
+}
+
+/*
+ * El estado final se lee en dos columnas para que los cinco recursos no queden
+ * tirados en una sola línea larga. Con una pantalla estrecha cae a una sola, y
+ * el refugio se queda el hueco que le toque, que es el quinto y el último.
+ */
+@media (min-width: 30rem) {
+  .game-over-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.game-over-stats div,
+.game-over-breakdown div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+}
+
+.game-over-stats dt,
+.game-over-breakdown dt {
+  color: var(--color-muted);
+  font-size: 0.82rem;
+}
+
+.game-over-stats dd,
+.game-over-breakdown dd {
+  margin: 0;
+  color: var(--color-light);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+/*
+ * El tono lo pone el dato y no la fila: la cifra que explica la muerte brilla
+ * como brillaba en la partida, y el resto se apaga. Se escribe el color en el
+ * `dd` y no en la fila entera para que la etiqueta siga siendo legible.
+ */
+.game-over-stats div[data-tone='warning'] dd {
+  color: var(--color-alarm);
+}
+
+/*
+ * Una acción que no se usó se apaga pero no desaparece. Es la fila que enseña
+ * que el jugador tenía delante una opción y no la tomó, y por eso el parte la
+ * cuenta a cero en vez de callarla.
+ */
+.game-over-breakdown div[data-used='false'] dt,
+.game-over-breakdown div[data-used='false'] dd {
+  color: var(--color-hint);
+}
+
+.game-over-shift {
+  max-width: 44ch;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.game-over-share {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+  width: 100%;
+}
+
+.game-over-share__details {
+  width: 100%;
+  color: var(--color-hint);
+  font-size: 0.78rem;
+  text-align: left;
+}
+
+.game-over-share__details summary {
+  cursor: pointer;
+  text-align: center;
+}
+
+/*
+ * El enlace se escribe entero y envuelto, no recortado. Es lo que permite
+ * copiarlo a mano cuando el portapapeles está bloqueado, que es el caso real en
+ * un contexto no seguro.
+ */
+.game-over-share__url {
+  display: block;
+  margin-top: var(--space-2);
+  padding: var(--space-2);
+  background: var(--color-terminal);
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 760px) {
   .difficulty-grid {
     grid-template-columns: 1fr;

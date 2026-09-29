@@ -244,8 +244,10 @@ las mediciones antes y después, está en `SPEC-threat.md`; aquí queda la regla
   no hace nada, y devolución del foco al botón al cancelar.
 - `src/ui/__tests__/screens.test.tsx` fija el copy del inicio («Sobrevive», nunca
   «Overvive») y la ausencia de la etiqueta «modo de supervivencia».
-- `src/ui/__tests__/game-over.test.tsx` distingue `Fin voluntario` de
-  `El último aliento` y traduce la causa `surrender`.
+- `src/ui/__tests__/game-over.test.tsx` traduce la causa `surrender` y comprueba
+  que no queda ningún rótulo sobre el `Game Over`, ni para una muerte ni para una
+  rendición. El rótulo que hubo ahí —«El último aliento» o «Fin voluntario»— se
+  borró al ampliar la pantalla de muerte con el parte.
 
 ## Regla para cambios futuros
 

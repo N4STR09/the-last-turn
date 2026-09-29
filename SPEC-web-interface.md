@@ -30,6 +30,13 @@ Crear una interfaz oscura, atmosférica e interactiva para jugar *The Last Turn*
   se llevaron consigo tres cosas que no son hambre. Lo que avisa de peligro toma
   `--color-alarm`; lo que solo necesita un color que no sea blanco toma
   `--color-text` o `--color-hint`.
+- **El dorado `--color-gold` es de una sola cosa: el «nuevo récord» de la pantalla
+  de muerte.** No es un `--stat-*` y no puede convertirse en uno, porque un récord
+  no es un recurso de nadie. Y no puede tomar el amarillo de la energía, que es el
+  `--stat-*` que más se le parece: por eso se oscurece en vez de aclararse, para
+  que en una pantalla llena de cifras propias se lea como oro y no como un recurso
+  más. Da 9.16:1 sobre el negro puro de esa pantalla. Es el único color de la
+  interfaz que no es ni texto ni alarma, y aparece una vez por partida.
 - Tipografía del sistema: sans para el cuerpo, serif para los titulares y
   monoespaciada del sistema para la terminal. No se cargarán fuentes externas.
 - El nombre del juego usa su propia pila gótica, `--font-title`:
@@ -97,7 +104,7 @@ Una sola columna estrecha, de 52 rem como máximo. El vacío a los lados es lo q
 
 El orden es el de lectura y no cambia con el tamaño:
 
-1. **Banner.** Nombre del juego en la pila gótica de `--font-title`, a `clamp(3.5rem, 13vw, 7rem)`, con `--glow-title`. Es lo más grande de la partida porque es lo único que la identifica. Debajo, la ronda y el nivel de escalada en blanco puro y con halo.
+1. **Banner.** Nombre del juego en la pila gótica de `--font-title`, a `clamp(3.5rem, 13vw, 7rem)`, con `--glow-title`. Es lo más grande de la partida porque es lo único que la identifica. Debajo, la ronda y el nivel de escalada en blanco puro y con halo, y —solo cuando la sesión ya tiene alguna partida muerta— el **rival fantasma**.
 2. **Cifras.** Una fila por recurso numérico, en el orden salud, hambre, energía
    y comida. Cada fila lleva etiqueta con icono, cifra y barra de bloques. La
    salud abre la rejilla porque es la única de las cuatro que puede acabar con la
@@ -109,6 +116,20 @@ El orden es el de lectura y no cambia con el tamaño:
 5. **Acciones.** Cinco botones de gasto y, debajo, la salida.
 
 El nivel que se muestra es el de escalada, no el modo de dificultad. La dificultad la dice la calavera.
+
+**El rival fantasma** es la mejor partida de la sesión, en turnos aguantados. Tiene tres estados, y ninguno es el de dejarlo fuera:
+
+- **Sin partidas muertas** no dice nada. Antes de la primera muerte no hay marca con la que compararse, y una cifra con «Tu mejor: —» no sería información, sería ruido.
+- **Por debajo de la marca**, la tercera cifra del banner rotula `Tu mejor` y muestra esa marca.
+- **Por encima de la marca**, la cifra pasa a rotular `Récord` y muestra los turnos aguantados. El rótulo cambia de sentido en vez de desaparecer, porque ese es el momento en que la escala invisible se vuelve visible.
+
+No hay ninguna frase debajo que diga cuánto falta. Había una —`Aguantados X de N`—, y se quitó: la cifra del rival fantasma **es** el marcador, y repetirlo en una frase añadía un dato derivado sin información nueva. Encima obligaba a decidir si esa frase era una pista o un reproche según lo lejos que fuera el jugador, y ninguna de las dos lecturas es la que el jugador quiere.
+
+La cuenta va sobre los turnos **ya aguantados**, no sobre la ronda que se muestra arriba, que es la que aún no se ha jugado. No es un matiz de redacción: es la misma medida que usa la insignia de récord del parte de muerte, y si las dos midieran cosas distintas el juego podría prometer «Récord» en el banner y negar «Nuevo récord» en la misma partida.
+
+Igualar la marca sigue contando: haber aguantado los mismos turnos que tu mejor partida es haberla igualado, no superarla. La cifra del rival va en `--color-muted` y sin halo, porque es un dato de *otra* partida y no debe competir con el turno en el que estás.
+
+Vive solo en memoria y se pierde al recargar. Eso es deliberado: es lo que lo hace un rival y no un récord, y es lo que permite no usar Web Storage. Una partida reproducida no cuenta como marca propia, porque no es del visitante.
 
 Las acciones, en orden de presentación, serán:
 
@@ -164,14 +185,34 @@ Eso no significa que la salud deje de tener reglas: cada punto que se pierde se 
 
 Pantalla **negra de punta a punta**, sin tarjeta ni panel: al terminar no queda interfaz, queda el anuncio de que se acabó. El negro cubre la pantalla entera, como el diálogo de rendirse y el aviso de escalada, y la composición va centrada como la del inicio.
 
-- Rótulo superior: `Fin voluntario` si la causa es `surrender`, si no `El último aliento`.
+- Sin rótulo superior. Antes iba `Fin voluntario` si la causa era `surrender` y `El último aliento` si no, y se quitó: con el parte la causa ya se dice con más precisión, y encima del `Game Over` solo quedaba una frase que lo repetía de otra manera. Rendirse sigue reconociéndose, pero en el mensaje de derrota, que es donde se lee el gesto.
 - Título `Game Over` en rojo de alarma `--color-alarm`, en la serif de titular, en negrita, con el halo en rojo sangre. Es lo único rojo de la pantalla, a propósito: en un negro entero una sola cosa puede brillar, y lo que tiene que brillar es que se acabó. El relleno va en alarma y no en `--color-blood` porque sobre negro puro la sangre da 2.02:1 y un título grande necesita 3:1; el halo sí es sangre, porque el halo es luz y no forma.
-- Mensaje de causa, en la serif de titular y blanco puro, centrado: el texto correspondiente a `end.reportedCause`, respetando la precedencia fiel del C. Se anuncia con `role="alert"`.
-- Datos de la partida, en monoespaciada y centrados: dificultad y total de turnos aguantados, `end.turnsSurvived`.
+- Aviso de reproducción, si la partida viene de un enlace: `Partida reproducida. No la has jugado tú`, en alarma y en cuerpo pequeño. Sin él, el visitante leería un parte que no es suyo como si lo fuera.
+- **Sin autopsia.** Hubo una frase de autopsy debajo del título que decía de qué moriste, en qué turno y con qué te quedaste, y se quitó: los tres datos ya están en el parte, y encima del `Game Over` lo que funciona es el remate. La consecuencia de diseño es que el modelo no lleva ese campo y `createAutopsy` no existe; lo que explica la muerte es el parte, no una frase aparte.
+- Mensaje de causa, en la serif de titular y blanco puro, centrado: el texto correspondiente a `end.reportedCause`, respetando la precedencia fiel del C. Se anuncia con `role="alert"`. Es lo primero que se lee después del título, y el remate es distinto para las cuatro causas, así que la rendición se reconoce aquí sin ninguna otra frase.
+- Datos de la partida, en monoespaciada y centrados: dificultad, total de turnos aguantados y la semilla en base 36 tal y como viaja en el enlace. Cuando la partida supera la mejor de la sesión, aparece **«Nuevo récord»** en `--color-gold` justo debajo de los turnos aguantados, porque califica esa cifra y no es un dato más. Tres condiciones: no sale en la primera partida de la sesión, porque sin marca previa no hay nada que batir; el empate no cuenta, con `>` y no `>=`, igual que el rival fantasma; y una partida reproducida nunca lo es, porque la muerte es de otra persona. `--color-gold` da 9.16:1 sobre el negro puro de la pantalla y no es un `--stat-*`: un récord no es un recurso de nadie.
+- **La insignia del récord se dice bajito.** Va con la tipografía del cuerpo, sin halo y en `0.8rem`, más pequeña que la cifra que califica. Antes iba en la serif de titular, en mayúsculas y con `--glow`, y eso la convertía en el segundo título de la pantalla; en una lápida un récord es un aval, no un titular. El dorado se conserva porque no hay otra forma de decir «esto fue bueno» sin añadir un color más.
+- **Cómo terminaste**: los cinco recursos en su valor final —cuatro cifras y el refugio, que cierra la lista porque es un interruptor y no una cifra— con la misma lectura que durante la partida: mismo orden, mismas etiquetas, mismo tono. Van como cifra y no como barra, porque las barras sirven mientras se decide y en una lápida serían adorno.
+- **Cómo jugaste**: las cinco acciones, aunque no se hayan usado nunca, con la cuenta y nada más. Las no usadas se apagan pero no se callan: la acción que el jugador tenía delante y no usó es justo lo que el parte tiene que enseñar. El turno de la primera vez se quitó de las filas porque el de «Último estreno» lo da una vez y mejor, y repetido en las cinco era un índice de turnos que no se leía.
+- **Último estreno**: el turno de la última acción estrenada. Se rotula como «dejaste de estrenar acciones» y no como «cambio de estrategia», porque lo segundo es una interpretación que el dato no respalda. Es `null`, y no se escribe nada, en una partida sin turnos.
+- **Compartir mi muerte**: botón que copia el enlace al portapapeles, y debajo un desplegable con la URL escrita entera para poder leerla y copiarla a mano si el portapapeles está bloqueado. La barra de direcciones no se toca.
 - Botón “Volver a jugar” que vuelve a la selección de dificultad y descarta la partida anterior.
 
 No habrá pantalla de victoria en esta migración.
 
+### 5. Semilla, enlace y reproducción
+
+La URL es la única superficie donde la partida se puede compartir, y tiene tres parámetros: `?seed=<base36>&d=<n|a>&a=<letras>`.
+
+- La semilla es un entero de 32 bits sin signo en base 36, siete caracteres como máximo, y decide el azar con un `mulberry32` sembrado. `Math.random` queda confinado a `createRandomSeed`.
+- La dificultad es obligatoria en el enlace porque sin ella la reproducción no puede reconstruir la partida.
+- Las letras son las de los atajos de teclado: `e` explorar, `c` comer, `s` curar, `d` descansar, `r` reparar. Un enlace se lee con el mismo alfabeto con el que se juega.
+- `?seed=X` sin dificultad ni acciones no es un enlace: abre una partida nueva con ese azar.
+- Un enlace corrupto, o cuya partida no muere, arranca una partida normal. Sin muerte no hay nada que reproducir, y un enlace escrito a mano que no termina no significa lo que dice.
+
+La reproducción ocurre **al arrancar**, no en un efecto. La partida reproducida nace ya muerta: si pasara por la pantalla de inicio, el visitante vería un parpadeo de una pantalla que no ha pedido, y además cambiar el estado tres veces seguidas para llegar allí es un render en cascada. La resolución que se guarda es la real, la que cerró la partida, así que la pantalla final no es un resumen.
+
+Lo que la reproducción **no** hace es verse turno a turno: la fold resuelve la partida entera de una vez. Verla con su ritmo exigiría llevar el estado de cada turno en el enlace, y el enlace tiene que ser corto.
 ## Contratos de componentes
 
 La interfaz consumirá view models, no el estado interno del motor:
@@ -267,7 +308,7 @@ La web no replicará las pausas artificiales de `getch()`. La resolución es sí
 
 Rendirse es la salida de la partida, no una acción más, y por eso se comporta como una decisión irreversible: botón propio, confirmación, foco atrapado y cierre con Escape.
 
-El diálogo es `role="dialog"` con `aria-modal="true"` y `aria-labelledby` apuntando a su título. Al confirmar, la pantalla final dice `Fin voluntario` en lugar de `El último aliento`, porque nadie murió, y el mensaje de derrota reconoce el gesto sin fingir que fue un fallo: *«Te has autoeliminado con un botón. El refugio queda intacto y tú, desinstalado.»*
+El diálogo es `role="dialog"` con `aria-modal="true"` y `aria-labelledby` apuntando a su título. Al confirmar, la pantalla final reconoce el gesto sin fingir que fue un fallo —*«Te has autoeliminado con un botón. El refugio queda intacto y tú, desinstalado.»*—, y ese mensaje es también lo que dice que la partida se terminó sin que nadie muriera. No lleva rótulo propio sobre el título.
 
 ## Accesibilidad
 
@@ -343,7 +384,7 @@ Con Vitest, jsdom y React Testing Library:
 - La selección de dificultad funciona con teclado y puntero.
 - Los recursos tienen etiquetas textuales además de color, y encienden un bloque por unidad.
 - El refugio se dice entero en su propia línea, con las cuatro cifras en una lista de cuatro filas y el refugio fuera.
-- Rendirse pide confirmación antes de terminar la partida, el diálogo atrapa el foco y devuelve el foco al botón al cancelar, y la pantalla final distingue `Fin voluntario` de una muerte.
+- Rendirse pide confirmación antes de terminar la partida, el diálogo atrapa el foco y devuelve el foco al botón al cancelar, y la pantalla final reconoce la rendición en el mensaje de derrota, que es el único sitio donde la causa se lee.
 - El aviso de estado aparece en texto solo cuando el recurso está en peligro.
 - El gasto impreso en cada botón se compara con el cálculo del motor para los siete niveles de amenaza, y la línea de rendirse no imprime gasto sino `(te lleva la partida)`.
 - La calavera lleva cuernos solo en Agonía, tanto en la terminal como en la tarjeta de dificultad.
