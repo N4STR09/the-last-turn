@@ -25,6 +25,32 @@ export function shortcutActionForKey(key: string): GameAction | null {
   return shortcutActions[key.toLowerCase()] ?? null;
 }
 
+/**
+ * Las mismas teclas al revés: de acción a tecla, en mayúscula.
+ *
+ * Están escritas a mano y no derivadas del diccionario de arriba. Derivarlas pide
+ * un `Object.fromEntries` con un `as const` dentro para que TypeScript no pierda
+ * los tipos, y eso se lee peor que las cinco líneas que ahorra. Lo que impide que
+ * las dos listas se separen no es la derivación: es que este `Record<GameAction,
+ * string>` no compila si aparece una sexta acción sin tecla, y el test comprueba
+ * que cada atajo del teclado tiene aquí su vuelta.
+ *
+ * Es un `Record` completo y no un `Partial`, así que en la hoja de reglas no hay
+ * caso «sin atajo» que dibujar. Rendirse es la única que no tiene tecla, y
+ * rendirse no es una acción de `GameAction`.
+ */
+const shortcutKeys: Readonly<Record<GameAction, string>> = {
+  explore: 'E',
+  eat: 'C',
+  cure: 'S',
+  rest: 'D',
+  repair: 'R',
+};
+
+export function shortcutKeyForAction(action: GameAction): string {
+  return shortcutKeys[action];
+}
+
 export function isInteractiveTarget(target: EventTarget | null): boolean {
   if (typeof Element === 'undefined' || !(target instanceof Element)) {
     return false;

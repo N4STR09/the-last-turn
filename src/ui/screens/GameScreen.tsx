@@ -2,11 +2,15 @@ import type { GameAction } from '../../game/types';
 import { ActionGrid } from '../components/ActionGrid';
 import { ResolutionPanel } from '../components/ResolutionPanel';
 import { ResourcePanel } from '../components/ResourcePanel';
+import { RulesOverlay } from '../components/RulesOverlay';
+import { SettingsMenu } from '../components/SettingsMenu';
+import type { SettingsControl as Settings } from '../components/SettingsMenu';
 import type { SurrenderControl as Surrender } from '../components/SurrenderControl';
 import type { GameViewModel } from '../view-models/ui-types';
 
 export interface GameScreenProps {
   readonly model: GameViewModel;
+  readonly settings: Settings;
   readonly onAction: (action: GameAction) => void;
   readonly surrender: Surrender;
 }
@@ -19,7 +23,7 @@ export interface GameScreenProps {
  * la dice, con cuernos y ojos rojos en Agonía. Repetirla en el banner sería
  * decirlo dos veces de dos maneras, y la segunda sería solo texto.
  */
-export function GameScreen({ model, onAction, surrender }: GameScreenProps) {
+export function GameScreen({ model, settings, onAction, surrender }: GameScreenProps) {
   /*
    * El rival fantasma tiene tres estados y ninguno es el de dejarlo fuera: sin
    * partidas muertas no hay marca con la que compararse, así que la banner no
@@ -54,6 +58,7 @@ export function GameScreen({ model, onAction, surrender }: GameScreenProps) {
         <h1 className="banner__title" id="game-title" tabIndex={-1}>
           The Last Turn
         </h1>
+        <SettingsMenu settings={settings} />
         <p className="banner__readout">
           <span className="banner__stat">
             <span className="banner__stat-label">Ronda</span>
@@ -87,6 +92,9 @@ export function GameScreen({ model, onAction, surrender }: GameScreenProps) {
         onAction={onAction}
         surrender={surrender}
       />
+      {settings.overlay === 'rules' ? (
+        <RulesOverlay model={settings.rules} onClose={settings.close} />
+      ) : null}
     </main>
   );
 }

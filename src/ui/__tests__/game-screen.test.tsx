@@ -2,24 +2,28 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { SettingsControl } from '../components/SettingsMenu';
 import type { SurrenderControl } from '../components/SurrenderControl';
 import { GameScreen, type GameScreenProps } from '../screens/GameScreen';
-import type { GameViewModel } from '../view-models/ui-types';
+import type { GameViewModel, RulesViewModel } from '../view-models/ui-types';
 
 const model: GameViewModel = {
   difficulty: 'agony',
   turn: 3,
   personalBest: null,
   threat: 1,
+  // En el orden del panel, que es el que la pantalla dibuja y el que la terminal
+  // recorre. Un fixture en otro orden no rompe nada porque nada lo mira por
+  // posición, pero enseña el orden equivocado a quien lo lea.
   stats: [
     {
-      id: 'hunger',
-      label: 'Hambre',
-      value: '4',
-      stateLabel: 'Hambre al límite',
-      tone: 'warning',
-      units: 4,
-      capacity: 12,
+      id: 'health',
+      label: 'Salud',
+      value: '5',
+      stateLabel: 'Sangrando',
+      tone: 'positive',
+      units: 5,
+      capacity: 10,
     },
     {
       id: 'energy',
@@ -31,6 +35,15 @@ const model: GameViewModel = {
       capacity: 12,
     },
     {
+      id: 'hunger',
+      label: 'Hambre',
+      value: '4',
+      stateLabel: 'Hambre al límite',
+      tone: 'warning',
+      units: 4,
+      capacity: 12,
+    },
+    {
       id: 'food',
       label: 'Comida',
       value: '2',
@@ -38,15 +51,6 @@ const model: GameViewModel = {
       tone: 'positive',
       units: 2,
       capacity: 12,
-    },
-    {
-      id: 'health',
-      label: 'Salud',
-      value: '5',
-      stateLabel: 'Sangrando',
-      tone: 'positive',
-      units: 5,
-      capacity: 10,
     },
   ],
   shelter: {
@@ -101,6 +105,36 @@ function createSurrender(
   };
 }
 
+const rules: RulesViewModel = {
+  title: 'Cómo se juega',
+  lead: 'Nunca se gana: se aguanta.',
+  actionsTitle: 'Las cinco acciones',
+  actions: [
+    {
+      id: 'explore',
+      label: 'Explorar',
+      cost: '(+1 hambre, −1 energía)',
+      shortcut: 'E',
+      effect: 'La única forma de conseguir comida.',
+    },
+  ],
+  sections: [{ title: 'Cada turno', lines: ['Cuesta hambre.'] }],
+};
+
+function createSettings(
+  overrides: Partial<SettingsControl> = {},
+): SettingsControl {
+  return {
+    overlay: 'none',
+    seedLabel: 'K3F9Z',
+    rules,
+    open: vi.fn(),
+    showRules: vi.fn(),
+    close: vi.fn(),
+    ...overrides,
+  };
+}
+
 /**
  * Los props de la pantalla y, además, trozos sueltos del modelo. Se mezclan sobre
  * el modelo de referencia para que un test del rival fantasma pueda decir
@@ -113,15 +147,17 @@ function renderScreen(
 ) {
   const onAction = props.onAction ?? vi.fn();
   const surrender = props.surrender ?? createSurrender();
+  const settings = props.settings ?? createSettings();
   const view = render(
     <GameScreen
       model={{ ...model, ...props.model }}
+      settings={settings}
       onAction={onAction}
       surrender={surrender}
     />,
   );
 
-  return { ...view, onAction, surrender };
+  return { ...view, onAction, settings, surrender };
 }
 
 describe('GameScreen', () => {
@@ -569,5 +605,62 @@ describe('GameScreen', () => {
 
     expect(surrender.ask).toHaveBeenCalledOnce();
     expect(onAction).not.toHaveBeenCalled();
+  });
+
+  it('cuelga el engranaje del banner para que la ayuda esté siempre a mano', () => {
+    renderScreen();
+
+    // Vive en el banner y no en la rejilla porque no es una acción: no gasta
+    // turno, y por lo tanto no puede parecer una más.
+    const banner = screen.getByRole('banner');
+    const gear = within(banner).getByRole('button', { name: 'Ajustes' });
+
+    expect(gear).toHaveAttribute('aria-expanded', 'false');
+    expect(
+      within(screen.getByRole('group', { name: 'Acciones' })).queryByRole(
+        'button',
+        { name: 'Ajustes' },
+      ),
+    ).toBeNull();
+  });
+
+  it('pide abrir el menú desde el engranaje', async () => {
+    const user = userEvent.setup();
+    const { settings } = renderScreen();
+
+    await user.click(screen.getByRole('button', { name: 'Ajustes' }));
+
+    expect(settings.open).toHaveBeenCalledOnce();
+  });
+
+  it('deja el menú puesto en el banner y la hoja sin abrir', () => {
+    renderScreen({ settings: createSettings({ overlay: 'settings' }) });
+
+    expect(screen.getByRole('button', { name: 'Ajustes' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    expect(screen.getByText('Ajustes')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('levanta la hoja de reglas en cuanto el menú la pide', () => {
+    renderScreen({ settings: createSettings({ overlay: 'rules' }) });
+
+    expect(screen.getByRole('dialog', { name: rules.title })).toBeInTheDocument();
+    // El menú se sustituye, no se apila: dos capas encima del mismo tablero
+    // serían dos cosas que cerrar y un jugador sin saber cuál.
+    expect(screen.queryByText('Ajustes')).toBeNull();
+  });
+
+  it('devuelve el cierre de la hoja tal cual', async () => {
+    const user = userEvent.setup();
+    const { settings } = renderScreen({
+      settings: createSettings({ overlay: 'rules' }),
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Cerrar' }));
+
+    expect(settings.close).toHaveBeenCalledOnce();
   });
 });

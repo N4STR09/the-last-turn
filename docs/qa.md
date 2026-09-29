@@ -1,11 +1,11 @@
 # Registro de QA final
 
-**Fecha:** 25 de septiembre de 2026, revisado el 28 tras el rediseño de acciones, el arreglo de colores y pantalla de muerte, y de nuevo con la tanda de semilla, enlace, parte y rival fantasma, ya en 29 con la autopsia, la línea de persecución y el tamaño de la insignia fuera de la pantalla de muerte, y con el turno de cada acción fuera del parte por completo
-**Alcance:** entrega web estática de *The Last Turn Web* con las reglas de la Fase 1 de supervivencia, la Fase 2 de escalada progresiva, el rediseño completo de la interfaz, el rediseño de acciones de la Fase 5 y la tanda de memoria y determinismo
+**Fecha:** 25 de septiembre de 2026, revisado el 28 tras el rediseño de acciones, el arreglo de colores y pantalla de muerte, y de nuevo con la tanda de semilla, enlace, parte y rival fantasma, ya en 29 con la autopsia, la línea de persecución y el tamaño de la insignia fuera de la pantalla de muerte, el turno de cada acción fuera del parte por completo, y el menú de ajustes con su hoja de reglas
+**Alcance:** entrega web estática de *The Last Turn Web* con las reglas de la Fase 1 de supervivencia, la Fase 2 de escalada progresiva, el rediseño completo de la interfaz, el rediseño de acciones de la Fase 5, la tanda de memoria y determinismo y la tanda de ajustes, que no toca el motor
 
 ## Estado de este registro
 
-Las tablas de la sección «Comandos automáticos» reflejan el árbol con la tanda de semilla y enlace, y con la limpieza de la pantalla de muerte. Las secciones de navegador real y de aceptación pública se realizaron sobre el build `0.1.0`, publicado antes de la Fase 1, y están etiquetadas como tales; la repetición en navegador con el build actual queda registrada como pendiente porque no hay navegador de escritorio conectado a esta sesión. El rediseño agrava esa limitación: su objeto de entrega es visual, así que ninguna prueba automática dice si la interfaz queda bien. La Fase 5 agrava la limitación en el otro sentido: cambió el motor, y ninguna prueba automática dice si el endless se siente endless. La tanda de semilla la agrava en un tercer sentido: añadió una superficie que solo se puede probar abriendo la página con un enlace en la barra de direcciones, y no hay barra de direcciones que probar. La limpieza de la pantalla de muerte la agrava en un cuarto, y es el más fino: quitar texto de una pantalla es fácil de comprobar en el árbol y difícil de comprobar en la vista, porque lo que hay que ver es que no falta.
+Las tablas de la sección «Comandos automáticos» reflejan el árbol con la tanda de ajustes: orden del panel, `+` de saturación, flotante del cambio y menú de ajustes con su hoja de reglas. Las secciones de navegador real y de aceptación pública se realizaron sobre el build `0.1.0`, publicado antes de la Fase 1, y están etiquetadas como tales; la repetición en navegador con el build actual queda registrada como pendiente porque no hay navegador de escritorio conectado a esta sesión. El rediseño agrava esa limitación: su objeto de entrega es visual, así que ninguna prueba automática dice si la interfaz queda bien. La Fase 5 agrava la limitación en el otro sentido: cambió el motor, y ninguna prueba automática dice si el endless se siente endless. La tanda de semilla la agrava en un tercer sentido: añadió una superficie que solo se puede probar abriendo la página con un enlace en la barra de direcciones, y no hay barra de direcciones que probar. La limpieza de la pantalla de muerte la agrava en un cuarto, y es el más fino: quitar texto de una pantalla es fácil de comprobar en el árbol y difícil de comprobar en la vista, porque lo que hay que ver es que no falta. La tanda de ajustes la agrava en un quinto: una hoja de reglas es, por definición, texto que hay que leer, y ninguna aserción comprueba que una hoja de reglas se lea bien.
 
 ## Comandos automáticos
 
@@ -14,18 +14,18 @@ Las tablas de la sección «Comandos automáticos» reflejan el árbol con la ta
 | `npm ci` | Pasa; instalación reproducible sin vulnerabilidades reportadas |
 | `npm run typecheck` | Pasa |
 | `npm run lint` | Pasa sin warnings |
-| `npm run test:coverage` | Pasa; 27 archivos y 445 pruebas; cobertura global 98.33% statements, 96.82% branches, 100% functions, 98.31% lines |
+| `npm run test:coverage` | Pasa; 30 archivos y 493 pruebas; cobertura global 98.69% statements, 97.50% branches, 100% functions, 98.67% lines |
 | `npm run test:coverage:scoped` | Pasa; aplica los umbrales de `src/app`, `src/ui` y `src/game` dentro de `verify` |
-| `npm run test:coverage -- src\app` | Pasa; cobertura de `src/app` 97.21% statements, 95.11% branches, 100% functions, 97.15% lines (160 pruebas) |
+| `npm run test:coverage -- src\app` | Pasa; cobertura de `src/app` 97.75% statements, 95.93% branches, 100% functions, 97.70% lines (181 pruebas) |
 | `npm run test:coverage -- src\game` | Pasa; cobertura de `src/game` 100% en las cuatro métricas (183 pruebas) |
-| `npm run test:coverage -- src\ui` | Pasa; cobertura de `src/ui` 100% en las cuatro métricas (86 pruebas) |
+| `npm run test:coverage -- src\ui` | Pasa; cobertura de `src/ui` 100% en las cuatro métricas (113 pruebas) |
 | `npm run verify` | Pasa; typecheck, lint, cobertura global, cobertura por capacidad, build, presupuestos y barrido de residuos |
 | `npm run build` | Pasa; bundle estático dentro de presupuesto |
-| `npm run check:budget` | Pasa; 78.33 KiB JS gzip (39,2 % de 200 KiB) y 4.27 KiB CSS gzip (8,5 % de 50 KiB) |
+| `npm run check:budget` | Pasa; 80.68 KiB JS gzip (40,3 % de 200 KiB) y 4.96 KiB CSS gzip (9,9 % de 50 KiB) |
 | `node scripts/residue-sweep.mjs` | Pasa; sin CJK, sin cirílico y sin `U+FFFD` en `src/`, `scripts/`, `docs/` y `dist/` |
 | `npm audit` | 0 vulnerabilidades |
 
-La puerta mide con gzip nivel 9 sobre `dist/assets/` e informa de 78.33 KiB de JavaScript y 4.27 KiB de CSS, mientras que Vite imprime otros valores para los mismos archivos. La diferencia es esperable y está explicada en `scripts/check-budget.mjs`: ambos ajustan gzip de forma distinta y la puerta aplica siempre su propia medición.
+La puerta mide con gzip nivel 9 sobre `dist/assets/` e informa de 80.68 KiB de JavaScript y 4.96 KiB de CSS, mientras que Vite imprime otros valores para los mismos archivos —83.61 KiB y 5.12 KiB—. La diferencia es esperable y está explicada en `scripts/check-budget.mjs`: ambos ajustan gzip de forma distinta y la puerta aplica siempre su propia medición.
 
 Las puertas se comprobaron además en su sentido de fallo, porque una comprobación que solo pasa no demuestra que bloquee:
 
@@ -743,6 +743,71 @@ antes no lo estaba:
 - **El mapa acumulativo, el punto 2, entero.** Sin empezar, a la espera de
   medición previa y de permiso explícito antes de meter reglas nuevas.
 
+## Orden del panel, barra y menú de ajustes
+
+Tanda de interfaz pura: no toca el motor. Cuatro cosas —el orden de las cifras, el
+`+` de saturación, el flotante del cambio y el menú de ajustes— y ninguna puede
+cambiar el resultado de una partida. Aun así, una de ellas añade una hoja de reglas
+nueva, y eso obliga a mirar el motor de cerca.
+
+### Lo que encontraron las pruebas
+
+Dos fallos reales, y los dos salieron de comparar contra el motor en vez de contra
+lo que yo creía:
+
+- **La hoja nombraba el meteorito y el mapache en Normal.** La sección «Cómo acaba»
+  decía, para las dos dificultades, que se pierde salud «con el meteorito y con el
+  mapache cuando arrecia». Los dos eventos son **solo de Agonía** —`rollRandomEvents`
+  no tira nada en Normal—, así que un jugador de Normal leía sobre un cielo que no
+  cae nunca. No era un error de redacción: era un error de regla, escrito en prosa.
+  Ahora la línea cambia por dificultad y hay un test que lo fija.
+- **La ficha de explorar decía «de 2 al principio a 2 con el nivel alto».** Los dos
+  números venían de la fórmula, pero `exploreWound(0)` es 2 y `exploreWound(8)` es 4,
+  así que en una partida nueva la hoja anunciaba un rango de 2 a 2. Reescrita para
+  citar solo el número vigente, que es el que importa, y decir que sube con el
+  nivel sin prometer un máximo que la hoja no puede calcular sin duplicar la
+  fórmula del motor.
+
+También aparecieron dos tests de `app-state.test.ts` que comparaban el estado
+resultante contra un objeto escrito a mano, y a los que faltaba `overlay`. No era un
+fallo del código: era el recordatorio de que el reducer ahora tiene un campo más, y
+que un `toEqual` con literales es el sitio donde se nota.
+
+### Lo que las pruebas cubren
+
+- El engranaje cuelga del `<header>` y **no** de la rejilla de acciones, con
+  `aria-expanded` sincronizado. Un control que gasta turnos tiene que estar en la
+  rejilla; uno que no, no.
+- La hoja **sustituye** al menú en vez de apilarse, y el `Cerrar` de la hoja pide el
+  cierre tal cual.
+- Los nombres y los gastos de la hoja son los mismos que los de los botones en la
+  misma partida, y las dos direcciones del mapa de atajos se corresponden sobre el
+  alfabeto entero, con un recuento de que son exactamente cinco.
+- Las cifras citadas cambian con la escalada. Esa es la prueba de que la hoja no
+  tiene números escritos a mano, y es la que un test de instantáneas no daría.
+- Un overlay abierto congela la partida **por las dos vías que existen**: el atajo,
+  que se apaga, y el click, que llega a la segunda red porque el menú es un
+  desplegable pequeño y los botones de acción siguen alcanzables por debajo. La
+  segunda red no la cruza ningún atajo; sin el test se habría dado por hecho que la
+  primera ya lo apagaba y que la segunda no hacía falta.
+- El `+` solo aparece con `units > capacity`, y el flotante se levanta en salud,
+  energía y hambre pero no en comida.
+
+### Lo que sigue sin comprobarse
+
+- **En navegador, los cuatro puntos.** Que el engranaje caiga donde tiene que caer
+  sin pisar el título, que el desplegable no se salga por arriba en 360 px, que la
+  hoja se lea entera con la barra fija, y que el `+` y el flotante se vean bien y no
+  se solapen con la cifra. Todo eso son afirmaciones sobre el árbol y el CSS. Sigue
+  sin haber navegador de escritorio conectado a la sesión.
+- **Que el flotante se entienda sin ver la animación.** Se ha comprobado que con
+  movimiento reducido la cifra no se mueve y se queda visible, pero si una cifra que
+  sube y baja durante 400 ms se lee o se ignora es una pregunta de ojo.
+- **Que la hoja no canse a quien ya sabe jugar.** Es una hoja larga y el juego cabe
+  en cinco botones. Que el que la abre por primera vez la termine y el que la abre
+  por quinta vez la cierre rápido depende de cómo se lea, y eso no lo mide ningún
+  test.
+
 ## Aceptación en la URL pública (Fase 2, desplegada)
 
 La publicación accesible está en `https://the-last-turn.erpro-ferru.workers.dev`.
@@ -854,6 +919,17 @@ Queda pendiente, y no se afirma aquí ningún resultado hasta ejecutarlo:
   del código, pero se vio en pantalla durante esta tanda: era el build anterior
   servido sin recargar a fondo, no el actual. Si vuelve a verse, es caché y se
   resuelve con Ctrl+Shift+R.
+- Recorrido de la tanda de ajustes en navegador real, que es lo único que queda de
+  este bloque sin mirar. Con **Ctrl+Shift+R** sobre `http://127.0.0.1:4186/`:
+  que el engranaje caiga en la esquina del banner sin pisar el título ni la ronda,
+  que el desplegable no se salga por arriba a 360 px y no tape los botones de
+  acción, que «Mostrar la semilla» revele un entero en base 36 y que el botón
+  cambie de rótulo, que «Información» sustituya al menú por la hoja, que la hoja
+  se lea entera con la barra y el «Cerrar» siempre a la vista, que Escape cierre
+  las dos capas, que el trap de tabulador no deje salir, y que el `+` aparezca en
+  comida y energía con unidades por encima de los bloques. Con
+  `prefers-reduced-motion` activado, que el flotante no se mueva pero que la cifra
+  siga en su sitio.
 - Empuje a `origin/main` y redespliegue, que requieren autorización explícita.
 
 `D-01`, `D-02` y `D-03` ya no bloquean la publicación: los tres están resueltos,

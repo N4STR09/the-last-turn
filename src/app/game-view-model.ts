@@ -465,6 +465,21 @@ function createAction(action: GameAction, threat: number): ActionViewModel {
   };
 }
 
+/**
+ * Las cinco acciones con su gasto vigente, en el orden de la rejilla.
+ *
+ * Se exporta porque la hoja de reglas lista las mismas cinco con el mismo precio y
+ * los mismos atajos. Sacarlas de aquí, en vez de volver a recorrer la rejilla por
+ * su cuenta, es lo que impide que la ayuda y los botones acaben contradiciéndose
+ * sobre lo que cuesta una acción, que es el peor sitio posible para una
+ * contradicción: uno en el que el jugador ya ha decidido.
+ */
+export function createActions(
+  threat: number,
+): readonly ActionViewModel[] {
+  return gridActions.map((id) => createAction(id, threat));
+}
+
 export function createResolutionViewModel(
   resolution: GameResolution,
   previousState?: GameCoreState,
@@ -495,7 +510,7 @@ export function createGameViewModel(
       resolution === null
         ? null
         : createResolutionViewModel(resolution, previousState),
-    actions: gridActions.map((id) => createAction(id, game.threat)),
+    actions: createActions(game.threat),
   };
 }
 

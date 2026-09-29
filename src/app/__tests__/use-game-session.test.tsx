@@ -55,6 +55,7 @@ function SessionHarness({
     <>
       <GameScreen
         model={session.gameModel!}
+        settings={session.settings!}
         onAction={session.performAction}
         surrender={session.surrender}
       />
@@ -235,6 +236,85 @@ describe('useGameSession', () => {
     await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
     await user.keyboard('e');
 
+    expect(resolveTurnMock).toHaveBeenCalledOnce();
+  });
+
+  it('abre el menú, levanta la ayuda y la cierra sin gastar un turno', async () => {
+    const user = userEvent.setup();
+    const resolveTurnMock = vi.fn((state) => ({
+      state: { ...state, turn: state.turn + 1 },
+      actionOutcome: { type: 'eat-no-food' } as const,
+      randomEvents: [],
+      threatNotice: null,
+    }));
+    render(
+      <SessionHarness
+        options={{
+          resolveTurn: resolveTurnMock,
+          randomInt: () => 4,
+        }}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Comenzar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+
+    await user.click(screen.getByRole('button', { name: 'Ajustes' }));
+    expect(screen.getByText('Ajustes')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    // La semilla no sale sola: se pide.
+    await user.click(screen.getByRole('button', { name: 'Mostrar la semilla' }));
+    expect(
+      screen.getByRole('button', { name: 'Ocultar la semilla' }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Información' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Cómo se juega' });
+    expect(within(dialog).getByText('Las cinco acciones')).toBeInTheDocument();
+    // El menú se sustituye en vez de apilarse: dos capas encima del tablero
+    // serían dos cosas que cerrar y ningún sitio para saber cuál está encima.
+    expect(screen.queryByText('Ajustes')).toBeNull();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Cerrar' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    expect(resolveTurnMock).not.toHaveBeenCalled();
+  });
+
+  it('congela la partida con el menú puesto, que es un desplegable pequeño', async () => {
+    const user = userEvent.setup();
+    const resolveTurnMock = vi.fn((state) => ({
+      state: { ...state, turn: state.turn + 1 },
+      actionOutcome: { type: 'eat-no-food' } as const,
+      randomEvents: [],
+      threatNotice: null,
+    }));
+    render(
+      <SessionHarness
+        options={{
+          resolveTurn: resolveTurnMock,
+          randomInt: () => 4,
+        }}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Comenzar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+    await user.click(screen.getByRole('button', { name: 'Ajustes' }));
+
+    // La ayuda es un diálogo a pantalla completa, pero el menú es un
+    // desplegable pequeño pegado al engranaje: los botones de abajo siguen
+    // alcanzables con el menú abierto, y por eso la congelación no puede
+    // quedarse solo en el teclado.
+    await user.click(screen.getByRole('button', { name: /Explorar/ }));
+    await user.keyboard('e');
+    expect(resolveTurnMock).not.toHaveBeenCalled();
+
+    // Y al cerrarlo la partida vuelve a estar viva, sin tener que recargarla.
+    await user.click(screen.getByRole('button', { name: 'Ajustes' }));
+    await user.click(screen.getByRole('button', { name: /Explorar/ }));
     expect(resolveTurnMock).toHaveBeenCalledOnce();
   });
 

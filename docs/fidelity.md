@@ -188,7 +188,19 @@ las mediciones antes y después, está en `SPEC-threat.md`; aquí queda la regla
 | `A-08` | **El mapache saquea `foodRaid` en vez de vaciar el depósito.** Vaciarlo mataba a todos por igual y en el mismo turno, así que decidía la partida antes de que la estrategia tuviera nada que decir. Robar una cantidad fija golpea a quien tiene el depósito lleno, que es una decisión y no una sentencia. |
 | `A-09` | **Descansar sin refugio devuelve 1**, que es exactamente lo que cuesta el turno: el refugio multiplica, no habilita. Antes devolvía 0, y ese 0 era el segundo tramo de la fractura `D-02`. Descansar tampoco cura: si lo hiciera, curar sería inútil en cuanto tuvieras techo y el refugio sería una segunda vía de curación. |
 | `A-10` | **El cierre de salud es `<= 0`, no `=== 0`.** El daño no siempre cae de uno en uno —explorar quita de 2 a 5 según la carga—, así que la salud se salta el cero con facilidad. Con igualdad exacta, a partir de carga 8 un jugador con salud 3 podía explorar hasta quedar en negativo y seguir jugando. |
-| `A-11` | **Atajos:** `E` explorar, `C` comer, `S` curar, `D` descansar, `R` reparar. La tecla es la inicial del verbo. Se retiran `B` y `P` y quedan sin mapeo, y hay una prueba que lo fija: una tecla que sobró no puede seguir significando una acción que ya no existe. |
+| `A-11` | **Atajos:** `E` explorar, `C` comer, `S` curar, `D` descansar, `R` reparar. La tecla es la inicial del verbo. Se retiran `B` y `P` y quedan sin mapeo, y hay una prueba que lo fija: una tecla que sobró no puede seguir significando una acción que ya no existe. El mapa existe en las dos direcciones —de tecla a acción y de acción a tecla— porque la hoja de reglas los cita al revés, y una hoja que muestra una tecla que el teclado no escucha es peor que una hoja sin teclas. |
+| `A-12` | **La hoja de reglas no es una regla, y por eso se ata al motor.** No introduce ninguna decisión ni modifica ninguna probabilidad: describe las que ya hay. Pero en el momento en que cita cifras, tiene que ser imposible que se separe de ellas, o la ayuda pasa a ser una segunda fuente de reglas paralela. De ahí que el nombre y el gasto de cada acción salgan de `createActions` —la misma función que dibuja los botones— y que las cifras que el motor resuelve por función se citen llamando a esa función. La prueba de que no están escritas a mano es que dos partidas con distinta escalada producen dos hojas distintas. |
+
+## Fase 6: menú de ajustes, hoja de reglas y barras
+
+Este bloque **no toca el motor**. Las Fases 3, 4 y 5 lo hicieron o no según el caso; esta no cambia ni una probabilidad, ni un turno, ni un nombre de acción. Cambia el orden de las cifras del panel, añade un `+` a la barra que satura, levanta el cambio de cada recurso como flotante y añade un engranaje con dos entradas. Ninguna de esas cuatro cosas puede cambiar el resultado de una partida, y por eso no hay entrada en el ledger de reglas.
+
+Lo que sí toca es la **fuente de verdad del copy del juego**: la hoja de reglas nueva describe el motor, así que se ató al motor para que no pueda divergir. Esa atadura es `A-12`, y su efecto observable es que la ayuda y los botones no pueden discrepar.
+
+Dos decisiones de esta fase **no** son fidelidad y por eso se registran aquí sin código de regla:
+
+- **La semilla se enseña solo cuando se pide.** El C no tenía semilla, y esto no es un equivalente de nada suyo: es una función de la versión web. No introduce azar —el entero es el que ya decidía la partida— y no persistir nada.
+- **El engranaje no tiene tecla.** La tecla de reglas se consideró y se descartó por decisión de diseño, no por divergencia. Una tecla es un atajo para quien ya conoce el juego.
 
 
 ## Evidencia y trazabilidad
@@ -239,6 +251,31 @@ las mediciones antes y después, está en `SPEC-threat.md`; aquí queda la regla
   confirmación puesta, el reducer devuelve el estado **idéntico**.
 - `src/app/__tests__/keyboard-focus.test.tsx` fija el mapa de los cinco atajos y
   que `B` y `P` quedan sin mapeo.
+- `src/app/__tests__/rules.test.ts` ata la hoja al motor, y es la prueba que
+  sostiene `A-12`: comprueba que el orden, los nombres y los gastos de la hoja
+  son los mismos que los de los botones en la misma partida, que las dos
+  direcciones del mapa de atajos se corresponden sobre el alfabeto entero, que son
+  exactamente cinco las teclas con atajo, que las cifras citadas cambian con la
+  escalada —la prueba de que no están escritas a mano— y que la hoja no nombra ni
+  el meteorito ni el mapache en Normal, donde ninguno de los dos llega a tirar.
+- `src/app/__tests__/app-state.test.ts` cubre los ocho comandos del overlay y sus
+  guardas, incluidas las dos que son mutuamente excluyentes con `surrenderPending`
+  en los dos sentidos: con cualquiera de los tres puesto, el reducer devuelve el
+  estado **idéntico**.
+- `src/app/__tests__/use-game-session.test.tsx` demuestra que un overlay abierto
+  congela la partida por las dos vías que existen: el atajo, que se apaga en
+  `useActionShortcuts`, y el click, que llega a la segunda red de `performAction`
+  porque el menú es un desplegable pequeño y los botones de acción siguen
+  alcanzables por debajo.
+- `src/ui/__tests__/settings-menu.test.tsx` y
+  `src/ui/__tests__/rules-overlay.test.tsx` cubren los dos componentes: el
+  `aria-pressed` de la semilla, el cierre con Escape, y en la hoja el foco inicial,
+  la trampa de tabulador en los dos sentidos, el click en el fondo que cierra y el
+  click dentro que no.
+- `src/ui/__tests__/game-screen.test.tsx` fija que el engranaje cuelga del banner y
+  no de la rejilla de acciones, que la hoja sustituye al menú en vez de apilarse, y
+  que el `+` solo aparece cuando hay más unidades que bloques y el flotante se
+  levanta en salud, energía y hambre pero no en comida.
 - `src/ui/__tests__/surrender-control.test.tsx` cubre el diálogo entero: apertura,
   foco dentro, trampa de tabulador en los dos sentidos, Escape, click fuera que
   no hace nada, y devolución del foco al botón al cancelar.

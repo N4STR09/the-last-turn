@@ -12,6 +12,7 @@ import type {
   PlayingGameState,
   ThreatNotice,
 } from '../../game';
+import type { Overlay } from '../../ui/view-models/ui-types';
 
 function createResolution(
   state: GameState,
@@ -28,7 +29,7 @@ function createResolution(
 
 /**
  * Estado de partida viva. La confirmación de rendirse se deja explícita en
- * false porque forma parte de la variante: si mañana se Adds un campo más, este
+ * false porque forma parte de la variante: si mañana se añade un campo más, este
  * helper avisa en vez de dejar que el estado sea medio falso.
  */
 function playingState(
@@ -36,6 +37,7 @@ function playingState(
   resolution: GameResolution | null = null,
   threatNotice: ThreatNotice | null = null,
   surrenderPending = false,
+  overlay: Overlay = 'none',
 ): AppState {
   return {
     screen: 'playing',
@@ -43,6 +45,7 @@ function playingState(
     resolution,
     threatNotice,
     surrenderPending,
+    overlay,
   };
 }
 
@@ -99,6 +102,7 @@ describe('appReducer', () => {
       resolution: null,
       threatNotice: null,
       surrenderPending: false,
+      overlay: 'none',
     });
   });
 
@@ -117,6 +121,7 @@ describe('appReducer', () => {
       resolution,
       threatNotice: null,
       surrenderPending: false,
+      overlay: 'none',
     });
   });
 
@@ -331,6 +336,103 @@ describe('rendirse', () => {
       expect(appReducer(state, { type: 'surrender' })).toBe(state);
     },
   );
+});
+
+describe('ajustes y ayuda', () => {
+  it('abre el menú sin tocar la partida', () => {
+    const state = playingState(createGame('normal'));
+
+    expect(appReducer(state, { type: 'open-settings' })).toEqual({
+      ...state,
+      overlay: 'settings',
+    });
+  });
+
+  it('cambia el menú por la hoja en vez de apilarla', () => {
+    const state = playingState(
+      createGame('normal'),
+      null,
+      null,
+      false,
+      'settings',
+    );
+
+    expect(appReducer(state, { type: 'open-rules' })).toEqual({
+      ...state,
+      overlay: 'rules',
+    });
+  });
+
+  it('cierra lo que haya encima sin tocar la partida', () => {
+    const state = playingState(createGame('normal'), null, null, false, 'rules');
+
+    expect(appReducer(state, { type: 'close-overlay' })).toEqual({
+      ...state,
+      overlay: 'none',
+    });
+  });
+
+  it('ignora el cierre cuando no hay nada encima', () => {
+    const state = playingState(createGame('normal'));
+
+    expect(appReducer(state, { type: 'close-overlay' })).toBe(state);
+  });
+
+  it('no abre nada con el aviso o la rendición delante', () => {
+    const withNotice = playingState(createGame('normal'), null, notice);
+    const asking = playingState(createGame('normal'), null, null, true);
+
+    for (const state of [withNotice, asking]) {
+      expect(appReducer(state, { type: 'open-settings' })).toBe(state);
+      expect(appReducer(state, { type: 'open-rules' })).toBe(state);
+    }
+  });
+
+  it('no deja rendirse con el menú abierto', () => {
+    const state = playingState(
+      createGame('normal'),
+      null,
+      null,
+      false,
+      'settings',
+    );
+
+    expect(appReducer(state, { type: 'ask-surrender' })).toBe(state);
+    expect(appReducer(state, { type: 'surrender' })).toBe(state);
+  });
+
+  it('cierra el menú al resolver un turno, por si acaso', () => {
+    const game = createGame('normal');
+    const resolution = createResolution(game);
+    const state = playingState(game, null, null, false, 'settings');
+
+    expect(appReducer(state, { type: 'resolve-action', resolution })).toEqual({
+      screen: 'playing',
+      game,
+      resolution,
+      threatNotice: null,
+      surrenderPending: false,
+      overlay: 'none',
+    });
+  });
+
+  it('ignora los ajustes fuera de la partida viva', () => {
+    const initial = createInitialAppState();
+    const difficulty = appReducer(initial, { type: 'show-difficulty' });
+    const finished = deadStateFrom(createGame('normal'));
+    const dead: AppState = {
+      screen: 'dead',
+      game: finished,
+      resolution: createResolution(finished),
+      threatNotice: null,
+    };
+
+    for (const state of [initial, difficulty, dead]) {
+      expect(appReducer(state, { type: 'open-settings' })).toBe(state);
+      expect(appReducer(state, { type: 'open-rules' })).toBe(state);
+      expect(appReducer(state, { type: 'close-overlay' })).toBe(state);
+    }
+  });
 });
 
 describe('browserRandomInt', () => {

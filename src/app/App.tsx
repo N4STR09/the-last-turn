@@ -24,6 +24,7 @@ export function App() {
       {session.state.screen === 'playing' ? (
         <GameScreen
           model={session.gameModel!}
+          settings={session.settings!}
           onAction={session.performAction}
           surrender={session.surrender}
         />

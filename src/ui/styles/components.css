@@ -61,7 +61,7 @@
 }
 
 /*
- * Botón de acción. Sin icono dentro de un marco: el marco se shattería en siete
+ * Botón de acción. Sin icono dentro de un marco: el marco se rompería en siete
  * cajas y el conjunto dejaría de leerse como un panel. Aquí el icono flota y el
  * texto manda.
  */
@@ -101,12 +101,19 @@
  * Cabecera. El nombre del juego es papel pintado: presente, discreto, arriba de
  * todo. La ronda y el nivel son la luz de la sala, y por eso van en blanco
  * puro con halo, en el cuerpo de letra grande.
+ *
+ * El engranaje de ajustes vive dentro pero se sale del flujo, así que la cabecera
+ * reserva su ancho por los dos lados. Reservarlo solo por el derecho descentraría
+ * el título, y eso se nota justo en los anchos estrechos, que son donde el
+ * engranaje se le acerca de verdad.
  */
 .banner {
+  position: relative;
   display: grid;
   justify-items: center;
   gap: var(--space-3);
   margin-bottom: var(--space-6);
+  padding-inline: 2.5rem;
   text-align: center;
 }
 
@@ -915,6 +922,254 @@
   }
 }
 
+/* ------------------------------------------------------------- ajustes -- */
+
+/*
+ * El engranaje. Es la única puerta de la interfaz que no es una acción de la
+ * partida, así que vive fuera del flujo, arriba a la derecha del banner, lejos de
+ * la rejilla de acciones y de los números. Presente sin pesar: hereda el gris de
+ * las pistas y solo se enciende al pasar por encima o con el menú abierto.
+ */
+.settings {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.settings__toggle {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: none;
+  color: var(--color-hint);
+  cursor: pointer;
+  transition:
+    color var(--motion-quick),
+    border-color var(--motion-quick);
+}
+
+.settings__toggle:hover,
+.settings__toggle[aria-expanded='true'] {
+  color: var(--color-light);
+  border-color: var(--color-track);
+}
+
+.settings__toggle:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.settings__panel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  display: grid;
+  gap: var(--space-3);
+  min-width: 13rem;
+  padding: var(--space-4);
+  border: 1px solid var(--color-track);
+  border-radius: 2px;
+  background: var(--color-panel);
+  box-shadow: 0 0.6rem 1.8rem rgb(0 0 0 / 65%);
+  text-align: left;
+}
+
+.settings__heading {
+  margin: 0;
+  color: var(--color-hint);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.settings__list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.settings__item {
+  width: 100%;
+}
+
+/*
+ * La semilla, en mono y seleccionable de un tirón. Es un dato que se apunta a
+ * mano si alguien quiere volver a esta partida, y obligar a arrastrar por siete
+ * caracteres es lo que hace que nadie la apunte.
+ */
+.settings__seed {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--color-track);
+  border-radius: 2px;
+  color: var(--color-light);
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  letter-spacing: 0.16em;
+  text-align: center;
+  user-select: all;
+}
+
+/* -------------------------------------------------------------- reglas -- */
+
+.rules-overlay {
+  position: fixed;
+  z-index: 100;
+  display: grid;
+  inset: 0;
+  padding: var(--space-5);
+  overflow-y: auto;
+  background: rgb(0 0 0 / 92%);
+}
+
+/*
+ * Cabecera fija y cuerpo con scroll. La hoja es larga a propósito, y una ayuda
+ * cuya salida se queda a dos pantallas de scroll es una ayuda que se acaba
+ * cerrando con el botón de atrás del navegador.
+ */
+.rules-dialog {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(46rem, 100%);
+  max-height: calc(100svh - 2 * var(--space-5));
+  margin: auto;
+  border: 1px solid var(--color-track);
+  border-radius: 2px;
+  background: var(--color-terminal);
+  text-align: left;
+}
+
+/* El diálogo recibe el foco al abrirse, pero no es un control: no se marca. */
+.rules-dialog:focus-visible {
+  outline: none;
+}
+
+.rules-dialog__bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-4);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5) var(--space-6) var(--space-4);
+  border-bottom: 1px solid var(--color-track);
+}
+
+.rules-dialog__title {
+  margin: 0;
+  color: var(--color-light);
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 4vw, 1.75rem);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.rules-dialog__close {
+  min-height: 2.25rem;
+  padding: 0.4rem 0.9rem;
+}
+
+.rules-dialog__body {
+  display: grid;
+  gap: var(--space-5);
+  overflow-y: auto;
+  padding: var(--space-5) var(--space-6) var(--space-6);
+}
+
+.rules-dialog__lead {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.rules-dialog__heading {
+  margin: 0;
+  color: var(--color-hint);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+/* Un bloque es un título con lo que cuelga de él, y no una fila suelta. */
+.rules-section {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.rules-actions {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rules-action {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border-left: 2px solid var(--color-track);
+}
+
+.rules-action__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+}
+
+.rules-action__label {
+  color: var(--color-light);
+  font-weight: 700;
+}
+
+/* `kbd` y no un span con borde: es lo que un lector de pantalla anuncia como tecla. */
+.rules-action__key {
+  min-width: 1.6rem;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--color-track);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.rules-action__cost {
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+.rules-action__effect {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.rules-section__lines {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--color-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
 /* ------------------------------------------------------------ responsive -- */
 
 @media (max-width: 760px) {
@@ -960,6 +1215,22 @@
 
   .surrender-dialog {
     padding: var(--space-5) var(--space-3);
+  }
+
+  .rules-overlay {
+    padding: var(--space-3);
+  }
+
+  .rules-dialog {
+    max-height: calc(100svh - 2 * var(--space-3));
+  }
+
+  .rules-dialog__bar {
+    padding: var(--space-4) var(--space-4) var(--space-3);
+  }
+
+  .rules-dialog__body {
+    padding: var(--space-4);
   }
 }
 

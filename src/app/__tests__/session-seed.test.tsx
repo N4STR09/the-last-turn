@@ -56,6 +56,7 @@ function Probe({
     <>
       <GameScreen
         model={session.gameModel!}
+        settings={session.settings!}
         onAction={session.performAction}
         surrender={session.surrender}
       />

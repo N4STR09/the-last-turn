@@ -4,6 +4,7 @@ import type {
   FinishedGameState,
   ThreatNotice,
 } from '../game';
+import type { Overlay } from '../ui/view-models/ui-types';
 
 export type AppState =
   | {
@@ -24,6 +25,13 @@ export type AppState =
        * partida está congelada y los atajos no deben disparar turnos.
        */
       readonly surrenderPending: boolean;
+      /**
+       * Menú de ajustes o hoja de reglas puestos encima. La partida está congelada
+       * mientras alguno lo esté, por lo mismo que la confirmación de rendirse: un
+       * atajo que se dispara por detrás de un overlay es un turno que el jugador no
+       * eligió gastar.
+       */
+      readonly overlay: Overlay;
     }
   | {
       readonly screen: 'dead';
@@ -44,6 +52,9 @@ export type AppCommand =
   | { readonly type: 'ask-surrender' }
   | { readonly type: 'cancel-surrender' }
   | { readonly type: 'surrender' }
+  | { readonly type: 'open-settings' }
+  | { readonly type: 'open-rules' }
+  | { readonly type: 'close-overlay' }
   | { readonly type: 'restart' };
 
 export function createInitialAppState(): AppState {
@@ -66,7 +77,7 @@ export function createInitialAppState(): AppState {
  *
  * La resolución que se guarda es la de verdad, la que cerró la partida. Por eso
  * la pantalla final no es un resumen: es exactamente la que habría visto quien
- * Jugó, con su última tirada y su último evento.
+ * jugó, con su última tirada y su último evento.
  */
 export function createReplayedAppState(
   game: FinishedGameState,

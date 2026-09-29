@@ -87,6 +87,74 @@ export interface ActionViewModel {
   readonly cost: string;
 }
 
+/**
+ * Una acción en la hoja de reglas: lo mismo que pone su botón, más lo que
+ * significa.
+ *
+ * El gasto y la etiqueta vienen del modelo de la partida, no se escriben aquí. Es
+ * lo que impide que la hoja y los botones acaben contando precios distintos, que
+ * es el peor sitio posible para una contradicción: uno en el que el jugador ya ha
+ * decidido.
+ */
+export interface RulesActionViewModel {
+  readonly id: GameAction;
+  readonly label: string;
+  /** El gasto, con la misma cadena y el mismo paréntesis que el botón. */
+  readonly cost: string;
+  /** La tecla que la lanza, en mayúscula. Las cinco tienen atajo. */
+  readonly shortcut: string;
+  /** Qué hace y a qué se paga, en una línea. */
+  readonly effect: string;
+}
+
+/**
+ * Un bloque de la hoja: un título y sus líneas.
+ *
+ * Una lista y no un objeto con un campo por sección, porque la hoja va a crecer y
+ * añadir un bloque tiene que consistir en añadir una entrada, no en cambiar a la
+ * vez la forma del modelo y la del componente.
+ */
+export interface RulesSectionViewModel {
+  readonly title: string;
+  readonly lines: readonly string[];
+}
+
+/**
+ * La hoja de reglas.
+ *
+ * Nadie la enseña al empezar: quien llega frío se aprendía el juego pulsando hasta
+ * morir, porque no había ninguna referencia dentro de la partida y la única forma
+ * de saber qué hace curar era curar y verlo. Esto no sustituye a esa primera
+ * partida, la hace informada. Va en un overlay que no gasta turno, así que leerla
+ * no es una decisión con precio: pensar ya era gratis y esto solo informa.
+ *
+ * Las cifras que dependen de la partida salen del motor, no escritas a mano en el
+ * texto: el gasto del turno, lo que quita una ración, lo que devuelve una cura, lo
+ * que cuesta reparar. Si el motor cambia un número, la hoja lo cambia con él, que
+ * es justo el fallo que hace que una ayuda acabe mintiendo.
+ */
+export interface RulesViewModel {
+  readonly title: string;
+  readonly lead: string;
+  readonly actionsTitle: string;
+  readonly actions: readonly RulesActionViewModel[];
+  readonly sections: readonly RulesSectionViewModel[];
+}
+
+/**
+ * Qué está puesto encima de la partida.
+ *
+ * Un solo campo y no dos banderas, porque las dos opciones son excluyentes por
+ * construcción: el menú y la hoja no pueden estar abiertos a la vez, y con un par
+ * de banderas sí se podría. `none` es el estado normal de juego.
+ *
+ * Vive en el estado de la aplicación y no en el del juego porque su único trabajo
+ * es congelar la partida mientras está puesto, por lo mismo que la confirmación de
+ * rendirse: un atajo que se dispara por detrás de un overlay es un turno que el
+ * jugador no eligió gastar.
+ */
+export type Overlay = 'none' | 'settings' | 'rules';
+
 export interface GameViewModel {
   readonly difficulty: Difficulty;
   readonly turn: number;

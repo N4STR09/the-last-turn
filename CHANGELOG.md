@@ -4,6 +4,63 @@
 
 ### Added
 
+- **El menú de ajustes, con el engranaje en el banner.** Sustituye a la tecla de
+  reglas que se pensó al principio. Una tecla es un atajo para quien ya conoce el
+  juego, y lo que faltaba era lo contrario: una puerta visible para quien no lo
+  conoce y no va a adivinar que existe. Va arriba a la derecha, dentro del banner
+  y fuera del flujo, con `aria-label="Ajustes"`, `aria-expanded` y
+  `aria-controls`. Es un desplegable y no un diálogo, y **no tiene tecla**: cerrar
+  con Escape es accesibilidad, abrir con una tecla sería volver a lo que este menú
+  sustituye. El menú queda además como el sitio donde añadir ajustes sin tocar el
+  teclado, que es por donde empezará el siguiente.
+- **«Mostrar la semilla», en el menú, y solo cuando se pide.** El dato no hace
+  falta para jugar, y en una pantalla que se mira por encima del hombro de alguien
+  lo que no se pide no se ve, así que el botón dice en qué estado está
+  (`aria-pressed`) y alterna entre «Mostrar la semilla» y «Ocultar la semilla». Lo
+  que se recuerda es si estaba revelado, y sale tal y como viaja en el enlace: un
+  entero de 32 bits escrito en base 36.
+- **La hoja de reglas, como diálogo modal.** «Información» la abre encima del
+  tablero y **sustituye** al menú en vez de apilarse: dos capas sobre el mismo
+  tablero serían dos cosas que cerrar y ningún sitio para saber cuál está
+  encima. Es un `role="dialog"` con `aria-modal`, con la barra de título y el
+  botón «Cerrar» fijos sobre un cuerpo con scroll, para que la salida siga a la
+  vista a media lectura. Cierra con Escape, con el botón y con un click en el
+  fondo, y **nunca con un click dentro**: cerrar la ayuda al intentar seleccionar
+  una línea sería el peor momento posible para cerrarla. El foco entra en el
+  diálogo y no en su primer botón, para no saltarse el principio de la hoja, que es
+  justo lo que el jugador ha venido a leer, y queda atrapado entre sus bordes.
+- **Los números de la hoja salen del motor, no de la hoja.** El nombre y el gasto
+  de cada acción salen de `createActions`, que es la misma función que dibuja los
+  botones, y la tecla sale de `shortcutKeyForAction`. Las cifras que el motor
+  resuelve por función —alivio de la ración, tope del descanso, herida del
+  hallazgo grande, salud de la cura— se citan llamando a esa función. No hay una
+  segunda lista de precios: si el precio cambiara, la ayuda y el botón cambiarían
+  a la vez, que es lo único que impide que una ayuda contradiga a lo que ayuda.
+  Las dos direcciones de los atajos tienen un test de ida y vuelta, y como
+  `shortcutKeys` es un `Record<GameAction, string>` completo, una sexta acción sin
+  tecla rompe la compilación en vez de colarse en la hoja con un hueco sin
+  dibujar.
+- **Lo que la hoja no puede decir, no lo dice.** Los eventos son solo de Agonía y
+  la sección lo dice; la línea de la salud **no nombra el meteorito ni el mapache
+  en Normal**, porque en Normal ninguno de los dos llega a tirar y un jugador al
+  que se le nombra un meteorito se queda esperando un cielo que no cae nunca. Las
+  probabilidades de la tabla de sorteos no se citan: viven en constantes internas
+  del motor, y una ayuda con números que envejecen solos es la peor ayuda que se
+  puede escribir.
+- **El `+` al final de la barra, cuando hay más unidades que bloques.** Una barra
+  que saturaba se llenaba y no decía nada, y la verdad estaba en la cifra del lado,
+  que es lo que hay que mirar de verdad. El `+` va pegado a los bloques, no antes
+  de ellos, y solo aparece cuando `units > capacity`. Dos barras lo admiten y dos
+  no lo pueden admitir nunca: la salud está topada en `MAX_HEALTH` y el hambre mata
+  por encima de 10, así que su máximo vivo es 11 de 12. El `+N` con la cuenta
+  exacta es la alternativa, pendiente de decidir.
+- **El cambio de cada recurso, en flotante sobre su barra.** Al resolver un turno
+  la cifra se levanta, se va y vuelve a su sitio, con el color que le toca: rojo de
+  alarma para lo que empeora y luz clara para lo que mejora. El nodo se remonta al
+  cambiar de ronda, porque reutilizarlo dejaría la animación entera en silencio a
+  partir del segundo turno, y con `prefers-reduced-motion` la cifra no se mueve y
+  se queda visible. **La comida se queda fuera**: es la única que se acumula, y una
+  barra que sube no dice nada que su cifra no diga mejor.
 - **El «nuevo récord» en la pantalla de muerte.** En dorado, justo debajo de los
   turnos aguantados, porque es lo que califica a esa cifra y no un dato más de la
   partida. No es una victoria: en este juego siempre se muere, así que lo único
@@ -109,6 +166,16 @@
   y el `Map` que lo calculaba en `createBreakdown`.
 
 ### Changed
+- **El panel empieza por la salud.** El orden es salud, energía, hambre y comida, y
+  el refugio debajo. La salud abre la lista porque es la única de las cuatro que
+  puede acabar con la partida: las otras tres avisan de un problema que aún se
+  puede resolver, y esta marca el borde a partir del cual no. La energía y el
+  hambre van juntas porque son los dos contadores que se mueven en todos los
+  turnos, los que se administran con los botones, y la comida va la última porque
+  es la única que acumula en vez de gastarse. El orden vive en `statIds` y la
+  terminal lo toma de ahí en vez de recorrer su propia lista, así que la lista de
+  cambios de la partida se lee mirando la rejilla de arriba y un cambio de orden en
+  el panel no puede dejarlos sin reordenar.
 - **El rival fantasma cuenta turnos aguantados, no rondas.** El banner comparaba
   `model.turn` contra la marca y la insignia de récord del parte comparaba
   `turnsSurvived`, que es esa misma cifra menos uno. En la partida que igualaba la
@@ -253,6 +320,41 @@
 - Reequilibrio de la economía de comida: comer quita `4 + hambreExtraPorTurno`
   en lugar de 4 fijos. Con carga 0 y 1 no cambia nada, así que la Fase 1 queda
   intacta, y a partir de ahí la ración vuelve a tapar el gasto del turno.
+
+### Verification de la tanda de ajustes
+
+- 493 pruebas en verde en 30 archivos. Cobertura global 98.69 % statements, 97.50 %
+  branches, 100 % functions y 98.67 % lines. `src/game` y `src/ui` al 100 % en las
+  cuatro métricas, con 183 y 113 pruebas, y `src/app` en 97.75/95.93 con 181. Los
+  huecos que quedan en `src/app` —`app-keyboard.ts:85`, `game-view-model.ts` y dos
+  puntos de rama en `use-game-session.ts`— son anteriores a esta tanda. Bundle de
+  80.68 KiB JS gzip y 4.96 KiB CSS gzip.
+- Los tres puntos del bloque se comprobaron en su sentido de fallo. La congelación
+  por overlay se comprobó de la única forma que se puede: **`use-game-session`
+  apaga el atajo cuando hay un overlay puesto**, así que la guarda de
+  `performAction` es la segunda red. Se alcanzó por la vía que de verdad la cruza en
+  un navegador —el menú es un desplegable pequeño y los botones de acción siguen
+  alcanzables por debajo—, y el test pulsa «Explorar» con el menú abierto y
+  comprueba que no se resuelve ningún turno. Los ocho comandos del overlay tienen
+  sus guardas en `app-reducer`, incluidas las dos que se combinan con
+  `surrenderPending` en los dos sentidos.
+- La ida y vuelta de los atajos se prueba sobre el alfabeto entero, no sobre una
+  copia de las cinco teclas: para cada acción, `shortcutKeyForAction` y
+  `shortcutActionForKey` devuelven lo mismo, y para cada letra del alfabeto que
+  tenga acción, la vuelta devuelve la misma letra. Además se cuenta que son
+  exactamente cinco, que es donde se delataría una sexta acción sin tecla.
+- **Lo que la hoja dice no se ha visto en ningún navegador.** No hay navegador de
+  escritorio conectado a esta sesión. Que el engranaje quede donde tiene que
+  quedar, que el desplegable no se salga por arriba en pantallas estrechas, que la
+  hoja se lea entera con la barra fija y que el `+` y el flotante se vean bien son
+  afirmaciones sobre el árbol y el CSS, no sobre lo que se ve. Queda pendiente
+  recargar con Ctrl+Shift+R y comprobar, en el mismo sitio donde ya estaba pendiente
+  la pantalla de muerte.
+- Dos residuos de texto **preexistentes en `HEAD`** y corregidos aquí: `turnola` por
+  `turno la` en `use-game-session.ts`, `shattería` por `rompería` en
+  `components.css`, y además `se Adds un campo más` en `app-state.test.ts` y un
+  `Jugó` en mayúscula en `app-state.ts`. Los cuatro estaban en comentarios, que es
+  donde el idioma se cuela sin que nada lo mire.
 
 ### Verification de la tanda de semilla y muerte
 

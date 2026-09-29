@@ -104,13 +104,18 @@ Una sola columna estrecha, de 52 rem como máximo. El vacío a los lados es lo q
 
 El orden es el de lectura y no cambia con el tamaño:
 
-1. **Banner.** Nombre del juego en la pila gótica de `--font-title`, a `clamp(3.5rem, 13vw, 7rem)`, con `--glow-title`. Es lo más grande de la partida porque es lo único que la identifica. Debajo, la ronda y el nivel de escalada en blanco puro y con halo, y —solo cuando la sesión ya tiene alguna partida muerta— el **rival fantasma**.
-2. **Cifras.** Una fila por recurso numérico, en el orden salud, hambre, energía
+1. **Banner.** Nombre del juego en la pila gótica de `--font-title`, a `clamp(3.5rem, 13vw, 7rem)`, con `--glow-title`. Es lo más grande de la partida porque es lo único que la identifica. Debajo, la ronda y el nivel de escalada en blanco puro y con halo, y —solo cuando la sesión ya tiene alguna partida muerta— el **rival fantasma**. El **engranaje de ajustes** va en la esquina superior derecha, posicionado en absoluto y fuera del flujo: el banner es `position: relative` y reserva `2.5rem` de `padding-inline` para que el engranaje no se coma el título.
+2. **Cifras.** Una fila por recurso numérico, en el orden salud, energía, hambre
    y comida. Cada fila lleva etiqueta con icono, cifra y barra de bloques. La
    salud abre la rejilla porque es la única de las cuatro que puede acabar con la
    partida: las otras tres avisan de un problema que aún se puede resolver y esta
-   marca el borde a partir del cual no. La terminal lista los cambios en el mismo
-   orden, para que se lean mirando las filas de arriba.
+   marca el borde a partir del cual no. Energía y hambre van juntas porque son los
+   dos contadores que se mueven en todos los turnos, los que se administran con
+   los botones, y la comida va la última porque es la única que acumula en vez de
+   gastarse. La terminal lista los cambios en el mismo orden, para que se lean
+   mirando las filas de arriba. El orden sale de `statIds` y la terminal lo toma
+   de ahí, no de una lista propia: un cambio de orden en el panel no puede
+   dejar la lista de cambios sin reordenar.
 3. **Refugio.** Una línea propia debajo de las cifras, con su bloque. No es una cuarta cifra: es un interruptor, y por eso se dice entero (`Construido` o `Destruido`) en lugar de medirse. Comparte la rejilla de cuatro columnas de las cifras (`etiqueta · cifra · barra · aviso`) y coloca su palabra entera donde empieza la barra y su bloque donde está el aviso, de modo que la columna queda cuadrada sin medir nada a mano. En `max-width: 560px` se estrecha con ellas y su palabra baja a fila propia, igual que el aviso.
 4. **Registro del turno.** La terminal descrita en la dirección visual.
 5. **Acciones.** Cinco botones de gasto y, debajo, la salida.
@@ -147,9 +152,62 @@ Atajos de teclado durante la partida: `E` explorar, `C` comer, `S` curarse, `D` 
 
 Pide confirmación en un diálogo modal con dos salidas, «Seguir jugando» y «Rendirme». Cierra con Escape o con «Seguir jugando», **nunca** con un click fuera: una derrota no se acepta por errar el ratón. El foco entra en el diálogo al abrirlo, queda atrapado entre los dos botones mientras esté abierto y vuelve al botón de rendirse al cancelar.
 
+#### El menú de ajustes y la hoja de reglas
+
+**No hay tecla de reglas.** Se consideró y se descartó: una tecla es un atajo para quien ya conoce el juego, y lo que faltaba era lo contrario, una puerta visible para quien no lo conoce y no va a adivinar que existe. En su lugar hay un **engranaje arriba a la derecha**, dentro del `<header class="banner">` y posicionado en absoluto para no ocupar sitio en el flujo.
+
+El engranaje no es una acción. No está en la rejilla, no gasta turno y por eso no puede parecerse a una de las cinco: si estuviera abajo, un click en él sería un turno que el jugador no eligió gastar. Va con `aria-label="Ajustes"`, `aria-expanded` y `aria-controls`.
+
+El menú es un **desplegable**, no un diálogo: son dos opciones y una cifra, y un diálogo para eso sería ceremonia. Contiene:
+
+- **Información**, que levanta la hoja de reglas.
+- **Mostrar la semilla / Ocultar la semilla**, con `aria-pressed`. La semilla es un entero de 32 bits en base 36 tal y como viaja en el enlace.
+
+**La semilla no se enseña de entrada.** No hace falta para jugar, y en una pantalla que se mira por encima del hombro de alguien lo que no se pide no se ve. El botón dice en qué estado está, porque un dato que aparece sin decir de qué es se lee como un número suelto. Si estaba revelada, lo sigue estando al reabrir el menú.
+
+**El menú no tiene tecla de apertura.** Cierra con Escape, que es accesibilidad y no es una decisión de diseño; abrirlo con una tecla sería devolver exactamente lo que este menú sustituye. Escape con el menú cerrado no hace nada.
+
+El menú queda además como **el sitio donde añadir ajustes sin tocar el teclado**, que es por donde empezará el siguiente. Por eso sus dos entradas son botones que piden un comando y no valores que el componente se guarde: el estado vive en el reducer, y el componente solo recuerda si la semilla estaba revelada, que es un detalle de presentación y no de partida.
+
+#### La hoja de reglas
+
+«Información» abre un **diálogo modal a pantalla completa**. Sustituye al menú en vez de apilarse encima: dos capas sobre el mismo tablero serían dos cosas que cerrar y ningún sitio para saber cuál está encima. Un solo overlay a la vez es también lo que permite que `overlay` sea un valor y no una lista.
+
+- `role="dialog"`, `aria-modal="true"` y `aria-labelledby` apuntando al título. El fondo va en `.rules-overlay` y el contenido en `.rules-dialog`.
+- **Barra fija con el título y el botón «Cerrar», y cuerpo con scroll por debajo.** Una ayuda larga sin salida visible a media lectura es una trampa, aunque tenga Escape. Es la razón de que la cabecera y el cuerpo sean dos bloques y no uno.
+- Cierra con **Escape, con el botón y con un click en el fondo**, y **nunca con un click dentro**: cerrar la ayuda al intentar seleccionar una línea sería el peor momento posible para cerrarla. El fondo distingue por `event.target === event.currentTarget` en vez de por haber recibido el evento, porque un click en un hueco entre dos bloques sube hasta el fondo.
+- El foco entra en **el propio diálogo**, no en su primer botón, para no saltarse el principio de la hoja, que es justo lo que el jugador ha venido a leer. Queda atrapado entre el primer y el último botón, con el mismo trap que el diálogo de rendirse.
+- Las teclas de cada acción van en `<kbd>`, porque son teclas y no texto suelto.
+
+**Lo que dice la hoja sale del motor, no de la hoja.** El nombre y el gasto de cada acción salen de `createActions`, la misma función que dibuja los botones, y la tecla sale de `shortcutKeyForAction`. Las cifras que el motor resuelve por función —alivio de la ración, tope del descanso, herida del hallazgo grande, salud de la cura— se citan llamando a esa función. No hay una segunda lista de precios en el sitio de la interfaz: si el precio cambiara, la ayuda y el botón cambiarían a la vez, que es lo único que impide que una ayuda termine contradiciendo a lo que ayuda.
+
+`shortcutKeyForAction` devuelve `string` y no `string | null` porque `shortcutKeys` es un `Record<GameAction, string>` completo y escrito a mano. Un `Record` incompleto no compila cuando aparece una sexta acción, y así la hoja no necesita una rama «sin atajo» que dibujar. Hay un test que comprueba las dos direcciones —de tecla a acción y de acción a tecla— sobre el alfabeto entero, y que son exactamente cinco las teclas con atajo.
+
+**Lo que la hoja no puede decir, no lo dice.** Los eventos son solo de Agonía y la sección lo dice. La línea de la salud **no nombra el meteorito ni el mapache en Normal**, porque en Normal ninguno de los dos llega a tirar. Las probabilidades de la tabla de sorteos no se citan: viven en constantes internas del motor y una ayuda con números que envejecen solos es la peor ayuda que se puede escribir.
+
+#### Qué congela un overlay
+
+Un overlay abierto **congela la partida**, igual que el aviso de escalada y la confirmación de rendirse. Con cualquiera de los tres puesto, un click en una acción no resuelve un turno y un atajo no dispara nada. No es una medida de interfaz: es que un atajo que se dispara por detrás de un overlay es un turno que el jugador no eligió gastar.
+
+Los tres son **mutuamente excluyentes en los dos sentidos**: con el aviso de escalada abierto no se abre el menú, y con el menú abierto no se pide rendirse. La razón es que un aviso o un diálogo encima de otro no se puede leer y no se puede cerrar con criterio.
+
+La congelación está escrita en tres sitios, y los tres hacen falta: en `useActionShortcuts`, que apaga el listener; en `performAction`, que es la segunda red para el click; y en el reducer, que ignora los comandos que llegan en un estado que no los admite. El segundo no lo cruza ningún atajo, porque el primero ya lo apagó, pero **sí lo cruza un click**: el menú es un desplegable pequeño pegado al engranaje y los botones de acción siguen alcanzables por debajo.
+
 #### Barras de recursos
 
 Un bloque por unidad, hasta un máximo de doce. Por encima de la capacidad la barra satura y la cifra sigue siendo la verdad: la barra es una pista visual, no el dato. El refugio es binario y se dibuja con un solo bloque.
+
+**El `+` de saturación va pegado a los bloques, y solo cuando hay más unidades que bloques.** Saturar sin decir nada obliga a mirar la cifra, que es lo correcto para leerla pero no para detectarla: una barra llena y otra que se ha quedado a un bloque de llenarse se ven igual. El `+` vive dentro de `.stat__bar` y es decorativo, como los bloques, porque la cifra ya está en texto a su lado. Su alternativa es un `+N` con la cuenta exacta del exceso, que dice más y ocupa más; está sin decidir.
+
+Dos barras pueden necesitarlo y dos no lo necesitan nunca. La salud está topada en `MAX_HEALTH` y el motor no la recorta, así que `units > capacity` es imposible. El hambre mata por encima de 10, de modo que su máximo vivo es 11 contra una capacidad de 12, y tampoco puede llegar. Solo la comida y la energía pueden surpassar su barra, y las dos lo hacen con frecuencia en una partida larga.
+
+**El cambio de cada recurso se levanta sobre su barra al resolver un turno.** La cifra sale hacia arriba, se va y vuelve a su sitio. El color sale del tono: `--color-alarm` cuando la cifra empeora y `--color-light` cuando mejora, de modo que el flotante no introduce una señal que el panel no tiene.
+
+El nodo **se remonta al cambiar de ronda**, con `key={turno-N}`. Reutilizarlo es lo que dejaría la animación en silencio a partir del segundo turno: la animación se dispara al montarse el nodo, y un nodo que ya estaba no vuelve a montarse. Remontar cada ronda cuesta un nodo nuevo y es la única forma de que el efecto se repita mientras dure la partida.
+
+**La comida no tiene flotante.** Es la única que se acumula, y una barra que sube no dice nada que su cifra —que ya sube— no diga mejor. El flotante se reserva para la salud, la energía y el hambre, que son las tres que se mueven en todos los turnos y las tres cuya variación se quiere ver de reojo.
+
+Con `prefers-reduced-motion` la cifra no se mueve y **se queda visible**: quitar el flotante entero dejaría fuera la animación sin quitar el dato, y el dato es lo que importa.
 
 **La salud es la excepción: su barra va hasta `MAX_HEALTH`, diez bloques.** Comparte código con las otras tres pero no comparte escala, y no por descuido: las otras tres son contadores que suben y bajan, y la salud es una reserva que solo baja y por eso tiene un final. Si compartieran escala, una salud a 6 y una salud a 10 se leerían como media barra y como casi llena, que es la misma foto de un cuerpo a la mitad.
 
@@ -217,11 +275,15 @@ Lo que la reproducción **no** hace es verse turno a turno: la fold resuelve la 
 La interfaz consumirá view models, no el estado interno del motor:
 
 ```ts
+export type StatId = 'health' | 'energy' | 'hunger' | 'food';
 export type ResourceId = 'hunger' | 'energy' | 'food' | 'shelter';
 export type Tone = 'neutral' | 'warning' | 'positive';
 
+/** Qué hay puesto encima de la partida. Un solo overlay a la vez, nunca dos. */
+export type Overlay = 'none' | 'settings' | 'rules';
+
 export interface ResourceViewModel {
-  readonly id: ResourceId;
+  readonly id: StatId;
   readonly label: string;
   readonly value: string;
   readonly stateLabel: string;
@@ -230,8 +292,6 @@ export interface ResourceViewModel {
   readonly units: number;
   /** Bloques que caben en la barra. */
   readonly capacity: number;
-  /** Punto sin retorno. Distinto de `tone === 'warning'` a propósito. */
-  readonly critical: boolean;
 }
 
 export interface ResolutionViewModel {
@@ -249,20 +309,44 @@ export interface ActionViewModel {
   readonly cost: string;
 }
 
+export interface RulesActionViewModel {
+  readonly id: GameAction;
+  readonly label: string;
+  readonly cost: string;
+  /**
+   * Tecla del atajo. No es `string | null`: `shortcutKeys` es un `Record` completo,
+   * así que una acción sin tecla rompe la compilación antes de poder llegar aquí.
+   */
+  readonly shortcut: string;
+  /** Qué hace, en una línea, con las cifras del motor dentro. */
+  readonly effect: string;
+}
+
+export interface RulesSectionViewModel {
+  readonly title: string;
+  readonly lines: readonly string[];
+}
+
+export interface RulesViewModel {
+  readonly title: string;
+  readonly lead: string;
+  readonly actionsTitle: string;
+  readonly actions: ReadonlyArray<RulesActionViewModel>;
+  readonly sections: ReadonlyArray<RulesSectionViewModel>;
+}
+
 export interface GameViewModel {
   readonly difficulty: Difficulty;
   readonly turn: number;
   /** Nivel de escalada vigente. */
   readonly threat: number;
-  readonly resources: ReadonlyArray<ResourceViewModel>;
+  readonly personalBest: number | null;
+  /** Salud, energía, hambre y comida, en el orden de `statIds`. */
+  readonly stats: ReadonlyArray<ResourceViewModel>;
+  readonly shelter: ShelterViewModel;
+  readonly forecast: ForecastViewModel | null;
   readonly resolution: ResolutionViewModel | null;
   readonly actions: ReadonlyArray<ActionViewModel>;
-}
-
-export interface GameOverViewModel {
-  readonly difficulty: Difficulty;
-  readonly reportedCause: DeathCause;
-  readonly turnsSurvived: number;
 }
 
 export interface StartScreenProps {
@@ -273,13 +357,48 @@ export interface DifficultyScreenProps {
   readonly onSelect: (difficulty: Difficulty) => void;
 }
 
+export interface SettingsControl {
+  readonly overlay: Overlay;
+  /** La semilla en base 36, tal y como viaja en el enlace. */
+  readonly seedLabel: string;
+  readonly rules: RulesViewModel;
+  readonly open: () => void;
+  readonly showRules: () => void;
+  readonly close: () => void;
+}
+
+export interface SettingsMenuProps {
+  readonly settings: SettingsControl;
+}
+
+export interface RulesOverlayProps {
+  readonly model: RulesViewModel;
+  readonly onClose: () => void;
+}
+
+export interface GameOverViewModel {
+  readonly difficulty: Difficulty;
+  readonly reportedCause: DeathCause;
+  readonly turnsSurvived: number;
+  readonly newRecord: boolean;
+  readonly stats: ReadonlyArray<ResourceViewModel>;
+  readonly shelter: ShelterViewModel;
+  readonly breakdown: BreakdownViewModel;
+  /** La semilla en base 36, tal y como viaja en el enlace. */
+  readonly seed: string;
+  readonly replayed: boolean;
+}
+
 export interface GameScreenProps {
   readonly model: GameViewModel;
+  readonly settings: SettingsControl;
   readonly onAction: (action: GameAction) => void;
+  readonly surrender: SurrenderControl;
 }
 
 export interface GameOverScreenProps {
   readonly model: GameOverViewModel;
+  readonly shareUrl: string | null;
   readonly onRestart: () => void;
 }
 
@@ -287,6 +406,10 @@ export interface SkullProps {
   readonly difficulty: Difficulty;
 }
 ```
+
+`ResourceViewModel` ya **no lleva `critical`**: con el refugio fuera de la lista de cifras el campo era idéntico a `tone === 'warning'`, y un campo que no separa nada es ruido con nombre de regla. El aviso y el parpadeo salen de `tone`.
+
+`Overlay` vive en `ui-types.ts` y no en `app-state.ts`, aunque lo consuma `AppState`. La interfaz no importa de `app/`; si el tipo viviera al otro lado, la regla se tendría que romper para que el menú pudiera compilar.
 
 `ResolutionViewModel.events` es una lista, no un evento único, porque la escalada añade tiradas extra y el mismo evento puede salir repetido en un turno. La Fase 2 eliminó `milestone`: la escalada progresiva absorbe lo que los hitos hacían.
 
@@ -326,9 +449,13 @@ Objetivo: WCAG 2.2 AA para los flujos del MVP.
 - Las barras de recursos van `aria-hidden`: son redundancia visual sobre una cifra y una etiqueta que ya están en texto.
 - Ninguna etiqueta visible se genera con `content: attr()`. El texto de CSS no entra en el árbol de accesibilidad, y el lector anunciaría las cifras sin decir qué es cada una.
 - La pantalla final recibirá foco al aparecer y se anunciará como error sin duplicar dos regiones `alert`; sus encabezados de pantalla usarán `tabIndex={-1}` para recibir foco programático.
-- Respeto de `prefers-reduced-motion`.
+- Respeto de `prefers-reduced-motion`. El flotante de las barras es el caso donde esto se nota: con movimiento reducido la cifra **no se mueve y se queda visible**, porque quitar el flotante entero dejaría fuera la animación sin quitar el dato.
 - Sin información comunicada exclusivamente mediante color o iconografía.
 - Las cifras largas no se recortan ni inducen desplazamiento horizontal.
+- El engranaje es un botón nativo con `aria-label="Ajustes"`, no un icono suelto, y lleva `aria-expanded` y `aria-controls` apuntando al panel. El panel es `role="group"` con nombre, para que un lector de pantalla pueda saltar a él.
+- El botón de la semilla lleva `aria-pressed` y su nombre accesible cambia con el estado («Mostrar la semilla» / «Ocultar la semilla»), de modo que el estado no depende de un icono ni de un estilo.
+- La hoja de reglas es un `role="dialog"` con `aria-modal="true"` y `aria-labelledby`. Su foco inicial es el propio diálogo, para que un lector de pantalla anuncie el título antes que el primer botón, y queda atrapado entre el primero y el último mientras esté abierta.
+- El `+` de saturación va dentro de la barra, que es `aria-hidden`: la cifra que lo acompaña ya está en texto, así que el `+` no necesita nombre propio.
 
 ## Responsive
 
@@ -338,6 +465,8 @@ Objetivo: WCAG 2.2 AA para los flujos del MVP.
 - Orden lógico de paneles al cambiar a una columna.
 - Valores grandes de energía o comida que no rompan el layout.
 - Controles y textos legibles sin necesidad de ampliar la página.
+- El engranaje mantiene su objetivo táctil de 44 × 44 px también en móvil, y el panel de ajustes se ancla a su derecha y no se sale de la ventana en `max-width: 560px`.
+- La hoja de reglas ocupa la ventana entera con un margen interior, para que el contenido no llegue a los bordes, y su barra de título y su botón «Cerrar» quedan por encima del cuerpo con scroll.
 
 ## Estructura prevista
 
@@ -356,6 +485,8 @@ src/ui/
     AppButton.tsx
     EscalationOverlay.tsx
     SurrenderControl.tsx
+    SettingsMenu.tsx
+    RulesOverlay.tsx
     Skull.tsx
   view-models/
     ui-types.ts
@@ -371,6 +502,10 @@ src/styles/
 `Skull.tsx` no se posiciona a sí mismo: solo lleva el color y los trazos, y quien la coloca es el contenedor. Así la misma calavera sirve de fondo en la terminal y de marca en la tarjeta de Agonía sin reglas de posición duplicadas.
 
 `SurrenderControl.tsx` contiene a la vez el botón y su diálogo de confirmación, y el motivo es el foco: al cancelar, el foco vuelve al botón que lo pidió sin tener que atravesar la aplicación prop drilling para encontrarlo.
+
+`SettingsMenu.tsx` es el espejo de `SurrenderControl` y por el mismo motivo, con una diferencia: **no** pinta el diálogo de la hoja de reglas. Si lo hiciera, el diálogo quedaría dentro del panel y desaparecería con él al cerrar el menú. Solo pide que se abra, y quien lo pinta es `GameScreen` al mismo nivel que la confirmación de rendirse. El componente exporta su propio `SettingsControl` para que quien lo use no tenga que importar el tipo desde un `app/`, que la interfaz no puede ver.
+
+`RulesOverlay.tsx` es un diálogo modal genérico que recibe el modelo ya escrito: no sabe qué es una acción ni qué es la escalada, solo sabe pintar secciones y listas y devolver un clic.
 
 `src/styles/app.css` será la entrada global. No se usarán Tailwind, Bootstrap ni una librería de componentes.
 
@@ -391,6 +526,11 @@ Con Vitest, jsdom y React Testing Library:
 - La pantalla final muestra la causa comunicada y los turnos.
 - Los atajos se ignoran al repetir una tecla, usar modificadores o pulsar otro control interactivo.
 - Se comprueban landmarks, nombres accesibles y el foco inicial principal.
+- El menú de ajustes abre, cambia sus dos entradas y cierra, y la hoja sustituye al menú en vez de apilarse. Un overlay abierto congela la partida: con el menú puesto, ni un click ni un atajo resuelven un turno, y al cerrarlo la partida vuelve a estar viva sin recargar.
+- La hoja de reglas atrapa el foco en los dos sentidos, se cierra con Escape, con su botón y con un click en el fondo, y **no** con un click dentro.
+- La hoja no puede contradecir a los botones: su orden, sus nombres y sus gastos se comparan contra `createActions` en la misma partida, y las teclas se comprueban en las dos direcciones sobre el alfabeto entero. Además se comprueba que las cifras citadas cambian con la escalada, que es la prueba de que no están escritas a mano.
+- La hoja no nombra eventos que no existen en la dificultad en juego: en Normal no aparece el meteorito ni el mapache.
+- El `+` aparece solo cuando hay más unidades que bloques, y el flotante se levanta en salud, energía y hambre pero no en comida, que se acumula.
 - Pruebas de instantáneas solo para casos visuales estables; se priorizan aserciones semánticas.
 
 Comandos previstos:

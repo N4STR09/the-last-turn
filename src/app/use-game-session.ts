@@ -15,6 +15,7 @@ import type {
   RandomInt,
 } from '../game';
 import type { SurrenderControl as Surrender } from '../ui/components/SurrenderControl';
+import type { SettingsControl as Settings } from '../ui/components/SettingsMenu';
 import type {
   GameOverViewModel,
   GameViewModel,
@@ -28,10 +29,11 @@ import {
   createGameOverViewModel,
   createGameViewModel,
 } from './game-view-model';
+import { createRulesViewModel } from './rules';
 import { createThreatNoticeViewModel } from './threat-copy';
 import { useActionShortcuts } from './app-keyboard';
 import { buildShareUrl, readSeedOnly } from './seed-url';
-import { createRandomSeed, createSeededRandomInt } from './seed';
+import { createRandomSeed, createSeededRandomInt, encodeSeed } from './seed';
 
 export interface GameSessionOptions {
   readonly randomInt?: RandomInt;
@@ -54,6 +56,8 @@ export interface GameSession {
   readonly performAction: (action: GameAction) => void;
   readonly dismissThreatNotice: () => void;
   readonly surrender: Surrender;
+  /** El menú de ajustes y la hoja de reglas. Nulo fuera de la partida. */
+  readonly settings: Settings | null;
   readonly restart: () => void;
 }
 
@@ -95,7 +99,7 @@ export function useGameSession(
 
   // El azar de la partida viva. Es un `ref` y no un `state` a propósito: la fuente
   // sembrada lleva su propio estado interno y tiene que ser la misma instancia
-  // durante toda la partida, sin que un turnola vuelva a crear.
+  // durante toda la partida, sin que un turno la vuelva a crear.
   const randomRef = useRef<RandomInt>(injected ?? browserRandomInt);
 
   // Si la URL trae una semilla suelta, esa semilla es la de la primera partida.
@@ -135,13 +139,14 @@ export function useGameSession(
 
   const performAction = useCallback(
     (action: GameAction) => {
-      // Con el aviso de escalada abierto o con la confirmación de rendirse
-      // puesta, la partida está congelada: el click solo descarta el aviso,
-      // nunca ejecuta una acción.
+      // Con el aviso de escalada abierto, con la confirmación de rendirse puesta o
+      // con el menú o la ayuda encima, la partida está congelada: el click solo
+      // descarta el aviso, nunca ejecuta una acción.
       if (
         state.screen !== 'playing' ||
         state.threatNotice !== null ||
-        state.surrenderPending
+        state.surrenderPending ||
+        state.overlay !== 'none'
       ) {
         return;
       }
@@ -192,6 +197,39 @@ export function useGameSession(
     setRecords([]);
     dispatch({ type: 'restart' });
   }, []);
+
+  // El menú de ajustes y la hoja de reglas.
+  //
+  // Nace aquí y no dentro del modelo del juego porque la hoja no es el estado del
+  // tablero: es una referencia que apenas cambia, y meterla en el modelo obligaría a
+  // reconstruirla y compararla en cada turno para nada. La semilla sí es de la
+  // partida, y por eso se enseña en el menú: es el único sitio donde el jugador
+  // puede verla mientras juega, y es lo que hace que el enlace de después
+  // signifique algo.
+  //
+  // Mismo corte que el parte: sin partida en curso no hay hoja que escribir, porque
+  // la hoja habla de los precios y el nivel de esta partida, y sin semilla no hay
+  // nada que enseñar en el menú.
+  const settings = useMemo<Settings | null>(() => {
+    if (state.screen !== 'playing' || seed === null) {
+      return null;
+    }
+
+    return {
+      overlay: state.overlay,
+      seedLabel: encodeSeed(seed),
+      rules: createRulesViewModel(state.game),
+      open: () => {
+        dispatch({ type: 'open-settings' });
+      },
+      showRules: () => {
+        dispatch({ type: 'open-rules' });
+      },
+      close: () => {
+        dispatch({ type: 'close-overlay' });
+      },
+    };
+  }, [seed, state]);
 
   const gameModel = useMemo(() => {
     if (state.screen !== 'playing') {
@@ -252,14 +290,15 @@ export function useGameSession(
     });
   }, [records, seed, state]);
 
-  // Los atajos se desactivan con el aviso abierto y con la confirmación de
-  // rendirse puesta, para que una tecla no ejecute acciones sobre una partida
-  // congelada. Es la misma condición que protege el click, escrita donde el
-  // teclado entra.
+  // Los atajos se desactivan con el aviso abierto, con la confirmación de rendirse
+  // puesta y con el menú o la ayuda encima, para que una tecla no ejecute acciones
+  // sobre una partida congelada. Es la misma condición que protege el click,
+  // escrita donde el teclado entra.
   useActionShortcuts(
     state.screen === 'playing' &&
       state.threatNotice === null &&
-      !state.surrenderPending,
+      !state.surrenderPending &&
+      state.overlay === 'none',
     performAction,
   );
 
@@ -274,6 +313,7 @@ export function useGameSession(
     performAction,
     dismissThreatNotice,
     surrender,
+    settings,
     restart,
   };
 }
