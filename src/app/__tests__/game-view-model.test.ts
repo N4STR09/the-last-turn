@@ -33,14 +33,14 @@ describe('createGameViewModel', () => {
     // partida, y por eso se lee antes que las tres que aún se pueden arreglar.
     expect(model.stats.map((resource) => resource.id)).toEqual([
       'health',
-      'hunger',
       'energy',
+      'hunger',
       'food',
     ]);
     expect(model.stats.map((resource) => resource.value)).toEqual([
       '10',
-      '0',
       '10',
+      '0',
       '0',
     ]);
     expect(model.shelter).toEqual({
@@ -118,8 +118,8 @@ describe('createGameViewModel', () => {
     ]);
     expect(model.resolution?.deltas).toEqual([
       { id: 'health', label: 'Salud', value: '−2', tone: 'warning' },
-      { id: 'hunger', label: 'Hambre', value: '+1', tone: 'warning' },
       { id: 'energy', label: 'Energía', value: '−1', tone: 'warning' },
+      { id: 'hunger', label: 'Hambre', value: '+1', tone: 'warning' },
       { id: 'food', label: 'Comida', value: '+4', tone: 'positive' },
     ]);
     expect(model.resolution?.events).toEqual([]);
@@ -170,8 +170,8 @@ describe('createGameViewModel', () => {
     ]);
     // La salud no se mueve al comer, y por eso no sale entre los cambios.
     expect(model.resolution?.deltas).toEqual([
-      { id: 'hunger', label: 'Hambre', value: '−2', tone: 'positive' },
       { id: 'energy', label: 'Energía', value: '−1', tone: 'warning' },
+      { id: 'hunger', label: 'Hambre', value: '−2', tone: 'positive' },
       { id: 'food', label: 'Comida', value: '−1', tone: 'warning' },
     ]);
   });
@@ -193,8 +193,8 @@ describe('createGameViewModel', () => {
       'No encuentras comida, y al menos no te hiere.',
     ]);
     expect(model.resolution?.deltas).toEqual([
-      { id: 'hunger', label: 'Hambre', value: '+1', tone: 'warning' },
       { id: 'energy', label: 'Energía', value: '−1', tone: 'warning' },
+      { id: 'hunger', label: 'Hambre', value: '+1', tone: 'warning' },
     ]);
   });
 
@@ -215,8 +215,8 @@ describe('createGameViewModel', () => {
     ]);
     expect(model.resolution?.deltas).toEqual([
       { id: 'health', label: 'Salud', value: '+2', tone: 'positive' },
-      { id: 'hunger', label: 'Hambre', value: '+1', tone: 'warning' },
       { id: 'energy', label: 'Energía', value: '−1', tone: 'warning' },
+      { id: 'hunger', label: 'Hambre', value: '+1', tone: 'warning' },
       { id: 'food', label: 'Comida', value: '−2', tone: 'warning' },
     ]);
   });
@@ -451,8 +451,8 @@ describe('createGameOverViewModel', () => {
 
     expect(model.stats.map((stat) => stat.id)).toEqual([
       'health',
-      'hunger',
       'energy',
+      'hunger',
       'food',
     ]);
     expect(model.shelter.hasShelter).toBe(true);

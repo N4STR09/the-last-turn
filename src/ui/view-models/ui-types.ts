@@ -98,7 +98,7 @@ export interface GameViewModel {
   readonly personalBest: number | null;
   /** Nivel de escalada vigente. La dificultad la comunica la calavera. */
   readonly threat: number;
-  /** Hambre, energía, comida y salud, en ese orden. */
+  /** Salud, energía, hambre y comida, en ese orden. El refugio va debajo. */
   readonly stats: ReadonlyArray<ResourceViewModel>;
   /** El refugio, en su propia línea debajo de las cifras. */
   readonly shelter: ShelterViewModel;

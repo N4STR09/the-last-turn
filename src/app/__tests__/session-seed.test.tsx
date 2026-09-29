@@ -240,8 +240,8 @@ describe('la semilla y el enlace', () => {
     expect(model?.reportedCause).toBe(state.end.reportedCause);
     expect(model?.stats.map((stat) => [stat.id, stat.value])).toEqual([
       ['health', `${state.health}`],
-      ['hunger', `${state.hunger}`],
       ['energy', `${state.energy}`],
+      ['hunger', `${state.hunger}`],
       ['food', `${state.food}`],
     ]);
     expect(model?.shelter.hasShelter).toBe(state.hasShelter);

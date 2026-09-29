@@ -27,11 +27,17 @@ import type {
 } from '../ui/view-models/ui-types';
 
 /**
- * Orden del panel. La salud va la primera porque es la única de las cuatro que
- * puede acabar con la partida: las otras tres avisan de un problema que aún se
- * puede resolver, y esta marca el borde a partir del cual no.
+ * Orden del panel: salud, energía, hambre y comida.
+ *
+ * La salud abre la lista porque es la única de las cuatro que puede acabar con la
+ * partida: las otras tres avisan de un problema que aún se puede resolver, y esta
+ * marca el borde a partir del cual no.
+ *
+ * Debajo van la energía y el hambre, juntas porque son los dos contadores que se
+ * mueven en todos los turnos, los que se administran con los botones. Y la comida
+ * va la última porque es la única que se acumula en vez de gastarse.
  */
-const statIds: ReadonlyArray<StatId> = ['health', 'hunger', 'energy', 'food'];
+const statIds: ReadonlyArray<StatId> = ['health', 'energy', 'hunger', 'food'];
 
 /**
  * Bloques de cada barra. Las cifras comparten escala para que las filas queden
@@ -211,11 +217,13 @@ function createDeltas(
 
   const deltas: ResourceDeltaViewModel[] = [];
   // El mismo orden que el panel, para que la lista de cambios se lea mirando la
-  // rejilla de arriba y no haya que buscar cada fila por su color.
+  // rejilla de arriba y no haya que buscar cada fila por su color. Sale de
+  // `statIds` y no de una lista propia: las dos tienen que ser la misma, o un
+  // cambio de orden en el panel dejaría los cambios de la terminal sin reordenar.
   const numericResources: ReadonlyArray<{ id: StatId; label: string }> = [
     { id: 'health', label: 'Salud' },
-    { id: 'hunger', label: 'Hambre' },
     { id: 'energy', label: 'Energía' },
+    { id: 'hunger', label: 'Hambre' },
     { id: 'food', label: 'Comida' },
   ];
 
@@ -500,7 +508,7 @@ export function createGameViewModel(
  * pantalla antes. Si el parte los dibujara de otra manera, el jugador tendría
  * que traducir entre dos sistemas para entender por qué perdió.
  *
- * El orden de los recursos es el de `statIds`: salud, hambre, energía y comida.
+ * El orden de los recursos es el de `statIds`: salud, energía, hambre y comida.
  * La salud va la primera porque es la única de las cuatro que puede haber
  * terminado la partida.
  *
