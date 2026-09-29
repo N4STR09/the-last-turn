@@ -282,8 +282,13 @@
  * Barra de bloques. Un bloque por unidad, que es lo que la hace legible de un
  * vistazo: doce squares vacíos dicen "no tienes nada" mejor que un cero. La
  * pista va en gris neutro para que el único color en la fila sea el del recurso.
+ *
+ * Es el contenedor del flotante, así que es `relative`. Sin positioning, el
+ * `bottom: 100%` del flotante se resolvería contra la fila entera y saldría
+ * encima de la etiqueta.
  */
 .stat__bar {
+  position: relative;
   display: flex;
   gap: 3px;
   min-width: 0;
@@ -313,6 +318,82 @@
 }
 
 /*
+ * `+` de saturación. Va pegado al último bloque y en el color de la fila, sin
+ * quitarle sitio a nada: solo dice que la barra se ha quedado corta. No dice
+ * cuánto sobra, y a propósito: es una señal de "mira la cifra, no la barra", no
+ * una segunda cuenta. Un `+18` obligaría a estar calculando el exceso en el
+ * sitio donde menos se lee, que es una barra de doce cuadrados.
+ */
+.stat__bar-over {
+  margin-left: 0.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.75;
+}
+
+/*
+ * Flotante del cambio del turno.
+ *
+ * Nace pegado al borde superior de la barra, nunca encima de los bloques: si
+ * apareciera sobre ellos, el primer fotograma de cada cambio sería una cifra
+ * ilegible sobre el propio recurso que está cambiando. Se va hacia arriba hasta
+ * medio bloque y se desvanece, y no sube más porque un recorrido largo lo
+ * convertiría en el centro de la atención en una pantalla donde lo que decide es
+ * el botón de abajo.
+ *
+ * El color sale del tono que ya le calculó la terminal al mismo cambio, así que
+ * «esto salió bien» y «esto salió mal» se ven igual en los dos sitios y no hay
+ * dos reglas de color para el mismo hecho. La alarma es el único rojo de la
+ * interfaz y el blanco es el de las cifras que importan; los tokens de recurso
+ * no se toman, porque pertenecen a su fila y solo a su fila.
+ */
+.stat__float {
+  position: absolute;
+  z-index: 1;
+  inset-inline: 0;
+  bottom: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  /* No es un control y no está en el flujo: no debe capturar el puntero ni
+     ensanchar la barra ni poder recibir foco. */
+  pointer-events: none;
+  user-select: none;
+  animation: stat-float 1200ms ease-out both;
+}
+
+.stat__float[data-tone='warning'] {
+  color: var(--color-alarm);
+  text-shadow: 0 0 4px var(--color-terminal);
+}
+
+.stat__float[data-tone='positive'] {
+  color: var(--color-light);
+  text-shadow: 0 0 4px var(--color-terminal);
+}
+
+@keyframes stat-float {
+  0% {
+    opacity: 0;
+    transform: translateY(0.2rem);
+  }
+
+  25% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+}
+
+/*
  * El estado crítico late en rojo. No es un estrobo: 1.8 s por ciclo son 0.55 Hz,
  * muy por debajo del umbral de 3 destellos de WCAG 2.3.1. Con movimiento
  * reducido se queda en rojo fijo, que ya comunica lo mismo sin parpadear.
@@ -334,6 +415,18 @@
 
 @media (prefers-reduced-motion: reduce) {
   .stat--critical {
+    animation: none;
+    opacity: 1;
+  }
+
+  /*
+   * El flotante se queda quieto y a la vista hasta que llega el turno siguiente.
+   * Quitar la animación sin dejar nada sería borrar el dato, y el dato es el
+   * motivo del flotante; quitar solo el movimiento conserva la información y
+   * respeta la preferencia. No hace falta neutralizar `transform` a mano: sin
+   * animación no hay ninguno aplicado.
+   */
+  .stat__float {
     animation: none;
     opacity: 1;
   }

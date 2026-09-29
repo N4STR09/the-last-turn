@@ -414,6 +414,128 @@ describe('GameScreen', () => {
     expect(food?.querySelectorAll('.stat__block--filled')).toHaveLength(2);
   });
 
+  it('no avisa de saturación cuando las unidades caben en la barra', () => {
+    const { container } = renderScreen({
+      model: {
+        ...model,
+        stats: model.stats.map((resource) =>
+          resource.id === 'food' ? { ...resource, units: 12, value: '12' } : resource,
+        ),
+      },
+    });
+
+    // Justo llena no es «más que llena». El `+` tiene que significar que el número
+    // se ha salido de la barra; si apareciera en el límite, valdría por la mitad
+    // de las partidas en las que no sobra nada y no avisaría de nada.
+    expect(
+      container.querySelector('[data-resource-id="food"] .stat__bar-over'),
+    ).toBeNull();
+  });
+
+  it('avisa con un + que la barra se ha quedado corta, sin tapar los bloques', () => {
+    const { container } = renderScreen({
+      model: {
+        ...model,
+        stats: model.stats.map((resource) =>
+          resource.id === 'food' ? { ...resource, units: 30, value: '30' } : resource,
+        ),
+      },
+    });
+
+    const food = container.querySelector('[data-resource-id="food"]');
+
+    expect(food?.querySelector('.stat__bar-over')).toHaveTextContent('+');
+    // Los doce bloques siguen encendidos: el `+` informa de lo que la barra no
+    // alcanza, no sustituye a la barra.
+    expect(food?.querySelectorAll('.stat__block--filled')).toHaveLength(12);
+  });
+
+  it('levanta un flotante sobre la barra de cada recurso que se movió', () => {
+    const { container } = renderScreen({
+      model: {
+        ...model,
+        resolution: {
+          ...model.resolution!,
+          deltas: [
+            { id: 'health', label: 'Salud', value: '−2', tone: 'warning' },
+            { id: 'energy', label: 'Energía', value: '−1', tone: 'warning' },
+            { id: 'hunger', label: 'Hambre', value: '+1', tone: 'positive' },
+          ],
+        },
+      },
+    });
+
+    for (const id of ['health', 'energy', 'hunger']) {
+      expect(
+        container.querySelector(`[data-resource-id="${id}"] .stat__float`),
+      ).not.toBeNull();
+    }
+
+    // El texto y el tono son los mismos que ya Narró la terminal para el mismo
+    // cambio. No hay una segunda lectura del hecho: hay una segunda forma de verlo
+    // desde donde está la vista.
+    expect(
+      container.querySelector('[data-resource-id="health"] .stat__float'),
+    ).toHaveTextContent('−2');
+    expect(
+      container.querySelector('[data-resource-id="health"] .stat__float'),
+    ).toHaveAttribute('data-tone', 'warning');
+    expect(
+      container.querySelector('[data-resource-id="hunger"] .stat__float'),
+    ).toHaveAttribute('data-tone', 'positive');
+  });
+
+  it('no levanta flotante en la comida, que se avisa con el +', () => {
+    const { container } = renderScreen({
+      model: {
+        ...model,
+        resolution: {
+          ...model.resolution!,
+          deltas: [{ id: 'food', label: 'Comida', value: '+4', tone: 'positive' }],
+        },
+      },
+    });
+
+    // La comida es la única que se acumula, y una barra que sube no dice nada que
+    // su cifra no diga mejor. El flotante se reserva para las tres que se mueven
+    // en todos los turnos.
+    expect(
+      container.querySelector('[data-resource-id="food"] .stat__float'),
+    ).toBeNull();
+  });
+
+  it('no levanta flotante en la primera pantalla, cuando no hay resolución', () => {
+    const { container } = renderScreen({ model: { ...model, resolution: null } });
+
+    expect(container.querySelector('.stat__float')).toBeNull();
+  });
+
+  it('remonta el flotante al cambiar de turno para que la animación se repita', () => {
+    const { container, rerender } = render(
+      <GameScreen
+        model={{ ...model, turn: 3 }}
+        settings={createSettings()}
+        onAction={vi.fn()}
+        surrender={createSurrender()}
+      />,
+    );
+    const antes = container.querySelector('.stat__float');
+
+    rerender(
+      <GameScreen
+        model={{ ...model, turn: 4 }}
+        settings={createSettings()}
+        onAction={vi.fn()}
+        surrender={createSurrender()}
+      />,
+    );
+
+    // El nodo cambia, y eso es exactamente el mecanismo: un nodo nuevo es una
+    // animación nueva. Si se reutilizara, la cifra saldría una vez y el resto de
+    // la partida la barra se movería en silencio.
+    expect(container.querySelector('.stat__float')).not.toBe(antes);
+  });
+
   it('escribe el aviso en texto solo cuando hay algo que avisar', () => {
     renderScreen();
 
