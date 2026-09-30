@@ -52,15 +52,12 @@
   que es lo que hay que mirar de verdad. El `+` va pegado a los bloques, no antes
   de ellos, y solo aparece cuando `units > capacity`. Dos barras lo admiten y dos
   no lo pueden admitir nunca: la salud está topada en `MAX_HEALTH` y el hambre mata
-  por encima de 10, así que su máximo vivo es 11 de 12. El `+N` con la cuenta
-  exacta es la alternativa, pendiente de decidir.
-- **El cambio de cada recurso, en flotante sobre su barra.** Al resolver un turno
-  la cifra se levanta, se va y vuelve a su sitio, con el color que le toca: rojo de
-  alarma para lo que empeora y luz clara para lo que mejora. El nodo se remonta al
-  cambiar de ronda, porque reutilizarlo dejaría la animación entera en silencio a
-  partir del segundo turno, y con `prefers-reduced-motion` la cifra no se mueve y
-  se queda visible. **La comida se queda fuera**: es la única que se acumula, y una
-  barra que sube no dice nada que su cifra no diga mejor.
+  por encima de 10, así que su máximo vivo es 11 de 12. **Va pelado, sin la cuenta
+  del exceso, y es decisión cerrada.** Un `+N` daría un dato mejor del que ya
+  está escrito al lado de la barra, y la copia es el problema: dos cifras del mismo
+  número en dos sitios son dos fuentes de verdad, y la que está metida en una fila
+  de doce cuadrados es la que primero se lee mal. Lo que el `+` tiene que decir es
+  «mira la cifra, no la barra», y eso cabe en un carácter.
 - **El «nuevo récord» en la pantalla de muerte.** En dorado, justo debajo de los
   turnos aguantados, porque es lo que califica a esa cifra y no un dato más de la
   partida. No es una victoria: en este juego siempre se muere, así que lo único
@@ -346,7 +343,7 @@
 - **Lo que la hoja dice no se ha visto en ningún navegador.** No hay navegador de
   escritorio conectado a esta sesión. Que el engranaje quede donde tiene que
   quedar, que el desplegable no se salga por arriba en pantallas estrechas, que la
-  hoja se lea entera con la barra fija y que el `+` y el flotante se vean bien son
+  hoja se lea entera con la barra fija y que el `+` se vea bien son
   afirmaciones sobre el árbol y el CSS, no sobre lo que se ve. Queda pendiente
   recargar con Ctrl+Shift+R y comprobar, en el mismo sitio donde ya estaba pendiente
   la pantalla de muerte.

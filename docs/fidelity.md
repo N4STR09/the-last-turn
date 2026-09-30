@@ -193,7 +193,7 @@ las mediciones antes y después, está en `SPEC-threat.md`; aquí queda la regla
 
 ## Fase 6: menú de ajustes, hoja de reglas y barras
 
-Este bloque **no toca el motor**. Las Fases 3, 4 y 5 lo hicieron o no según el caso; esta no cambia ni una probabilidad, ni un turno, ni un nombre de acción. Cambia el orden de las cifras del panel, añade un `+` a la barra que satura, levanta el cambio de cada recurso como flotante y añade un engranaje con dos entradas. Ninguna de esas cuatro cosas puede cambiar el resultado de una partida, y por eso no hay entrada en el ledger de reglas.
+Este bloque **no toca el motor**. Las Fases 3, 4 y 5 lo hicieron o no según el caso; esta no cambia ni una probabilidad, ni un turno, ni un nombre de acción. Cambia el orden de las cifras del panel, añade un `+` a la barra que satura y añade un engranaje con dos entradas. Ninguna de esas tres cosas puede cambiar el resultado de una partida, y por eso no hay entrada en el ledger de reglas.
 
 Lo que sí toca es la **fuente de verdad del copy del juego**: la hoja de reglas nueva describe el motor, así que se ató al motor para que no pueda divergir. Esa atadura es `A-12`, y su efecto observable es que la ayuda y los botones no pueden discrepar.
 
@@ -274,8 +274,8 @@ Dos decisiones de esta fase **no** son fidelidad y por eso se registran aquí si
   click dentro que no.
 - `src/ui/__tests__/game-screen.test.tsx` fija que el engranaje cuelga del banner y
   no de la rejilla de acciones, que la hoja sustituye al menú en vez de apilarse, y
-  que el `+` solo aparece cuando hay más unidades que bloques y el flotante se
-  levanta en salud, energía y hambre pero no en comida.
+  que el `+` solo aparece cuando hay más unidades que bloques y que su texto es
+  exactamente `+`, sin la cuenta del exceso.
 - `src/ui/__tests__/surrender-control.test.tsx` cubre el diálogo entero: apertura,
   foco dentro, trampa de tabulador en los dos sentidos, Escape, click fuera que
   no hace nada, y devolución del foco al botón al cancelar.

@@ -80,12 +80,7 @@ export function GameScreen({ model, settings, onAction, surrender }: GameScreenP
           )}
         </p>
       </header>
-      <ResourcePanel
-        stats={model.stats}
-        shelter={model.shelter}
-        deltas={model.resolution?.deltas ?? null}
-        turn={model.turn}
-      />
+      <ResourcePanel stats={model.stats} shelter={model.shelter} />
       <ResolutionPanel
         difficulty={model.difficulty}
         forecast={model.forecast}

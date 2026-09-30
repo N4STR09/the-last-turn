@@ -5,7 +5,7 @@
 
 ## Estado de este registro
 
-Las tablas de la sección «Comandos automáticos» reflejan el árbol con la tanda de ajustes: orden del panel, `+` de saturación, flotante del cambio y menú de ajustes con su hoja de reglas. Las secciones de navegador real y de aceptación pública se realizaron sobre el build `0.1.0`, publicado antes de la Fase 1, y están etiquetadas como tales; la repetición en navegador con el build actual queda registrada como pendiente porque no hay navegador de escritorio conectado a esta sesión. El rediseño agrava esa limitación: su objeto de entrega es visual, así que ninguna prueba automática dice si la interfaz queda bien. La Fase 5 agrava la limitación en el otro sentido: cambió el motor, y ninguna prueba automática dice si el endless se siente endless. La tanda de semilla la agrava en un tercer sentido: añadió una superficie que solo se puede probar abriendo la página con un enlace en la barra de direcciones, y no hay barra de direcciones que probar. La limpieza de la pantalla de muerte la agrava en un cuarto, y es el más fino: quitar texto de una pantalla es fácil de comprobar en el árbol y difícil de comprobar en la vista, porque lo que hay que ver es que no falta. La tanda de ajustes la agrava en un quinto: una hoja de reglas es, por definición, texto que hay que leer, y ninguna aserción comprueba que una hoja de reglas se lea bien.
+Las tablas de la sección «Comandos automáticos» reflejan el árbol con la tanda de ajustes: orden del panel, `+` de saturación y menú de ajustes con su hoja de reglas. Las secciones de navegador real y de aceptación pública se realizaron sobre el build `0.1.0`, publicado antes de la Fase 1, y están etiquetadas como tales; la repetición en navegador con el build actual queda registrada como pendiente porque no hay navegador de escritorio conectado a esta sesión. El rediseño agrava esa limitación: su objeto de entrega es visual, así que ninguna prueba automática dice si la interfaz queda bien. La Fase 5 agrava la limitación en el otro sentido: cambió el motor, y ninguna prueba automática dice si el endless se siente endless. La tanda de semilla la agrava en un tercer sentido: añadió una superficie que solo se puede probar abriendo la página con un enlace en la barra de direcciones, y no hay barra de direcciones que probar. La limpieza de la pantalla de muerte la agrava en un cuarto, y es el más fino: quitar texto de una pantalla es fácil de comprobar en el árbol y difícil de comprobar en la vista, porque lo que hay que ver es que no falta. La tanda de ajustes la agrava en un quinto: una hoja de reglas es, por definición, texto que hay que leer, y ninguna aserción comprueba que una hoja de reglas se lea bien.
 
 ## Comandos automáticos
 
@@ -745,8 +745,8 @@ antes no lo estaba:
 
 ## Orden del panel, barra y menú de ajustes
 
-Tanda de interfaz pura: no toca el motor. Cuatro cosas —el orden de las cifras, el
-`+` de saturación, el flotante del cambio y el menú de ajustes— y ninguna puede
+Tanda de interfaz pura: no toca el motor. Tres cosas —el orden de las cifras, el
+`+` de saturación y el menú de ajustes— y ninguna puede
 cambiar el resultado de una partida. Aun así, una de ellas añade una hoja de reglas
 nueva, y eso obliga a mirar el motor de cerca.
 
@@ -790,19 +790,19 @@ que un `toEqual` con literales es el sitio donde se nota.
   desplegable pequeño y los botones de acción siguen alcanzables por debajo. La
   segunda red no la cruza ningún atajo; sin el test se habría dado por hecho que la
   primera ya lo apagaba y que la segunda no hacía falta.
-- El `+` solo aparece con `units > capacity`, y el flotante se levanta en salud,
-  energía y hambre pero no en comida.
+- El `+` solo aparece con `units > capacity`, y su texto es exactamente `+`. La
+  aserción es exacta y no por subcadena a propósito: un `+18` también contendría
+  un `+`, así que una comprobación floja habría dejado pasar justo la variante que
+  se descartó. Se comprobó mutando el componente y la prueba falla con
+  `expected '+18' to be '+'`.
 
 ### Lo que sigue sin comprobarse
 
-- **En navegador, los cuatro puntos.** Que el engranaje caiga donde tiene que caer
+- **En navegador, los tres puntos.** Que el engranaje caiga donde tiene que caer
   sin pisar el título, que el desplegable no se salga por arriba en 360 px, que la
-  hoja se lea entera con la barra fija, y que el `+` y el flotante se vean bien y no
-  se solapen con la cifra. Todo eso son afirmaciones sobre el árbol y el CSS. Sigue
+  hoja se lea entera con la barra fija, y que el `+` se vea bien y no
+  se solape con la cifra. Todo eso son afirmaciones sobre el árbol y el CSS. Sigue
   sin haber navegador de escritorio conectado a la sesión.
-- **Que el flotante se entienda sin ver la animación.** Se ha comprobado que con
-  movimiento reducido la cifra no se mueve y se queda visible, pero si una cifra que
-  sube y baja durante 400 ms se lee o se ignora es una pregunta de ojo.
 - **Que la hoja no canse a quien ya sabe jugar.** Es una hoja larga y el juego cabe
   en cinco botones. Que el que la abre por primera vez la termine y el que la abre
   por quinta vez la cierre rápido depende de cómo se lea, y eso no lo mide ningún
@@ -927,9 +927,9 @@ Queda pendiente, y no se afirma aquí ningún resultado hasta ejecutarlo:
   cambie de rótulo, que «Información» sustituya al menú por la hoja, que la hoja
   se lea entera con la barra y el «Cerrar» siempre a la vista, que Escape cierre
   las dos capas, que el trap de tabulador no deje salir, y que el `+` aparezca en
-  comida y energía con unidades por encima de los bloques. Con
-  `prefers-reduced-motion` activado, que el flotante no se mueva pero que la cifra
-  siga en su sitio.
+  comida y energía con unidades por encima de los bloques, y que no salga ningún
+  número de cambio sobre las barras. Con `prefers-reduced-motion` activado, que la
+  fila que avisa siga en rojo fijo sin latir.
 - Empuje a `origin/main` y redespliegue, que requieren autorización explícita.
 
 `D-01`, `D-02` y `D-03` ya no bloquean la publicación: los tres están resueltos,

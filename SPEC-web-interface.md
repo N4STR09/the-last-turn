@@ -197,17 +197,13 @@ La congelación está escrita en tres sitios, y los tres hacen falta: en `useAct
 
 Un bloque por unidad, hasta un máximo de doce. Por encima de la capacidad la barra satura y la cifra sigue siendo la verdad: la barra es una pista visual, no el dato. El refugio es binario y se dibuja con un solo bloque.
 
-**El `+` de saturación va pegado a los bloques, y solo cuando hay más unidades que bloques.** Saturar sin decir nada obliga a mirar la cifra, que es lo correcto para leerla pero no para detectarla: una barra llena y otra que se ha quedado a un bloque de llenarse se ven igual. El `+` vive dentro de `.stat__bar` y es decorativo, como los bloques, porque la cifra ya está en texto a su lado. Su alternativa es un `+N` con la cuenta exacta del exceso, que dice más y ocupa más; está sin decidir.
+**El `+` de saturación va pegado a los bloques, y solo cuando hay más unidades que bloques.** Saturar sin decir nada obliga a mirar la cifra, que es lo correcto para leerla pero no para detectarla: una barra llena y otra que se ha quedado a un bloque de llenarse se ven igual. El `+` vive dentro de `.stat__bar` y es decorativo, como los bloques, porque la cifra ya está en texto a su lado.
+
+**Va pelado, sin la cuenta del exceso.** Se studió un `+N` con el número exacto y se descartó: el dato no es nuevo, está escrito en `value` justo al lado, y duplicarlo en la barra crea dos fuentes de verdad para el mismo número. La que vive dentro de la barra es además la que primero se lee mal, porque hay que calcular el resto contra una fila de doce cuadrados mientras se juega. El `+` no informa de cuánto sino de que la cifra se ha salido de ahí, que es lo único que la barra no puede decir por sí misma. Un test compara el texto exacto del nodo con `+`, no por subcadena, para que un `+18` no vuelva a colarse.
 
 Dos barras pueden necesitarlo y dos no lo necesitan nunca. La salud está topada en `MAX_HEALTH` y el motor no la recorta, así que `units > capacity` es imposible. El hambre mata por encima de 10, de modo que su máximo vivo es 11 contra una capacidad de 12, y tampoco puede llegar. Solo la comida y la energía pueden surpassar su barra, y las dos lo hacen con frecuencia en una partida larga.
 
-**El cambio de cada recurso se levanta sobre su barra al resolver un turno.** La cifra sale hacia arriba, se va y vuelve a su sitio. El color sale del tono: `--color-alarm` cuando la cifra empeora y `--color-light` cuando mejora, de modo que el flotante no introduce una señal que el panel no tiene.
-
-El nodo **se remonta al cambiar de ronda**, con `key={turno-N}`. Reutilizarlo es lo que dejaría la animación en silencio a partir del segundo turno: la animación se dispara al montarse el nodo, y un nodo que ya estaba no vuelve a montarse. Remontar cada ronda cuesta un nodo nuevo y es la única forma de que el efecto se repita mientras dure la partida.
-
-**La comida no tiene flotante.** Es la única que se acumula, y una barra que sube no dice nada que su cifra —que ya sube— no diga mejor. El flotante se reserva para la salud, la energía y el hambre, que son las tres que se mueven en todos los turnos y las tres cuya variación se quiere ver de reojo.
-
-Con `prefers-reduced-motion` la cifra no se mueve y **se queda visible**: quitar el flotante entero dejaría fuera la animación sin quitar el dato, y el dato es lo que importa.
+**La barra no dice cuánto ha cambiado la cifra.** Cada fila es etiqueta, cifra, barra y aviso, y nada más. Se studió levantar el cambio sobre su barra y se retiró: la terminal ya narra todos los cambios, en texto y en el mismo orden que las filas, así que la cifra flotante era el mismo dato por tercera vez. Y competía con la cifra fija que tiene al lado: en una rejilla de cuatro bloques lo que se mueve es lo que se mira, y en el momento en que se elige la acción eso es exactamente lo que no debe pasar. El panel dice cuánto tienes; lo que cambió está en la terminal, que es donde se lee encadenado con el resto del turno.
 
 **La salud es la excepción: su barra va hasta `MAX_HEALTH`, diez bloques.** Comparte código con las otras tres pero no comparte escala, y no por descuido: las otras tres son contadores que suben y bajan, y la salud es una reserva que solo baja y por eso tiene un final. Si compartieran escala, una salud a 6 y una salud a 10 se leerían como media barra y como casi llena, que es la misma foto de un cuerpo a la mitad.
 
@@ -449,7 +445,7 @@ Objetivo: WCAG 2.2 AA para los flujos del MVP.
 - Las barras de recursos van `aria-hidden`: son redundancia visual sobre una cifra y una etiqueta que ya están en texto.
 - Ninguna etiqueta visible se genera con `content: attr()`. El texto de CSS no entra en el árbol de accesibilidad, y el lector anunciaría las cifras sin decir qué es cada una.
 - La pantalla final recibirá foco al aparecer y se anunciará como error sin duplicar dos regiones `alert`; sus encabezados de pantalla usarán `tabIndex={-1}` para recibir foco programático.
-- Respeto de `prefers-reduced-motion`. El flotante de las barras es el caso donde esto se nota: con movimiento reducido la cifra **no se mueve y se queda visible**, porque quitar el flotante entero dejaría fuera la animación sin quitar el dato.
+- Respeto de `prefers-reduced-motion`. Queda una animación en la partida, el latido rojo de la fila que avisa, y con movimiento reducido se apaga y el aviso se queda en rojo fijo.
 - Sin información comunicada exclusivamente mediante color o iconografía.
 - Las cifras largas no se recortan ni inducen desplazamiento horizontal.
 - El engranaje es un botón nativo con `aria-label="Ajustes"`, no un icono suelto, y lleva `aria-expanded` y `aria-controls` apuntando al panel. El panel es `role="group"` con nombre, para que un lector de pantalla pueda saltar a él.
@@ -530,7 +526,7 @@ Con Vitest, jsdom y React Testing Library:
 - La hoja de reglas atrapa el foco en los dos sentidos, se cierra con Escape, con su botón y con un click en el fondo, y **no** con un click dentro.
 - La hoja no puede contradecir a los botones: su orden, sus nombres y sus gastos se comparan contra `createActions` en la misma partida, y las teclas se comprueban en las dos direcciones sobre el alfabeto entero. Además se comprueba que las cifras citadas cambian con la escalada, que es la prueba de que no están escritas a mano.
 - La hoja no nombra eventos que no existen en la dificultad en juego: en Normal no aparece el meteorito ni el mapache.
-- El `+` aparece solo cuando hay más unidades que bloques, y el flotante se levanta en salud, energía y hambre pero no en comida, que se acumula.
+- El `+` aparece solo cuando hay más unidades que bloques, y su texto es exactamente `+`, sin la cuenta del exceso.
 - Pruebas de instantáneas solo para casos visuales estables; se priorizan aserciones semánticas.
 
 Comandos previstos:
