@@ -8,16 +8,38 @@
 # funciones web estándar (`fetch`, `crypto.subtle`, `TextEncoder`, `URL`), que
 # la plataforma ya tiene, así que no hace falta ninguna pieza de Node ni su
 # polyfill.
+#
+# DESPLIEGUE: el proyecto usa integración Git con Cloudflare Pages, no
+# `wrangler deploy`. El build y la publicación los hace Cloudflare
+# automáticamente en cada push a main. Para actualizar el sitio no hace falta
+# Wrangler. Si algún día hay que publicar a mano, el comando correcto es:
+#
+#   npx wrangler pages deploy dist --project-name=the-last-turn
+#
+# `wrangler deploy` (sin `pages`) es para Workers normales y falla en un
+# proyecto Pages con "Missing entry-point".
 
 name = "the-last-turn"
 compatibility_date = "2025-03-01"
 pages_build_output_dir = "dist"
 
-# El `database_id` lo pone `wrangler d1 create the-last-turn`, y es lo primero
-# que hay que hacer antes de que nada funcione. Está aquí como marca para que
-# nadie pase por alto que falta.
-[[d1_databases]]
-binding = "DB"
-database_name = "the-last-turn"
-database_id = "PENDIENTE_DE_wrangler_d1_create"
-migrations_dir = "migrations"
+# D1 va comentado a propósito, y no por descuido.
+#
+# Un `database_id` de relleno rompe la compilación del despliegue: Cloudflare
+# valida el identificador al leer este archivo, así que un UUID que no existe no
+# es un aviso, es un error. Con el bloque comentado el sitio se publica, el juego
+# funciona entero y `/api/health` responde 503 diciendo que la base de datos no
+# responde, que es exactamente la verdad y se arregla en cuanto la haya.
+#
+# Para activarlo, en este orden:
+#
+#   npx wrangler d1 create the-last-turn     # devuelve el database_id
+#   # pegar el database_id de verdad en las dos líneas siguientes
+#   npm run db:migrate                       # aplica migrations/ en la real
+#
+# En local, `npm run db:migrate:local` crea y aplica la copia sin tocar la real.
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "the-last-turn"
+# database_id = "EL_UUID_QUE_DEVUELVA_wrangler_d1_create"
+# migrations_dir = "migrations"

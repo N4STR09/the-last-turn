@@ -30,11 +30,17 @@ Cloudflare conserva los despliegues anteriores, así que una regresión se puede
 revertir desde el dashboard. La alternativa es revertir el commit en local y
 volver a hacer `push`.
 
-Cloudflare permite publicar contenido estático en dos superficies distintas: Pages, normalmente bajo `*.pages.dev`, y Workers con Static Assets, normalmente bajo `*.workers.dev`. La URL pública observada es `workers.dev`; por eso el registro no afirma que exista un proyecto Pages clásico. El repositorio no contiene `wrangler.toml`, `wrangler.jsonc`, `functions/` ni código de Worker, y la aceptación confirmó que el sitio publicado es el build estático sin peticiones a terceros.
+Cloudflare permite publicar contenido estático en dos superficies distintas: Pages, normalmente bajo `*.pages.dev`, y Workers con Static Assets, normalmente bajo `*.workers.dev`. La URL pública observada es `workers.dev`; por eso el registro no afirma que exista un proyecto Pages clásico.
+
+**Esto cambió con las cuentas.** El repositorio ya contiene `wrangler.toml`, `functions/` y código de servidor, y lo seguirá contendiendo. Hasta la primera versión de este bloque, lo único que había era el build estático: ninguna petición a terceros, ningún backend, ninguna base de datos. La aceptación que se describe más abajo se hizo contra aquel estado y sigue siendo válida **para aquel estado**: no dice nada sobre el sitio actual. Lo que describe el proyecto hoy está en `docs/accounts.md`, y lo que se publica ahora es `dist/` más las Functions, que son un servidor.
+
+El modo de publicación **no ha cambiado**: sigue siendo la integración con Git, que compila y publica en cada `push` a `main`. Añadir `wrangler.toml` no lo convierte en un despliegue manual. Lo único que cambia es que Cloudflare encuentra un `functions/` y lo sube junto al sitio.
 
 ## Objetivo
 
-*The Last Turn* se distribuye como una web 100 % estática. Una persona jugará abriendo una URL HTTPS en su navegador, sin instalar la aplicación, crear una cuenta ni configurar un servidor. El proyecto no necesita Pages Functions, una Worker con código, backend, base de datos ni variables de entorno de producto.
+*The Last Turn* se distribuye como una web que se abre en el navegador, sin instalar nada ni configurar un servidor. Una persona **juega** sin cuenta: la cuenta es opcional y solo sirve para que el récord y las estadísticas sobrevivan a cerrar la pestaña.
+
+Desde el bloque de cuentas el proyecto **sí** tiene Pages Functions, backend y base de datos D1. La razón está en `docs/accounts.md`: el secreto de cliente de Google no puede vivir en un paquete descargable, así que el login obliga a un servidor. Lo que sigue sin hacer falta son las variables de entorno de producto en el navegador, que no existen en ninguna forma.
 
 El resultado de `npm run build` es el directorio `dist/`. Este directorio contiene el único artefacto que Cloudflare necesita publicar.
 

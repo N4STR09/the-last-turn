@@ -20,6 +20,7 @@
     "test:coverage:server": "node scripts/run-coverage.mjs functions/_lib && node scripts/run-coverage.mjs functions/api",
     "db:migrate:local": "wrangler d1 migrations apply the-last-turn --local",
     "db:migrate": "wrangler d1 migrations apply the-last-turn --remote",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name=the-last-turn",
     "check:budget": "node scripts/check-budget.mjs",
     "check:residues": "node scripts/residue-sweep.mjs",
     "verify": "npm run typecheck && npm run lint && npm run test:coverage && npm run test:coverage:scoped && npm run test:coverage:server && npm run build && npm run check:budget && npm run check:residues"
