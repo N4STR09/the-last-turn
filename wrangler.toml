@@ -1,0 +1,23 @@
+# Cloudflare Pages + Functions + D1.
+#
+# `functions/` es el servidor. Vite sigue construyendo `dist/` igual que antes y
+# el mismo despliegue sirve las dos cosas, así que el sitio sigue siendo un solo
+# origen: sin CORS y con `SameSite=Lax` suficiente para la cookie de sesión.
+#
+# No se pide `nodejs_compat`. El código del servidor está escrito contra
+# funciones web estándar (`fetch`, `crypto.subtle`, `TextEncoder`, `URL`), que
+# la plataforma ya tiene, así que no hace falta ninguna pieza de Node ni su
+# polyfill.
+
+name = "the-last-turn"
+compatibility_date = "2025-03-01"
+pages_build_output_dir = "dist"
+
+# El `database_id` lo pone `wrangler d1 create the-last-turn`, y es lo primero
+# que hay que hacer antes de que nada funcione. Está aquí como marca para que
+# nadie pase por alto que falta.
+[[d1_databases]]
+binding = "DB"
+database_name = "the-last-turn"
+database_id = "PENDIENTE_DE_wrangler_d1_create"
+migrations_dir = "migrations"

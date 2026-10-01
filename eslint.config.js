@@ -33,4 +33,41 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-imports': 'error',
     },
   },
+  {
+    // El servidor no es un navegador. Sin este bloque heredaría los globals del
+    // bloque general y podría escribir `document` o `localStorage` en código que
+    // en la plataforma no existen: no fallaría nada en local, y en producción
+    // reventaría en la primera petición.
+    files: ['functions/**/*.ts'],
+    languageOptions: {
+      globals: globals.serviceworker,
+    },
+    rules: {
+      // Cierra la puerta que abre `@types/node` en `tsconfig.functions.json`.
+      // La plataforma no tiene módulos de Node, así que un `import 'node:fs'`
+      // en `_lib` o en `api` no falla al compilar ni al probar en local: falla
+      // en la primera petición en producción, que es el peor momento para
+      // descubrirlo. Las pruebas sí pueden usarlos, y por eso la regla no toca
+      // `__tests__`.
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['node:*', 'fs', 'path', 'os', 'child_process', 'crypto'],
+              message:
+                'La plataforma no tiene módulos de Node. Usa las funciones web estándar: fetch, crypto.subtle, TextEncoder, URL.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Solo las pruebas pueden salirse a Node, y solo porque corren en Node.
+    files: ['functions/**/__tests__/**/*.ts'],
+    rules: {
+      'no-restricted-imports': 'off',
+    },
+  },
 );

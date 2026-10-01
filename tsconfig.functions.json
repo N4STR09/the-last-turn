@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.functions.tsbuildinfo",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    // Sin DOM a propósito. El servidor no se ejecuta en un navegador y no debe
+    // poder tocar nada de uno: si algún día `functions/` importara
+    // `document` o `localStorage`, esto lo rompe en vez de dejarlo pasar al
+    // bundle del navegador, donde no existirían.
+    //
+    // `@types/node` está porque las pruebas corren en Node y necesitan `node:fs`
+    // para leer la migración y `node:sqlite` para ejecutarla de verdad. Eso
+    // deja la puerta abierta a que el código de producción importe un módulo de
+    // Node, así que la puerta se cierra en `eslint.config.js` con una regla que
+    // prohíbe `node:*` en `_lib` y `api`. Los tipos abren la puerta; la regla la
+    // cierra.
+    "types": ["@cloudflare/workers-types", "@types/node"]
+  },
+  "include": ["functions"]
+}

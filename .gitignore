@@ -3,3 +3,7 @@ dist/
 coverage/
 *.local
 .vite/
+# Base de datos local de D1 cuando se prueba con `wrangler d1 migrations
+# apply --local`. Son datos de prueba en un archivo, y subirlos sería llevar a
+# git algo que no debería estar en un repositorio ni aunque se vaciara.
+.wrangler/

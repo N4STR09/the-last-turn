@@ -17,9 +17,12 @@
     "test:watch": "vitest",
     "test:coverage": "node scripts/run-coverage.mjs",
     "test:coverage:scoped": "node scripts/run-coverage.mjs src/app && node scripts/run-coverage.mjs src/ui && node scripts/run-coverage.mjs src/game",
+    "test:coverage:server": "node scripts/run-coverage.mjs functions/_lib && node scripts/run-coverage.mjs functions/api",
+    "db:migrate:local": "wrangler d1 migrations apply the-last-turn --local",
+    "db:migrate": "wrangler d1 migrations apply the-last-turn --remote",
     "check:budget": "node scripts/check-budget.mjs",
     "check:residues": "node scripts/residue-sweep.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run test:coverage && npm run test:coverage:scoped && npm run build && npm run check:budget && npm run check:residues"
+    "verify": "npm run typecheck && npm run lint && npm run test:coverage && npm run test:coverage:scoped && npm run test:coverage:server && npm run build && npm run check:budget && npm run check:residues"
   },
   "dependencies": {
     "lucide-react": "1.48.0",
@@ -27,6 +30,7 @@
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260930.1",
     "@eslint/js": "10.0.1",
     "@testing-library/dom": "10.4.2",
     "@testing-library/jest-dom": "7.0.1",
@@ -45,6 +49,7 @@
     "typescript": "6.0.3",
     "typescript-eslint": "8.70.1",
     "vite": "8.3.1",
-    "vitest": "5.0.1"
+    "vitest": "5.0.1",
+    "wrangler": "^4.144.0"
   }
 }
