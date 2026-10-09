@@ -1,11 +1,11 @@
 # Registro de QA final
 
-**Fecha:** 25 de septiembre de 2026, revisado el 28 tras el rediseño de acciones, el arreglo de colores y pantalla de muerte, y de nuevo con la tanda de semilla, enlace, parte y rival fantasma, ya en 29 con la autopsia, la línea de persecución y el tamaño de la insignia fuera de la pantalla de muerte, el turno de cada acción fuera del parte por completo, y el menú de ajustes con su hoja de reglas
-**Alcance:** entrega web estática de *The Last Turn Web* con las reglas de la Fase 1 de supervivencia, la Fase 2 de escalada progresiva, el rediseño completo de la interfaz, el rediseño de acciones de la Fase 5, la tanda de memoria y determinismo y la tanda de ajustes, que no toca el motor
+**Fecha:** 25 de septiembre de 2026, revisado el 28 tras el rediseño de acciones, el arreglo de colores y pantalla de muerte, y de nuevo con la tanda de semilla, enlace, parte y rival fantasma, ya en 29 con la autopsia, la línea de persecución y el tamaño de la insignia fuera de la pantalla de muerte, el turno de cada acción fuera del parte por completo, y el menú de ajustes con su hoja de reglas; el 6 de octubre de 2026 con el sistema de cuentas, la sesión y el acceso de Google; y el 9 de octubre de 2026 con las estadísticas agregadas, la cola de invitado, el formulario de correo y contraseña, la decisión de bajar las iteraciones del hasheado y el desacople de la puerta de las cuentas del cliente de Google
+**Alcance:** entrega web estática de *The Last Turn Web* con las reglas de la Fase 1 de supervivencia, la Fase 2 de escalada progresiva, el rediseño completo de la interfaz, el rediseño de acciones de la Fase 5, la tanda de memoria y determinismo y la tanda de ajustes, que no toca el motor, y del sistema de cuentas con sus estadísticas agregadas, que tampoco lo toca
 
 ## Estado de este registro
 
-Las tablas de la sección «Comandos automáticos» reflejan el árbol con la tanda de ajustes: orden del panel, `+` de saturación y menú de ajustes con su hoja de reglas. Las secciones de navegador real y de aceptación pública se realizaron sobre el build `0.1.0`, publicado antes de la Fase 1, y están etiquetadas como tales; la repetición en navegador con el build actual queda registrada como pendiente porque no hay navegador de escritorio conectado a esta sesión. El rediseño agrava esa limitación: su objeto de entrega es visual, así que ninguna prueba automática dice si la interfaz queda bien. La Fase 5 agrava la limitación en el otro sentido: cambió el motor, y ninguna prueba automática dice si el endless se siente endless. La tanda de semilla la agrava en un tercer sentido: añadió una superficie que solo se puede probar abriendo la página con un enlace en la barra de direcciones, y no hay barra de direcciones que probar. La limpieza de la pantalla de muerte la agrava en un cuarto, y es el más fino: quitar texto de una pantalla es fácil de comprobar en el árbol y difícil de comprobar en la vista, porque lo que hay que ver es que no falta. La tanda de ajustes la agrava en un quinto: una hoja de reglas es, por definición, texto que hay que leer, y ninguna aserción comprueba que una hoja de reglas se lea bien.
+Las tablas de la sección «Comandos automáticos» reflejan el árbol con la tanda de cuentas y las estadísticas agregadas, que parte del de la tanda de ajustes —orden del panel, `+` de saturación y menú de ajustes con su hoja de reglas—. Las secciones de navegador real y de aceptación pública se realizaron sobre el build `0.1.0`, publicado antes de la Fase 1, y están etiquetadas como tales; la repetición en navegador con el build actual queda registrada como pendiente porque no hay navegador de escritorio conectado a esta sesión. El rediseño agrava esa limitación: su objeto de entrega es visual, así que ninguna prueba automática dice si la interfaz queda bien. La Fase 5 agrava la limitación en el otro sentido: cambió el motor, y ninguna prueba automática dice si el endless se siente endless. La tanda de semilla la agrava en un tercer sentido: añadió una superficie que solo se puede probar abriendo la página con un enlace en la barra de direcciones, y no hay barra de direcciones que probar. La limpieza de la pantalla de muerte la agrava en un cuarto, y es el más fino: quitar texto de una pantalla es fácil de comprobar en el árbol y difícil de comprobar en la vista, porque lo que hay que ver es que no falta. La tanda de ajustes la agrava en un quinto: una hoja de reglas es, por definición, texto que hay que leer, y ninguna aserción comprueba que una hoja de reglas se lea bien. La tanda de cuentas la agrava en un sexto y último: su interfaz depende de dos cosas que en esta sesión no existen —una base D1 con su `database_id` y un cliente OAuth de Google—, así que lo que se mide es el camino sin Google contra un doble de la base.
 
 ## Comandos automáticos
 
@@ -14,18 +14,22 @@ Las tablas de la sección «Comandos automáticos» reflejan el árbol con la ta
 | `npm ci` | Pasa; instalación reproducible sin vulnerabilidades reportadas |
 | `npm run typecheck` | Pasa |
 | `npm run lint` | Pasa sin warnings |
-| `npm run test:coverage` | Pasa; 30 archivos y 493 pruebas; cobertura global 98.69% statements, 97.50% branches, 100% functions, 98.67% lines |
+| `npm run test:coverage` | Pasa; 50 archivos y 978 pruebas; cobertura global 99.4% statements, 98.65% branches, 100% functions, 99.39% lines |
 | `npm run test:coverage:scoped` | Pasa; aplica los umbrales de `src/app`, `src/ui` y `src/game` dentro de `verify` |
-| `npm run test:coverage -- src\app` | Pasa; cobertura de `src/app` 97.75% statements, 95.93% branches, 100% functions, 97.70% lines (181 pruebas) |
+| `npm run test:coverage -- src\app` | Pasa; cobertura de `src/app` 98.24% statements, 96.54% branches, 100% functions, 98.21% lines (220 pruebas) |
 | `npm run test:coverage -- src\game` | Pasa; cobertura de `src/game` 100% en las cuatro métricas (183 pruebas) |
-| `npm run test:coverage -- src\ui` | Pasa; cobertura de `src/ui` 100% en las cuatro métricas (113 pruebas) |
+| `npm run test:coverage -- src\ui` | Pasa; cobertura de `src/ui` 100% en las cuatro métricas (150 pruebas) |
+| `npm run test:coverage -- functions\_lib` | Pasa; cobertura de `functions/_lib` 100% en las cuatro métricas (304 pruebas) |
+| `npm run test:coverage -- functions\api` | Pasa; cobertura de `functions/api` 100% en las cuatro métricas (82 pruebas) |
 | `npm run verify` | Pasa; typecheck, lint, cobertura global, cobertura por capacidad, build, presupuestos y barrido de residuos |
 | `npm run build` | Pasa; bundle estático dentro de presupuesto |
-| `npm run check:budget` | Pasa; 80.68 KiB JS gzip (40,3 % de 200 KiB) y 4.96 KiB CSS gzip (9,9 % de 50 KiB) |
+| `npm run check:budget` | Pasa; 82.41 KiB JS gzip (41,2 % de 200 KiB) y 5.10 KiB CSS gzip (10,2 % de 50 KiB) |
 | `node scripts/residue-sweep.mjs` | Pasa; sin CJK, sin cirílico y sin `U+FFFD` en `src/`, `scripts/`, `docs/` y `dist/` |
 | `npm audit` | 0 vulnerabilidades |
 
-La puerta mide con gzip nivel 9 sobre `dist/assets/` e informa de 80.68 KiB de JavaScript y 4.96 KiB de CSS, mientras que Vite imprime otros valores para los mismos archivos —83.61 KiB y 5.12 KiB—. La diferencia es esperable y está explicada en `scripts/check-budget.mjs`: ambos ajustan gzip de forma distinta y la puerta aplica siempre su propia medición.
+La puerta mide con gzip nivel 9 sobre `dist/assets/` e informa de 82.41 KiB de JavaScript y 5.10 KiB de CSS, mientras que Vite imprime otros valores para los mismos archivos —85.40 KiB y 5.25 KiB—. La diferencia es esperable y está explicada en `scripts/check-budget.mjs`: ambos ajustan gzip de forma distinta y la puerta aplica siempre su propia medición.
+
+**Cómo se midió, y por qué con dos trabajadores.** En esta máquina —4 núcleos, 8 GB de RAM y alrededor de 1,5 GB libres— la cobertura global se mide con `npm run test:coverage -- --maxWorkers=2`. Vitest reparte por número de hilos, y cada trabajador levanta su propio `jsdom`: con ocho, los tres archivos pesados de `src/` (`App.test.tsx`, `session-seed.test.tsx` y `use-game-session.test.tsx`) se quedan sin memoria y fallan con `Test timed out in 5000ms` sin que haya ninguna aserción rota, y el test que falla cambia de una vuelta a la otra. Con dos trabajadores pasa entero, y esos mismos archivos pasan también al margen de la cobertura. Al `accounts.test.ts` de `functions/_lib` le ocurre lo contrario: «gasta lo mismo con un correo inexistente que con una contrasena mala» compara dos duraciones, y bajo carga la rara gana. **Los dos síntomas se resuelven esperando y repitiendo, no tocando el código**, y por eso la fila de `npm run verify` dice «Pasa»: pasó completo el mismo día de esta revisión.
 
 Las puertas se comprobaron además en su sentido de fallo, porque una comprobación que solo pasa no demuestra que bloquee:
 
@@ -807,6 +811,80 @@ que un `toEqual` con literales es el sitio donde se nota.
   en cinco botones. Que el que la abre por primera vez la termine y el que la abre
   por quinta vez la cierre rápido depende de cómo se lea, y eso no lo mide ningún
   test.
+
+## Cuentas, sesión y estadísticas
+
+Esta es la tanda que invirtió la regla fundacional del proyecto. Hasta aquí la
+página era solo frontend y no había backend, ni cuentas, ni persistencia, ni Web
+Storage; ahora hay servidor. La decisión entera está escrita en
+`docs/accounts.md`, y lo que sigue es lo que las pruebas comprueban de ella.
+
+**El motor no se toca.** Ni una probabilidad, ni un turno, ni el nombre de una
+acción, ni una línea de `src/game`. Con cuenta y sin ella una partida se juega
+igual; lo único que cambia es dónde se apunta al final. Por eso esta tanda no
+tiene entrada en el ledger de reglas de `docs/fidelity.md`.
+
+### Qué cubren las pruebas
+
+| Pieza | Qué demuestra |
+|---|---|
+| `src/app/__tests__/accounts.test.ts` | Que la puerta de las cuentas es distinta del cliente de Google: sin ninguna de las dos variables no hay cuentas; `VITE_ACCOUNTS` habilita con cualquier valor no vacío y una cadena vacía no habilita; un cliente de Google habilita por compatibilidad y un cliente vacío no. |
+| `src/app/__tests__/google-sign-in.test.ts` | Que sin `VITE_GOOGLE_CLIENT_ID` no se pide nada a Google y que una cadena vacía cuenta como ausente; que la petición del script se comparte, de modo que una segunda llamada mientras carga no inserta otro `<script>`; que un fallo retira el `<script>` del DOM para que el siguiente intento lo vuelva a pedir; que sin la API de Google no se pinta nada; y que el botón se inicializa con el contenedor vaciado y la credencial entregada al llamante solo si es texto no vacío. |
+| `src/ui/__tests__/account-panel.test.tsx` | Que sin cuentas el panel no aparece y no se hace ninguna petición, y que con `VITE_ACCOUNTS` pero sin cliente de Google sí se enseña el formulario —sin pedir el script—; que con sesión abierta enseña el correo y «Cerrar sesión» y sin ella el botón de Google; que el 409 de «ese correo ya tiene cuenta» llega con el mensaje del servidor mientras que un rechazo sin cuerpo aprovechable cae en el mensaje propio; que un 200 sin correo no se toma por un acceso a medias; que los tres fallos sin red dejan el panel donde estaba y que una sesión ilegible o sin correo se trata como ausente y no como error; y que una respuesta que llega después de que el panel se haya retirado no pinta ni avisa. Desde esta ronda comprueba además los avisos de `onSessionChange`: que avisa al abrir y al cerrar sesión, que avisa de que no hay nadie cuando la consulta falla —que es lo que enseña— y que no avisa cuando lo que falla es una entrada o una salida que no se completa. Y el formulario de correo y contraseña: que entra y crea cuenta por la ruta que toca con el cuerpo que toca, que alterna entre las dos sin preguntarle nada al servidor, que enseña el mensaje del servidor y usa el suyo cuando no lo hay, que no da por dentro un 2xx sin correo y que borra la contraseña al entrar conservando el correo. |
+| `functions/_lib/__tests__/google.test.ts` | Que un JWT con `alg` que no es `RS256`, una firma que no cuadra, un `aud` de otro cliente, un `email_verified` que no es exactamente `true` o un correo sin forma se rechazan siempre, y que la firma se comprueba contra las claves de Google **antes** de leer el cuerpo. Además que las claves se cachean según el `max-age` con suelo de 5 minutos y techo de un día, y que una JWKS que falla deja la caché vacía en vez de conservar claves viejas. |
+| `functions/_lib/__tests__/accounts.test.ts` | Que la contraseña se guarda hasheada con PBKDF2 y sal, nunca en claro; que «no hay cuenta» y «la contraseña no es esa» responden igual para no revelar qué existe, y lo mismo en el alta; que el bloqueo progresivo no vuelve a hashear mientras dura y que un acceso bien suyo lo desbloquea; y que el `sub` de Google se enlaza con sesión abierta, se resiste sin ella con el código `'cuenta'` y sobrescribe al anterior. |
+| `functions/api/auth/__tests__/auth.test.ts` | Las cuatro rutas de contraseña: el alta con el mismo mensaje que el acceso para no revelar el correo, el acceso con un 401 único que bloquea con el escalón que toque, la sesión que responde 200 siempre y el cierre que exige same-origin. |
+| `functions/api/auth/__tests__/google.test.ts` | Los seis caminos de la ruta: 403 sin same-origin, 503 sin `GOOGLE_CLIENT_ID`, 400 con el cuerpo sin `credential`, 401 con un token que no verifica, 409 cuando el correo ya tiene contraseña y 200 con el correo de vuelta. |
+| `functions/_lib/__tests__/stats.test.ts` | Que el servidor suma en SQL y no en JavaScript: `MAX` para la mejor marca y el nivel más alto, `+1` para las partidas jugadas y `+total` para los turnos. Que una cuenta que nunca ha jugado devuelve `bestTurns: null` y no `0`, que una dificultad que no sea exactamente `'normal'` o `'agony'` se rechaza, y que los enteros del parte van de `0` a un millón. |
+| `functions/api/__tests__/stats.test.ts` | El orden de las comprobaciones —origen, sesión y cuerpo— con sus tres códigos, que el `GET` responde 200 tanto dentro como fuera de la cuenta, y que el `POST` contesta el resumen nuevo leído de la base. |
+| `src/app/__tests__/stats.test.ts` | El cliente de red, por separado: la marca de una cuenta que está dentro, la de una que todavía no tiene ninguna, la ausencia de sesión, y que ni el `GET` ni el `POST` rompen nada cuando la red no está o el cuerpo no se puede leer. |
+| `src/app/__tests__/use-game-session.test.tsx` (tanda de estadísticas) | Ocho pruebas: la marca se lee al abrir y entra en juego; una cuenta sin partidas no pone marca; al morir se sube la partida; sin sesión no se sube nada; lo jugado de invitado sube en cuanto alguien entra; al salir se tira la cola pero no la marca; la marca de la cuenta se suma a la de la sesión con `Math.max`; y una partida que el servidor no aceptó se vuelve a intentar. |
+
+### Tres decisiones que las pruebas obligaron a fijar
+
+- **El nivel que se sube es la amenaza alcanzada, no la que tocaría por turnos.**
+  `state.game.threat` solo sube durante la partida y es la misma cifra que el
+  jugador vio en el banner, así que no hay dos formas de calcular «hasta dónde
+  llegaste» que puedan discrepar.
+- **La cola de invitado saca la partida antes de mandarla.** Entre comprobar que
+  queda algo y sacarlo no hay ningún `await`, así que dos envíos no pueden
+  llevarse la misma partida; y como no hay `await` de por medio, tampoco hace
+  falta una bandera de «estoy vaciando» que era una rama imposible de cubrir.
+- **El aviso de sesión dice lo que el panel cree, que es lo que enseña.** Si la
+  consulta de sesión no responde, el panel se comporta como si no hubiera nadie
+  dentro —enseña el botón— y avisa de eso. Lo que no avisa es de una entrada o
+  una salida que no se completan: ahí no cambia quién está dentro.
+
+### Lo que sigue sin comprobarse
+
+- **La base de datos de verdad.** No hay `database_id` de D1, así que todo se
+  prueba contra un doble de la base con la misma forma. Que las seis tablas y sus
+  índices se creen como dice `migrations/0001_cuentas.sql` está en el árbol, no
+  en una base real.
+- **El botón de Google.** Sin cliente OAuth la variable no existe y el botón no
+  se pinta; el formulario de contraseña sí, porque las cuentas y el botón son
+  puertas distintas. El camino con Google se prueba con un cliente de mentira y
+  un token firmado a mano, no contra Google.
+- **`wrangler dev`.** npm no ha ejecutado los scripts de instalación de `workerd`
+  y `esbuild`, así que no se ha levantado el servidor entero contra la base local.
+- **En navegador, toda la interfaz de la cuenta.** El formulario y el panel se
+  comprueban por el árbol de accesibilidad; ninguna prueba dice si se leen bien,
+  si el campo de la contraseña se ve como un campo o si el iframe de Google cae
+  donde tiene que caer. Sigue sin haber navegador de escritorio conectado a la
+  sesión.
+- **El coste de seguridad del hasheado.** La decisión está tomada: 5 000
+  iteraciones para caber en los 10 ms de CPU por petición del plan gratuito,
+  frente a las 600 000 que pide OWASP. Lo que no se puede comprobar aquí es el
+  precio real de esa bajada —cuánto tarda quien ataque con la base en la mano—,
+  solo que el valor por defecto cabe en el cupo. La variable
+  `PBKDF2_ITERATIONS` puede subirlo, y el suelo es el propio valor por defecto.
+- **El aviso de privacidad.** Se guarda un correo, y un correo es un dato
+  personal. Alguien tiene que escribirlo.
+- **El enlace de una cuenta de Google con una de contraseña.** No se hace por
+  correo salvo con sesión abierta, y el 409 con el código `'cuenta'` empuja a
+  entrar con la contraseña primero. El formulario que ese mensaje pide ya está;
+  lo que no se puede probar aquí es el enlace en sí, que necesita las dos cuentas
+  y un token de Google de verdad.
 
 ## Aceptación en la URL pública (Fase 2, desplegada)
 
