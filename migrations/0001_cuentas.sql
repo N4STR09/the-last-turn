@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS players (
   email          TEXT    NOT NULL UNIQUE,
   display_name   TEXT    NOT NULL,
   -- NULL cuando la cuenta es solo de Google. Un hash, nunca una contraseña: ver
-  -- `src/server/password.ts` para por qué cifrar sería peor.
+  -- `functions/_lib/password.ts` para por qué cifrar sería peor.
   password_hash  TEXT,
   -- El `sub` del token de Google, que es estable por cuenta de Google y no
   -- cambia si la persona renombra su dirección. NULL si nunca ha entrado con

@@ -252,7 +252,7 @@ describe('el reparto por nivel', () => {
     record('normal', 3);
     record('normal', 3);
     record('normal', 4);
-    record('agonia', 1);
+    record('agony', 1);
 
     const row = database
       .prepare(
@@ -260,7 +260,7 @@ describe('el reparto por nivel', () => {
       )
       .get('jugador-1', 'normal', 3) as Row;
     expect(row['games']).toBe(2);
-    // Tres filas: dos niveles en normal y uno en agonia. La segunda partida en
+    // Tres filas: dos niveles en normal y uno en agony. La segunda partida en
     // el nivel 3 de normal sumó a la fila que ya estaba, no creó otra.
     expect(countOf(database, 'player_levels')).toBe(3);
   });
@@ -279,11 +279,11 @@ describe('el reparto por nivel', () => {
         .run('jugador-1', difficulty);
 
     record('normal');
-    record('agonia');
+    record('agony');
 
     const row = database
       .prepare('SELECT games FROM player_levels WHERE difficulty = ?')
-      .get('agonia') as Row;
+      .get('agony') as Row;
     expect(row['games']).toBe(1);
   });
 });

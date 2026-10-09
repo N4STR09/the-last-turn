@@ -23,7 +23,7 @@ export const scopedDirectories = [
 // `src/ui` no está aquí y es deliberado. Mide al 100 %, pero el plan no lo exige:
 // exigirlo convertiría una práctica en una regla, y esa es una decisión que
 // hay que tomar a parte y decir en voz alta. Lo mismo con `src/app`, que está
-// en 97,75 por práctica. Si algún día se deciden exigir, es un cambio de
+// en 98,22 por práctica. Si algún día se deciden exigir, es un cambio de
 // política y entra en su propio commit, no de paso con un andamiaje.
 export const fullCoverageDirectories = ['src/game', 'functions/_lib'];
 
