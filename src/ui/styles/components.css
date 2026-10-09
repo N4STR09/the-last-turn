@@ -1034,6 +1034,167 @@
   user-select: all;
 }
 
+/* -------------------------------------------------------------- cuenta -- */
+
+/*
+ * La cuenta en la pantalla de inicio.
+ *
+ * Es lo último de la columna y va sin caja ni borde: un bloque con marco debajo
+ * de la nota se leería como un cuarto elemento del contenido, y la cuenta no lo
+ * es. Solo separa un filete del resto, y solo cuando hay algo que enseñar; el
+ * tiempo de consulta, que es un estado vacío, no ocupa ni un píxel.
+ */
+.account-panel {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+/*
+ * `display: grid` de la regla anterior ganaría al `hidden` del navegador, que
+ * es una hoja con especificidad baja. Sin esto el contenedor del botón de Google
+ * seguiría visible cuando hay alguien dentro.
+ */
+.account-panel[hidden] {
+  display: none;
+}
+
+.account-panel__session {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--space-2) var(--space-4);
+}
+
+/*
+ * El correo en mono, como cualquier dato que se pueda apuntar o copiar. Se
+ * enseña el correo y no el nombre derivado: el nombre de una cuenta nueva sale
+ * de la primera parte del correo, y dos cuentas distintas podrían enseñar el
+ * mismo nombre sin que nadie hubiera confundido nada.
+ */
+.account-panel__mail {
+  margin: 0;
+  color: var(--color-light);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+/*
+ * El formulario de correo y contraseña. Es lo primero que se puede hacer sin
+ * cuenta, y el botón de Google va debajo como la otra forma de hacer lo mismo.
+ */
+.account-panel__form {
+  display: grid;
+  gap: var(--space-3);
+  width: min(100%, 22rem);
+}
+
+/*
+ * `display: grid` vuelve a ganarle al `hidden` del navegador, igual que en el
+ * panel entero. Sin esto el formulario seguiría visible durante el tiempo de la
+ * consulta de sesión.
+ */
+.account-panel__form[hidden] {
+  display: none;
+}
+
+.account-panel__field {
+  display: grid;
+  gap: var(--space-1);
+  width: 100%;
+}
+
+/*
+ * La etiqueta va en el gris de pista, el mismo que ya usan los rótulos de las
+ * cifras. Es texto que se lee una vez y no compite con lo que se escribe.
+ */
+.account-panel__label {
+  color: var(--color-hint);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+/*
+ * El campo. En mono, como todo lo que se escribe y se puede revisar letra a
+ * letra, y con el borde de un botón secundario para que se lea como algo con lo
+ * que se interactúa y no como un hueco muerto.
+ */
+.account-panel__input {
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: 2px;
+  padding: 0.7rem 0.9rem;
+  background: rgb(255 255 255 / 4%);
+  color: var(--color-light);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.account-panel__input:focus-visible {
+  border-color: var(--color-focus);
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/*
+ * El cambio entre entrar y crear cuenta. Es una acción, no un dato, así que va
+ * como texto subrayado y no como un segundo botón: dos botones seguidos con el
+ * mismo peso harían dudar de cuál es el que envía el formulario.
+ */
+.account-panel__switch {
+  justify-self: center;
+  border: none;
+  padding: 0;
+  background: none;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.account-panel__switch:hover {
+  color: var(--color-light);
+}
+
+.account-panel__switch:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/*
+ * El hueco del botón de Google. El botón lo pinta el script de Google dentro de
+ * este div, en su propio iframe, y la única cosa que aquí se decide es que esté
+ * centrado y que, mientras no toque pintarse, no ocupe nada.
+ */
+.account-panel__google {
+  display: grid;
+  justify-content: center;
+  min-height: 0;
+}
+
+.account-panel__google[hidden] {
+  display: none;
+}
+
+/*
+ * El aviso. En rojo porque es la única cosa de este bloque que exige atención,
+ * y en el cuerpo de la aplicación y no en mono para que un mensaje largo se
+ * lea como una frase y no como una salida de terminal.
+ */
+.account-panel__notice {
+  max-width: 46ch;
+  margin: 0;
+  color: var(--color-alarm);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
 /* -------------------------------------------------------------- reglas -- */
 
 .rules-overlay {

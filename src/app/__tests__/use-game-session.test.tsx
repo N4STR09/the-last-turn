@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DifficultyScreen } from '../../ui/screens/DifficultyScreen';
 import { EscalationOverlay } from '../../ui/components/EscalationOverlay';
@@ -478,5 +478,338 @@ describe('rendirse desde la sesión', () => {
     screen.getByRole('button', { name: /Rendirse/ }).blur();
     await user.keyboard('e');
     expect(resolveTurnMock).toHaveBeenCalledOnce();
+  });
+});
+
+/**
+ * Las estadísticas de la cuenta.
+ *
+ * El servidor está simulado en la frontera de `fetch`, que es donde empieza lo
+ * que es de la sesión de juego y acaba lo que es del servidor: qué se guarda y
+ * cómo se acumula ya está probado en `functions/_lib` contra SQLite de verdad.
+ * Aquí lo que importa es lo de esta capa: cuándo se pregunta, cuándo se sube, y
+ * sobre todo cuándo no se sube nada, que es el caso del que no se puede quejar
+ * nadie porque no hay nadie dentro.
+ *
+ * `AccountPanel` no llega a hacer ninguna petición en estas pruebas: sin cuentas
+ * no devuelve nada. Así que todo lo que se ve aquí son llamadas a `/api/stats`.
+ */
+describe('las estadísticas de la cuenta', () => {
+  function respuesta(status: number, body: unknown): Response {
+    return {
+      ok: status >= 200 && status < 300,
+      status,
+      json: async () => body,
+    } as unknown as Response;
+  }
+
+  /** Una cuenta autenticada con la marca que se le quiera poner. */
+  function cuenta(bestTurns: number | null): unknown {
+    return {
+      autenticado: true,
+      bestTurns,
+      gamesPlayed: 3,
+      totalTurns: 60,
+      hardestLevel: 2,
+    };
+  }
+
+  /**
+   * Un turno de la cola de mensajes. Con eso se procesa todo lo que una
+   * respuesta deja pendiente: las respuestas son microtareas y esto espera una
+   * macrotarea, que es cuando ya no queda ninguna.
+   */
+  async function asentar(): Promise<void> {
+    await act(async () => {
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 0);
+      });
+    });
+  }
+
+  /** Lo que el servidor acepta al consultar la marca. */
+  let consulta: unknown;
+  /** Si el servidor acepta el parte de una partida. */
+  let aceptaSubida: boolean;
+  /** Los partes que han llegado, en orden. */
+  let subidas: unknown[];
+  /** Cuántas veces se ha preguntado por la marca. */
+  let consultas: number;
+
+  beforeEach(() => {
+    consulta = { autenticado: false };
+    aceptaSubida = true;
+    subidas = [];
+    consultas = 0;
+
+    vi.stubGlobal(
+      'fetch',
+      async (input: unknown, init?: { method?: string; body?: string }) => {
+        const ruta = String(input);
+        if (ruta === '/api/stats' && init?.method === 'POST') {
+          subidas.push(JSON.parse(init.body ?? 'null') as unknown);
+          return respuesta(aceptaSubida ? 200 : 403, {});
+        }
+        if (ruta === '/api/stats') {
+          consultas += 1;
+          return respuesta(200, consulta);
+        }
+        return respuesta(200, { autenticado: false });
+      },
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  /**
+   * Un objeto para guardar la sesión y poder llamarla desde el test.
+   *
+   * No es un `let` del módulo porque el que lo rellena se llama mientras se
+   * renderiza, y un render puede no llegar a confirmarse. Es lo mismo que hace
+   * `onSession` del arnés, y se queda aquí para que cada prueba pueda pedirle
+   * lo que necesita a su sesión.
+   */
+  function capturar(): { sesion?: GameSession } {
+    return {};
+  }
+
+  it('lee la marca de la cuenta al abrir y la pone en juego', async () => {
+    const user = userEvent.setup();
+    let mejor: number | null | undefined;
+    consulta = cuenta(47);
+
+    render(
+      <SessionHarness
+        options={{ randomInt: () => 4 }}
+        onSession={(session) => {
+          if (session.state.screen === 'playing') {
+            mejor = session.gameModel?.personalBest;
+          }
+        }}
+      />,
+    );
+
+    await waitFor(() => expect(consultas).toBe(1));
+    await asentar();
+
+    await user.click(screen.getByRole('button', { name: 'Comenzar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+
+    expect(mejor).toBe(47);
+  });
+
+  it('no pone ninguna marca cuando la cuenta todavía no tiene ninguna', async () => {
+    const user = userEvent.setup();
+    let mejor: number | null | undefined;
+    consulta = cuenta(null);
+
+    render(
+      <SessionHarness
+        options={{ randomInt: () => 4 }}
+        onSession={(session) => {
+          if (session.state.screen === 'playing') {
+            mejor = session.gameModel?.personalBest;
+          }
+        }}
+      />,
+    );
+
+    await waitFor(() => expect(consultas).toBe(1));
+    await asentar();
+
+    await user.click(screen.getByRole('button', { name: 'Comenzar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+
+    // Sin marca no se inventa ninguna. Que `bestTurns` venga en `null` y no en
+    // `0` es lo que distingue «aún no has jugado» de «has jugado y has hecho
+    // cero turnos», y solo la primera merece quedarse sin récord.
+    expect(mejor).toBeNull();
+  });
+
+  it('sube la partida al morir', async () => {
+    const user = userEvent.setup();
+    consulta = cuenta(null);
+
+    render(<SessionHarness options={{ randomInt: () => 4 }} />);
+
+    await waitFor(() => expect(consultas).toBe(1));
+    await asentar();
+
+    await user.click(screen.getByRole('button', { name: 'Comenzar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+    await user.click(screen.getByRole('button', { name: /Rendirse/ }));
+    await user.click(screen.getByRole('button', { name: 'Rendirme' }));
+
+    await waitFor(() => expect(subidas).toHaveLength(1));
+    expect(subidas[0]).toEqual({
+      turns: 0,
+      level: 0,
+      difficulty: 'normal',
+    });
+  });
+
+  it('no sube nada mientras no haya nadie dentro', async () => {
+    const user = userEvent.setup();
+
+    render(<SessionHarness options={{ randomInt: () => 4 }} />);
+
+    await waitFor(() => expect(consultas).toBe(1));
+    await asentar();
+
+    await user.click(screen.getByRole('button', { name: 'Comenzar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+    await user.click(screen.getByRole('button', { name: /Rendirse/ }));
+    await user.click(screen.getByRole('button', { name: 'Rendirme' }));
+
+    await asentar();
+    expect(subidas).toEqual([]);
+  });
+
+  it('sube lo jugado de invitado en cuanto alguien entra', async () => {
+    const user = userEvent.setup();
+    const guardada = capturar();
+
+    render(
+      <SessionHarness
+        options={{ randomInt: () => 4 }}
+        onSession={(session) => {
+          guardada.sesion = session;
+        }}
+      />,
+    );
+
+    await waitFor(() => expect(consultas).toBe(1));
+    await asentar();
+
+    await user.click(screen.getByRole('button', { name: 'Comenzar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+    await user.click(screen.getByRole('button', { name: /Rendirse/ }));
+    await user.click(screen.getByRole('button', { name: 'Rendirme' }));
+
+    await asentar();
+    expect(subidas).toEqual([]);
+
+    consulta = cuenta(null);
+    await act(async () => {
+      await guardada.sesion!.accountChanged(true);
+    });
+
+    expect(subidas).toEqual([
+      { turns: 0, level: 0, difficulty: 'normal' },
+    ]);
+  });
+
+  it('tira la cola cuando alguien sale de la cuenta', async () => {
+    const user = userEvent.setup();
+    const guardada = capturar();
+
+    render(
+      <SessionHarness
+        options={{ randomInt: () => 4 }}
+        onSession={(session) => {
+          guardada.sesion = session;
+        }}
+      />,
+    );
+
+    await waitFor(() => expect(consultas).toBe(1));
+    await asentar();
+
+    await user.click(screen.getByRole('button', { name: 'Comenzar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+    await user.click(screen.getByRole('button', { name: /Rendirse/ }));
+    await user.click(screen.getByRole('button', { name: 'Rendirme' }));
+
+    await asentar();
+
+    await act(async () => {
+      await guardada.sesion!.accountChanged(false);
+    });
+
+    consulta = cuenta(null);
+    await act(async () => {
+      await guardada.sesion!.accountChanged(true);
+    });
+
+    // Sin forma de saber de qué cuenta eran esas partidas, mandárselas al
+    // siguiente que entre sería peor que perderlas: se tiran.
+    expect(subidas).toEqual([]);
+  });
+
+  it('suma la marca de la cuenta a la de la sesión', async () => {
+    const user = userEvent.setup();
+    const guardada = capturar();
+    let mejor: number | null | undefined;
+
+    render(
+      <SessionHarness
+        options={{ randomInt: () => 4 }}
+        onSession={(session) => {
+          guardada.sesion = session;
+          if (session.state.screen === 'playing') {
+            mejor = session.gameModel?.personalBest;
+          }
+        }}
+      />,
+    );
+
+    await waitFor(() => expect(consultas).toBe(1));
+    await asentar();
+
+    await user.click(screen.getByRole('button', { name: 'Comenzar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+    await user.click(screen.getByRole('button', { name: /Rendirse/ }));
+    await user.click(screen.getByRole('button', { name: 'Rendirme' }));
+
+    // La cuenta de esta partida es cero, así que la de la cuenta, que es de
+    // dos, manda.
+    consulta = cuenta(2);
+    await act(async () => {
+      await guardada.sesion!.accountChanged(true);
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Volver a jugar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+
+    expect(mejor).toBe(2);
+  });
+
+  it('vuelve a intentar una partida que el servidor no aceptó', async () => {
+    const user = userEvent.setup();
+    const guardada = capturar();
+    consulta = cuenta(null);
+    aceptaSubida = false;
+
+    render(
+      <SessionHarness
+        options={{ randomInt: () => 4 }}
+        onSession={(session) => {
+          guardada.sesion = session;
+        }}
+      />,
+    );
+
+    await waitFor(() => expect(consultas).toBe(1));
+    await asentar();
+
+    await user.click(screen.getByRole('button', { name: 'Comenzar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+    await user.click(screen.getByRole('button', { name: /Rendirse/ }));
+    await user.click(screen.getByRole('button', { name: 'Rendirme' }));
+
+    await waitFor(() => expect(subidas).toHaveLength(1));
+    await asentar();
+
+    // Lo que el servidor no aceptó sigue en la cola, y la cola no se pierde
+    // por salir y volver a entrar.
+    aceptaSubida = true;
+    await act(async () => {
+      await guardada.sesion!.accountChanged(true);
+    });
+
+    expect(subidas).toHaveLength(2);
+    expect(subidas[1]).toEqual(subidas[0]);
   });
 });

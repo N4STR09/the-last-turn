@@ -16,7 +16,10 @@ export function App() {
   return (
     <div ref={rootRef} className="app-root">
       {session.state.screen === 'start' ? (
-        <StartScreen onBegin={session.showDifficulty} />
+        <StartScreen
+          onBegin={session.showDifficulty}
+          onSessionChange={session.accountChanged}
+        />
       ) : null}
       {session.state.screen === 'difficulty' ? (
         <DifficultyScreen onSelect={session.selectDifficulty} />
