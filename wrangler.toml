@@ -1,27 +1,41 @@
-# Cloudflare Pages + Functions + D1.
+# Cloudflare Workers + Static Assets + D1.
 #
-# `functions/` es el servidor. Vite sigue construyendo `dist/` igual que antes y
-# el mismo despliegue sirve las dos cosas, así que el sitio sigue siendo un solo
-# origen: sin CORS y con `SameSite=Lax` suficiente para la cookie de sesión.
+# El proyecto de Cloudflare es un Worker con integración Git (Workers Builds),
+# no un proyecto Pages. De ahí que la URL pública termine en `workers.dev` y
+# que el paso de publicación ejecute `wrangler deploy`. Durante el bloque de
+# cuentas este archivo se escribió como si fuera Pages
+# (`pages_build_output_dir`), y eso rompía la publicación: `wrangler deploy`
+# busca un Worker o un directorio de assets y no encontraba ninguno de los dos.
+#
+# `functions/` sigue siendo el servidor, pero como origen. `npm run build` lo
+# compila con `wrangler pages functions build` a `.worker/index.js`, y
+# `wrangler deploy` publica ese Worker junto al build de Vite (`dist/`). El
+# sitio sigue siendo un solo origen: sin CORS y con `SameSite=Lax` suficiente
+# para la cookie de sesión.
 #
 # No se pide `nodejs_compat`. El código del servidor está escrito contra
 # funciones web estándar (`fetch`, `crypto.subtle`, `TextEncoder`, `URL`), que
 # la plataforma ya tiene, así que no hace falta ninguna pieza de Node ni su
 # polyfill.
 #
-# DESPLIEGUE: el proyecto usa integración Git con Cloudflare Pages, no
-# `wrangler deploy`. El build y la publicación los hace Cloudflare
-# automáticamente en cada push a main. Para actualizar el sitio no hace falta
-# Wrangler. Si algún día hay que publicar a mano, el comando correcto es:
+# DESPLIEGUE: integración Git. Cloudflare ejecuta `npm run build` y después
+# `wrangler deploy` en cada push a main, así que para actualizar el sitio no
+# hace falta Wrangler a mano. Si algún día hay que publicar a mano:
 #
-#   npx wrangler pages deploy dist --project-name=the-last-turn
-#
-# `wrangler deploy` (sin `pages`) es para Workers normales y falla en un
-# proyecto Pages con "Missing entry-point".
+#   npm run deploy
 
 name = "the-last-turn"
 compatibility_date = "2025-03-01"
-pages_build_output_dir = "dist"
+
+# Worker compilado desde `functions/`. Lo genera `npm run build` con el script
+# `build:functions`. No se edita a mano ni se sube a git.
+main = ".worker/index.js"
+
+# `dist/` es el build de Vite. El binding `ASSETS` es obligatorio: el Worker
+# compilado resuelve con `env.ASSETS.fetch(...)` las rutas que no son API.
+[assets]
+directory = "./dist"
+binding = "ASSETS"
 
 # D1 va comentado a propósito, y no por descuido.
 #

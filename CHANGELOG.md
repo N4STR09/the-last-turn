@@ -197,6 +197,17 @@
   grande necesita 3:1, así que en sangre se leería por el halo y no por las
   letras.
 ### Fixed
+- **La publicación se rompió porque el repositorio decía Pages y Cloudflare
+  ejecutaba un Worker.** El proyecto de Cloudflare es un Worker con Static Assets
+  (Workers Builds), no un Pages clásico, y el bloque de cuentas escribió
+  `wrangler.toml` con `pages_build_output_dir`. El `push` de las cuentas disparó
+  la compilación y `wrangler deploy` falló con `Missing entry-point to Worker
+  script or to assets directory`, precedido del aviso de que se estaba usando
+  `wrangler deploy` en un proyecto detectado como Pages. Ahora `wrangler.toml`
+  declara `main` (el Worker que `npm run build` compila desde `functions/`) y un
+  bloque `[assets]` con `directory = "./dist"` y `binding = "ASSETS"`, que es lo
+  que el Worker compilado necesita para servir el juego. La publicación manual
+  pasa a ser `npm run deploy`.
 - **La mejor partida se guardaba un turno por encima de lo que decía la partida.**
   La marca se calculaba con `state.turn` mientras que el motor announce
   `turn - 1`, así que rendirse en el turno 1 se anunciaba como un turno aguantado

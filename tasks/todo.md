@@ -414,7 +414,7 @@
 - [x] Crear el repositorio `the-last-turn` en GitHub y publicarlo.
 - [x] Conectar el repositorio al despliegue estático de Cloudflare.
 - [x] Desplegar y verificar `https://the-last-turn.erpro-ferru.workers.dev`.
-- [ ] Confirmar en el dashboard si Cloudflare lo ha registrado como Pages clásico o Workers con Static Assets; la URL pública disponible termina en `workers.dev`, no en `pages.dev`.
+- [x] Confirmar el tipo de proyecto: es un **Worker con Static Assets** (Workers Builds), no un Pages clásico. La configuración del repositorio se migró a Workers el 9 de octubre de 2026 (`main` hacia el Worker compilado desde `functions/`, binding `env.ASSETS`); ver `docs/deployment.md`.
 
 ## Fase 1: supervivencia infinita
 

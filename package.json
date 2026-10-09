@@ -9,7 +9,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && npm run build:functions",
+    "build:functions": "wrangler pages functions build functions --outdir=.worker --compatibility-date=2025-03-01",
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint . --max-warnings 0",
@@ -20,7 +21,7 @@
     "test:coverage:server": "node scripts/run-coverage.mjs functions/_lib && node scripts/run-coverage.mjs functions/api",
     "db:migrate:local": "wrangler d1 migrations apply the-last-turn --local",
     "db:migrate": "wrangler d1 migrations apply the-last-turn --remote",
-    "deploy": "npm run build && wrangler pages deploy dist --project-name=the-last-turn",
+    "deploy": "npm run build && wrangler deploy",
     "check:budget": "node scripts/check-budget.mjs",
     "check:residues": "node scripts/residue-sweep.mjs",
     "verify": "npm run typecheck && npm run lint && npm run test:coverage && npm run test:coverage:scoped && npm run test:coverage:server && npm run build && npm run check:budget && npm run check:residues"

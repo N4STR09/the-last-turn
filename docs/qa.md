@@ -867,6 +867,11 @@ tiene entrada en el ledger de reglas de `docs/fidelity.md`.
   un token firmado a mano, no contra Google.
 - **`wrangler dev`.** npm no ha ejecutado los scripts de instalación de `workerd`
   y `esbuild`, así que no se ha levantado el servidor entero contra la base local.
+- **El despliegue del Worker.** La configuración se corrigió para el proyecto que
+  existe (Worker con Static Assets, ver `docs/deployment.md`) y se validó sin
+  subir nada con `wrangler deploy --dry-run`: el Worker compila desde
+  `functions/`, lee los archivos de `dist/` y expone el binding `env.ASSETS`. El
+  `push` que lo redespliega sigue pendiente de autorización explícita.
 - **En navegador, toda la interfaz de la cuenta.** El formulario y el panel se
   comprueban por el árbol de accesibilidad; ninguna prueba dice si se leen bien,
   si el campo de la contraseña se ve como un campo o si el iframe de Google cae
@@ -948,7 +953,7 @@ Aun así se verificó sobre el despliegue:
 - El reinicio volvió a `screen--difficulty` y una recarga durante la partida volvió a `screen--start`, sin persistencia.
 - La auditoría de contraste sobre los 42 nodos de texto visibles en el estado auditado no encontró fallos; la auditoría completa de 64 nodos de las cuatro pantallas está registrada arriba.
 
-**Nota de infraestructura:** la URL disponible termina en `workers.dev`, no en `pages.dev`. Cloudflare sirve correctamente el artefacto estático en ese endpoint. El despliegue de la Fase 2 demuestra que la compilación es automática desde `main`, lo que significa que la integración Git está configurada; lo que sigue sin confirmarse es si el proyecto se creó como Pages clásico o como Workers con Static Assets, porque ambos compilan desde Git. Hay que revisarlo en el dashboard. No se da por verificado un proyecto Pages clásico mientras la URL no sea `*.pages.dev`.
+**Nota de infraestructura (resuelta el 9 de octubre de 2026):** la URL disponible termina en `workers.dev`, no en `pages.dev`. Esto quedó confirmado como un **Worker con Static Assets** conectado a Git (Workers Builds), no un proyecto Pages: el paso de publicación ejecuta `wrangler deploy` y la URL es un subdominio de Workers. El bloque de cuentas escribió `wrangler.toml` como si fuera Pages y la publicación se rompió con `Missing entry-point to Worker script or to assets directory`; el 9 de octubre se migró la configuración a Workers (`main` hacia el Worker compilado desde `functions/`, binding `env.ASSETS` para `dist/`). Ver `docs/deployment.md`.
 
 Las capturas de pantalla de 360, 768 y 1440 px se generaron temporalmente para la inspección y no forman parte del repositorio. La primera versión no incluye E2E automatizado; la comprobación de navegador se mantiene como QA manual reproducible.
 
@@ -981,8 +986,9 @@ Queda pendiente, y no se afirma aquí ningún resultado hasta ejecutarlo:
   refugio, que es la única regla nueva de la rampa.
 - Barrido de residuos en `dist/`: que no queden `forage`, `fish`, `Auxiliary`,
   `Ayuda`, `Hito` ni los textos de los hitos de los turnos 15 y 30.
-- Confirmación de infraestructura en el dashboard de Cloudflare: si el proyecto
-  es Pages clásico o Workers con Static Assets, y qué rama produce despliegues.
+- Confirmación pendiente en el dashboard de Cloudflare: qué ramas producen
+  despliegues de vista previa. El tipo de proyecto ya está resuelto (Worker con
+  Static Assets, ver `docs/deployment.md`).
 - Recorrido de la tanda nueva en navegador real: abrir un enlace de partida y
   confirmar que aparece directamente su pantalla de muerte sin parpadeo de la de
   inicio, que el parte se lee, que el desplegable de compartir enseña la URL
