@@ -37,23 +37,20 @@ main = ".worker/index.js"
 directory = "./dist"
 binding = "ASSETS"
 
-# D1 va comentado a propósito, y no por descuido.
+# D1 activo. La base `the-last-turn` (región WEUR) se creó con
+# `npx wrangler d1 create the-last-turn` y el identificador de abajo es el que
+# devolvió ese comando, no un relleno: un `database_id` inventado rompe la
+# compilación del despliegue, porque Cloudflare valida el identificador al
+# leer este archivo.
 #
-# Un `database_id` de relleno rompe la compilación del despliegue: Cloudflare
-# valida el identificador al leer este archivo, así que un UUID que no existe no
-# es un aviso, es un error. Con el bloque comentado el sitio se publica, el juego
-# funciona entero y `/api/health` responde 503 diciendo que la base de datos no
-# responde, que es exactamente la verdad y se arregla en cuanto la haya.
+# El binding se llama `DB` porque así lo lee el servidor (`env.DB` en
+# `functions/api/`). Este bloque solo surte efecto en producción a partir del
+# siguiente despliegue (push a main, o `npm run deploy` a mano). Migraciones:
 #
-# Para activarlo, en este orden:
-#
-#   npx wrangler d1 create the-last-turn     # devuelve el database_id
-#   # pegar el database_id de verdad en las dos líneas siguientes
-#   npm run db:migrate                       # aplica migrations/ en la real
-#
-# En local, `npm run db:migrate:local` crea y aplica la copia sin tocar la real.
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "the-last-turn"
-# database_id = "EL_UUID_QUE_DEVUELVA_wrangler_d1_create"
-# migrations_dir = "migrations"
+#   npm run db:migrate:local   # crea y aplica la copia local, no toca la real
+#   npm run db:migrate         # aplica migrations/ en la base real
+[[d1_databases]]
+binding = "DB"
+database_name = "the-last-turn"
+database_id = "abc27643-915e-4ab4-b491-cca526553235"
+migrations_dir = "migrations"
