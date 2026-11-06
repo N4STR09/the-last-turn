@@ -51,9 +51,12 @@ Hoy el repositorio está escrito para el proyecto que existe:
 2. `wrangler deploy` publica ese Worker y sube `dist/` como assets estáticos
    (binding `env.ASSETS`). El Worker resuelve `/api/*` y deja el resto a los
    assets.
-3. D1 se enlaza como binding `DB` cuando exista la base. Hasta entonces el bloque
-   va comentado en `wrangler.toml` y `/api/health` responde 503 diciendo la
-   verdad.
+3. D1 se enlaza como binding `DB`. La base `the-last-turn` ya existe en la
+   cuenta (región WEUR), con `0001_cuentas.sql` aplicado y su `database_id`
+   real guardado en `wrangler.toml`. Mientras la base conteste,
+   `/api/health` responde 200 con `{"ok":true,"jugadores":0}`; si no llega a
+   responder, 503 diciendo la verdad. Las migraciones se aplican con
+   `npm run db:migrate:local` (copia local) y `npm run db:migrate` (la real).
 
 `functions/` sigue siendo el origen del servidor; lo que cambia respecto de un
 proyecto Pages es que no hay enrutado por ficheros en la plataforma: el Worker
