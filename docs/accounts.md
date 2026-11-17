@@ -468,18 +468,6 @@ cola hasta que el servidor lo acepta.
 
 Nada de esto se hace solo; hay que decidirlo o hacerlo fuera del código:
 
-- **Aplicar `0002_progresion.sql` a la base remota.** La migración está
-  escrita y probada contra SQLite de verdad, y se aplica con
-  `npm run db:migrate` —`npm run db:migrate:local` ya la tiene en la copia
-  local—. Falta la autorización explícita para tocar la base real, y
-  conviene hacerlo **antes** del `push` que publique el código nuevo: sin las
-  dos tablas, `POST /api/stats` fallaría. Aplicarla antes no afecta al código
-  actual, que no las consulta.
-- **`VITE_ACCOUNTS` en el despliegue de producción.** Sin ella (y sin cliente
-  de Google) el panel de cuenta no aparece en producción. Es una variable de
-  build y vive en `.env.production`; el porqué de ese sitio —y el porqué no
-  el panel de Cloudflare ni `wrangler.toml`— están contados en
-  `docs/deployment.md`.
 - **El cliente de OAuth de Google.** Hace falta crearlo en la consola de Google
   con el dominio del sitio como origen autorizado. El secreto no entra en el
   repositorio ni en el paquete del navegador.

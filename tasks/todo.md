@@ -771,9 +771,12 @@ el más útil no era el que se sospechaba:
 
 ## Bloque de progresión por cuenta (monedas, personajes y logros)
 
-**Estado:** implementado y verificado con los comandos automáticos (las fases
-interna 0 a 4 de este bloque: habilitar D1, servidor, cliente y documentación).
-Pendiente solo lo que exige autorización o el despliegue.
+**Estado:** implementado, desplegado y verificado en producción (las fases
+interna 0 a 4 de este bloque: habilitar D1, servidor, cliente y
+documentación, más el despliegue y la comprobación con dos navegadores).
+No queda ningún pendiente de este bloque; lo que queda abajo como
+«decisión futura» es fuera del código (cliente de OAuth y aviso de
+privacidad).
 
 **Descripción:** la cuenta ya existía —sesión, contraseñas, estadísticas—; este
 bloque añade encima monedas, personajes y logros que se ganan jugando, sin que
@@ -790,8 +793,13 @@ el navegador decida nada. Todo el diseño y la economía están escritos en
 - **Identidad semilla:** `gameKey = sha256(player_id | seed | difficulty |
   turns | level)`; todo lo demás va gateado por `player_reports`, así que un
   informe repetido devuelve las estadísticas actuales sin escribir.
-- **`VITE_ACCOUNTS` para producción:** variable de en Workers Builds, no
-  commiteada.
+- **`VITE_ACCOUNTS` para producción:** variable de **build** con valor
+  `1`. El plan original —variable en Workers Builds, sin commitear— no
+  funcionó: el panel *Variables & Secrets* es de runtime y `[vars]` de
+  `wrangler.toml` tampoco se inyecta en `npm run build` (con los dos, el
+  bundle salió idéntico al de un build sin ella). Acabó en
+  `.env.production`, que es el mecanismo nativo de Vite y viaja con el
+  repositorio; el recorrido entero está contado en `docs/deployment.md`.
 
 **Criterios de aceptación:**
 - [x] La identidad sale solo de la sesión resuelta; el cliente nunca manda
@@ -812,7 +820,7 @@ el navegador decida nada. Todo el diseño y la economía están escritos en
 - [x] `npm run verify` en verde: 1 066 pruebas en 53 archivos; cobertura
       global 99.44 % statements / 98.75 % branches / 100 % functions /
       99.44 % lines; `functions/_lib` y `functions/api` al 100 %, `src/ui` y
-      `src/game` al 100 %, `src/app` en 98.3; bundle de 82.81 KiB JS gzip y
+      `src/game` al 100 %, `src/app` en 98.3; bundle de 82.82 KiB JS gzip y
       5.14 KiB CSS gzip.
 - [x] Servidor probado contra SQLite de verdad: idempotencia, techo de
       monedas, umbrales, aislamiento por cuenta y freno de ritmo en sus cuatro
@@ -821,17 +829,18 @@ el navegador decida nada. Todo el diseño y la economía están escritos en
 - [x] Cliente probado en la frontera de `fetch`: silencio ante cualquier
       fallo, singular y listas vacías, identificador desconocido, colección
       tirada al salir y respuesta tardía descartada.
-- [ ] Aplicar `npm run db:migrate` (migración `0002_progresion.sql`) a la
-      base remota. **Requiere autorización explícita; hacerlo antes del
-      `push`.**
-- [ ] Habilitar `VITE_ACCOUNTS` (`.env.production`) y desplegar.
-- [ ] Verificación con dos navegadores en producción: dos cuentas en dos
-      ventanas, jugar y morir en una, comprobar aislamiento y que la
-      colección aparece al recargar.
-- [ ] Publicar. **Requiere autorización explícita.**
-- [ ] Limitación conocida: al entrar, la consulta de la colección puede
-      correr a la par que el vaciado de la cola de invitado; la primera
-      colección puede no incluir las partidas recién subidas hasta recargar.
+- [x] Aplicar `npm run db:migrate` (migración `0002_progresion.sql`) a la
+      base remota: hecho antes del `push`, con las nueve tablas confirmadas
+      en la base real.
+- [x] Habilitar `VITE_ACCOUNTS` (`.env.production`) y desplegar: hecho; el
+      bundle de producción hornea el valor (`accountsEnabled()` verdadero).
+- [x] Verificación con dos navegadores en producción: dos cuentas en dos
+      ventanas, jugar y morir en una —aislamiento y colección al recargar—,
+      conforme.
+- [x] Publicar: hecho (código, migración y despliegue verificado).
+- Limitación conocida: al entrar, la consulta de la colección puede
+  correr a la par que el vaciado de la cola de invitado; la primera
+  colección puede no incluir las partidas recién subidas hasta recargar.
 
 **Archivos tocados:**
 - `migrations/0002_progresion.sql` (nuevo)
@@ -848,3 +857,4 @@ el navegador decida nada. Todo el diseño y la economía están escritos en
 - `docs/deployment.md`
 - `CHANGELOG.md`
 - `README.md`
+- `.env.production` (nuevo; `VITE_ACCOUNTS=1`)

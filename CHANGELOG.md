@@ -368,7 +368,7 @@
   cuatro métricas, `src/ui` y `src/game` al 100 %, y `src/app` en 98.3/96.7
   —los huecos son los mismos de antes: `app-keyboard.ts:85`,
   `game-view-model.ts` y dos ramas de `use-game-session.ts`. Bundle de
-  82.81 KiB JS gzip (41,4 % de 200) y 5.14 KiB CSS gzip (10,3 % de 50).
+  82.82 KiB JS gzip (41,4 % de 200) y 5.14 KiB CSS gzip (10,3 % de 50).
 - La idempotencia se probó en su sentido de fallo: repetir el mismo cuerpo
   sin la clave de informe volvería a otorgar, y con ella el segundo informe no
   escribe ni una fila y la respuesta es idéntica. El freno de ritmo se probó
@@ -383,11 +383,19 @@
   identificador desconocido, en que la colección de una cuenta no se quede
   bajo la de otra al salir, y en que una respuesta que llega después de
   haber salido se descarta.
-- **Sin comprobar todavía en producción.** `0002_progresion.sql` no se ha
-  aplicado a la base remota —falta la autorización— y `VITE_ACCOUNTS` no está
-  puesta en Workers Builds, así que ni el panel ni la colección se han visto
-  en el despliegue real. La comprobación con dos navegadores queda pendiente
-  por lo mismo.
+- **Comprobado ya en producción.** `0002_progresion.sql` se aplicó a la base
+  remota **antes** del `push` que publicó el código que la consulta (las
+  nueve tablas, confirmadas en la base real), y `VITE_ACCOUNTS` va en
+  `.env.production`: ni el panel *Variables & Secrets* —que es de runtime—
+  ni `[vars]` de `wrangler.toml` llegan al `npm run build`, y con cada uno
+  de los dos el bundle salió idéntico al de un build sin ella. Sobre el
+  despliegue real: sin sesión, las lecturas responden
+  `200 {autenticado:false}` y la escritura `401`; una partida de 50 turnos en
+  Normal otorgó 6 monedas, `primera-partida`, `turno-50` y `explorador`;
+  repetir el mismo cuerpo devolvió la respuesta idéntica sin subir el saldo;
+  dos cuentas que enviaron la misma partida se llevaron cada una las suyas
+  sin pisarse; y la comprobación de dos ventanas en el navegador —panel,
+  aislamiento y colección al recargar— quedó conforme.
 - Limitación conocida, documentada en `docs/accounts.md`: al entrar, la
   consulta de la colección puede correr a la par que el vaciado de la cola de
   invitado, así que la primera colección puede no incluir las partidas

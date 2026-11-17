@@ -58,11 +58,12 @@ Hoy el repositorio está escrito para el proyecto que existe:
    responder, 503 diciendo la verdad. Las migraciones se aplican con
    `npm run db:migrate:local` (copia local) y `npm run db:migrate` (la real).
    La segunda migración, `0002_progresion.sql` —`player_reports` y
-   `report_attempts`— está escrita y probada pero **todavía no se ha aplicado a
-   la base remota**: hacerlo requiere autorización explícita y conviene
-   hacerlo **antes** del `push` que publique el código que la consulta, porque
-   sin esas dos tablas `POST /api/stats` falla con 500. Aplicarla antes no
-   afecta al código actual, que no las lee.
+   `report_attempts`— se aplicó a la base remota con
+   `npm run db:migrate` **antes** del `push` que publicó el código que la
+   consulta —las nueve tablas se confirmaron en la base real—, y ese sigue
+   siendo el orden para las próximas: migración primero, `push` después,
+   porque sin esas dos tablas `POST /api/stats` falla con 500. Aplicarla
+   antes no afecta al código anterior, que no las lee.
 4. El cliente y las funciones se despliegan juntos en el mismo build, así que
    no hay versión vieja de la página hablando con API nueva ni al revés. Lo
    único que se mueve por separado es el esquema de la base: por eso el orden
