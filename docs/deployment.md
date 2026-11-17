@@ -92,14 +92,28 @@ build`, y un cambio de valor no hace efecto hasta el siguiente despliegue. Ningu
 de las dos es un secreto: las dos viajan dentro del paquete que descarga
 cualquiera.
 
-En Workers Builds se ponen así: proyecto **the-last-turn** → *Settings* →
-*Environment variables* → *Add variable*, con alcance de producción. Guardar no
-despliega nada; el valor se aplica en la siguiente compilación, que Workers
-Builds ejecuta en cada `push` a `main`.
+Viven en `wrangler.toml`, en la tabla `[vars]`:
+
+```toml
+[vars]
+VITE_ACCOUNTS = "1"
+```
+
+No en el panel de Cloudflare: *Variables & Secrets* es la sección de
+**runtime** —lo que el Worker recibe en `env` al ejecutarse—, y lo que
+decide el cliente es lo que Vite ve durante `npm run build`. La
+documentación de Cloudflare indica que `[vars]` de la configuración de
+Wrangler sí se inyecta en el build; la comprobación empírica de por qué no
+vale el panel está en el historial de esta tanda: con la variable solo en el
+panel, el bundle de producción salió idéntico byte a byte al de un build sin
+ella. Al estar en el archivo, el valor viaja con el repositorio y cada `push`
+a `main` lo compila tal cual; cambiarlo es editar el archivo y volver a
+desplegar. Un `.env` local no sirve: Workers Builds no lo lee.
 
 En el lado del servidor hay variables propias del Worker que no llegan al
-navegador —la única hoy es `PBKDF2_ITERATIONS`—. Se configuran en las mismas
-pantallas de Cloudflare y su efecto está descrito en `docs/accounts.md`.
+navegador —la única hoy es `PBKDF2_ITERATIONS`—. Esas sí van en *Settings* →
+*Variables & Secrets* del Worker, con alcance de producción, y su efecto está
+descrito en `docs/accounts.md`.
 
 ## Verificación antes de publicar
 

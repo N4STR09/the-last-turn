@@ -31,6 +31,18 @@ compatibility_date = "2025-03-01"
 # `build:functions`. No se edita a mano ni se sube a git.
 main = ".worker/index.js"
 
+# Variables de entorno. `VITE_*` las lee Vite al compilar: el valor se
+# incrusta en el bundle, así que un cambio solo hace efecto en el siguiente
+# build. El servidor nunca las lee. Sin `VITE_ACCOUNTS` (y sin cliente de
+# Google) la página no enseña el panel de cuenta, como antes de existir
+# cuentas. `VITE_GOOGLE_CLIENT_ID` entrará aquí el día que se cree el cliente
+# de OAuth. No son secretos: las dos viajan dentro del paquete que descarga
+# cualquiera. Viven en este archivo y no en el panel de Cloudflare porque
+# Variables & Secrets es la sección de runtime y lo que decide el panel es lo
+# que Vite ve al construir, que es esto.
+[vars]
+VITE_ACCOUNTS = "1"
+
 # `dist/` es el build de Vite. El binding `ASSETS` es obligatorio: el Worker
 # compilado resuelve con `env.ASSETS.fetch(...)` las rutas que no son API.
 [assets]
