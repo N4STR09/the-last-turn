@@ -1,8 +1,7 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
 import type { Database, Row } from '../../_lib/database';
+import { migrationsSql } from './migrations';
 
 /**
  * Una base de datos de pruebas que es SQLite de verdad.
@@ -18,12 +17,10 @@ import type { Database, Row } from '../../_lib/database';
  * consulta esta mal escrita, la prueba falla aqui y no en produccion.
  */
 
-const MIGRATION = join(import.meta.dirname, '..', '..', '..', 'migrations', '0001_cuentas.sql');
-
 /** Una base de datos nueva con el esquema aplicado. */
 export function freshDatabase(): Database {
   const sqlite = new DatabaseSync(':memory:');
-  sqlite.exec(readFileSync(MIGRATION, 'utf8'));
+  sqlite.exec(migrationsSql());
   return wrap(sqlite);
 }
 

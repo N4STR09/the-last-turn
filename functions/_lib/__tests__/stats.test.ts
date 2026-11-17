@@ -184,15 +184,21 @@ describe('recordGame', () => {
 
 describe('parseGameReport', () => {
   it('acepta una partida bien escrita', () => {
-    expect(parseGameReport({ turns: 12, level: 3, difficulty: 'normal' })).toEqual({
+    expect(
+      parseGameReport({ turns: 12, level: 3, difficulty: 'normal', seed: 7 }),
+    ).toEqual({
       turns: 12,
       level: 3,
       difficulty: 'normal',
+      seed: 7,
     });
-    expect(parseGameReport({ turns: 0, level: 0, difficulty: 'agony' })).toEqual({
+    expect(
+      parseGameReport({ turns: 0, level: 0, difficulty: 'agony', seed: 0 }),
+    ).toEqual({
       turns: 0,
       level: 0,
       difficulty: 'agony',
+      seed: 0,
     });
   });
 
@@ -213,7 +219,7 @@ describe('parseGameReport', () => {
     ['es negativo', { turns: -1 }],
     ['es enorme', { turns: 1_000_001 }],
   ])('rechaza un turno que %s', (_nombre, parcial) => {
-    const cuerpo = { level: 1, difficulty: 'normal', ...parcial };
+    const cuerpo = { level: 1, difficulty: 'normal', seed: 9, ...parcial };
     expect(parseGameReport(cuerpo)).toBeNull();
   });
 
@@ -224,7 +230,7 @@ describe('parseGameReport', () => {
     ['es negativo', { level: -3 }],
     ['es enorme', { level: 1_000_001 }],
   ])('rechaza un nivel que %s', (_nombre, parcial) => {
-    const cuerpo = { turns: 12, difficulty: 'normal', ...parcial };
+    const cuerpo = { turns: 12, difficulty: 'normal', seed: 9, ...parcial };
     expect(parseGameReport(cuerpo)).toBeNull();
   });
 
@@ -233,13 +239,30 @@ describe('parseGameReport', () => {
     ['no es de este juego', { difficulty: 'brutal' }],
     ['esta en espanol', { difficulty: 'agonia' }],
   ])('rechaza una dificultad que %s', (_nombre, parcial) => {
-    const cuerpo = { turns: 12, level: 3, ...parcial };
+    const cuerpo = { turns: 12, level: 3, seed: 9, ...parcial };
+    expect(parseGameReport(cuerpo)).toBeNull();
+  });
+
+  it.each<[string, Record<string, unknown>]>([
+    ['falta', {}],
+    ['no es numero', { seed: '9' }],
+    ['no es entero', { seed: 9.5 }],
+    ['es negativo', { seed: -1 }],
+    ['es enorme', { seed: 0x100000000 }],
+  ])('rechaza una semilla que %s', (_nombre, parcial) => {
+    const cuerpo = { turns: 12, level: 3, difficulty: 'normal', ...parcial };
     expect(parseGameReport(cuerpo)).toBeNull();
   });
 
   it('rechaza campos de mas sin importarlos', () => {
     expect(
-      parseGameReport({ turns: 12, level: 3, difficulty: 'normal', estado: 'vivo' }),
-    ).toEqual({ turns: 12, level: 3, difficulty: 'normal' });
+      parseGameReport({
+        turns: 12,
+        level: 3,
+        difficulty: 'normal',
+        seed: 5,
+        estado: 'vivo',
+      }),
+    ).toEqual({ turns: 12, level: 3, difficulty: 'normal', seed: 5 });
   });
 });

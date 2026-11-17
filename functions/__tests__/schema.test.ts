@@ -3,16 +3,16 @@
 // Node y no jsdom, que es el que pone el proyecto por defecto. `node:sqlite` y
 // `node:fs` no existen en un navegador, así que la elección no es discutible
 // aquí, pero se escribe igual para que quede claro y no parezca un descuido.
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { migrationsSql } from './helpers/migrations';
+
 /**
  * El esquema, probado de verdad.
  *
- * Esto aplica el archivo de migración real sobre una base SQLite en memoria,
+ * Esto aplica el SQL de migración real sobre una base SQLite en memoria,
  * que es el mismo motor que usa D1. No se prueba una copia del SQL escrita a
  * mano: si el archivo y la prueba se separan, la prueba sigue pasando y el
  * esquema se queda sin comprobar, que es la forma habitual de que eso ocurra.
@@ -21,24 +21,16 @@ import { beforeEach, describe, expect, it } from 'vitest';
  * mismo SQL. El runtime de la plataforma solo hace falta para levantar el
  * servidor, no para responder a una consulta.
  *
- * La ruta se arma con `import.meta.dirname` y no con un `URL`. Con los tipos de
- * Node y los de la plataforma en el mismo programa hay dos clases `URL` que no
- * se pueden pasar la una a la otra, y `fileURLToPath` solo acepta la de Node.
- * Con `dirname` no hay ninguna clase que cruzar.
+ * Los archivos se leen con `migrationsSql()`, que los ordena por nombre: si un
+ * día hay tres migraciones, esta prueba aplica las tres en orden y no se queda
+ * con la primera por costumbre.
  */
-const MIGRATION = join(
-  import.meta.dirname,
-  '..',
-  '..',
-  'migrations',
-  '0001_cuentas.sql',
-);
 
 type Row = Record<string, unknown>;
 
 function freshDatabase(): DatabaseSync {
   const database = new DatabaseSync(':memory:');
-  database.exec(readFileSync(MIGRATION, 'utf8'));
+  database.exec(migrationsSql());
   return database;
 }
 
@@ -89,17 +81,23 @@ describe('las tablas del esquema', () => {
     database = freshDatabase();
   });
 
-  it('crea exactamente las seis que el proyecto necesita', () => {
+  it('crea exactamente las ocho que el proyecto necesita', () => {
     // La lista es completa a propósito, y esa es la forma de que la promesa de
     // no guardar partidas no sea una promesa. Cualquier tabla nueva obliga a
     // tocar esta prueba, y tocarla obliga a explicar para qué sirve. Si algún
     // día aparece una tabla `games`, esta prueba falla y pregunta.
+    //
+    // Las dos de la segunda migración no guardan partidas: `player_reports`
+    // guarda la clave de un informe ya procesado (un hash, no una semilla) y
+    // `report_attempts` cuenta informes por ventana de tiempo.
     expect(tableNames(database)).toEqual([
       'login_attempts',
       'player_levels',
+      'player_reports',
       'player_stats',
       'player_unlocks',
       'players',
+      'report_attempts',
       'sessions',
     ]);
   });
@@ -315,11 +313,20 @@ describe('el borrado en cascada', () => {
         'INSERT INTO player_unlocks (player_id, kind, id, obtained_at) VALUES (?, ?, ?, 1)',
       )
       .run('google', 'logro', 'primera-noche');
+    database
+      .prepare('INSERT INTO player_reports (player_id, game_key, reported_at) VALUES (?, ?, 1)')
+      .run('google', 'clave-de-informe');
 
     database.prepare('DELETE FROM players WHERE id = ?').run('google');
 
     expect(countOf(database, 'players')).toBe(0);
-    for (const table of ['sessions', 'player_stats', 'player_levels', 'player_unlocks']) {
+    for (const table of [
+      'sessions',
+      'player_stats',
+      'player_levels',
+      'player_unlocks',
+      'player_reports',
+    ]) {
       expect(countOf(database, table)).toBe(0);
     }
   });

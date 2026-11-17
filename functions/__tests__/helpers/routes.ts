@@ -1,8 +1,7 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
 import type { Row } from '../../_lib/database';
+import { migrationsSql } from './migrations';
 
 /**
  * Un D1 simulado para probar las rutas.
@@ -19,8 +18,6 @@ import type { Row } from '../../_lib/database';
  * de una envoltura con la forma de D1. Lo que se simula es el intermediario, no
  * la base de datos.
  */
-
-const MIGRATION = join(import.meta.dirname, '..', '..', '..', 'migrations', '0001_cuentas.sql');
 
 /**
  * Iteraciones con las que trabajan las pruebas de rutas.
@@ -50,7 +47,7 @@ export function testEnv(): {
   sqlite: DatabaseSync;
 } {
   const sqlite = new DatabaseSync(':memory:');
-  sqlite.exec(readFileSync(MIGRATION, 'utf8'));
+  sqlite.exec(migrationsSql());
   return {
     env: {
       DB: wrap(sqlite) as unknown as D1Database,

@@ -39,11 +39,24 @@ export interface StatsSummary {
   readonly hardestLevel: number;
 }
 
-/** Lo que el cliente declara de una partida. Tres enteros y una letra. */
-export interface GameReport {
+/** Lo que el cliente declara de una partida: tres enteros y una letra. */
+export interface GameFacts {
   readonly turns: number;
   readonly level: number;
   readonly difficulty: 'normal' | 'agony';
+}
+
+/**
+ * El informe completo de una partida: los tres enteros, la letra y la semilla.
+ *
+ * La semilla no es un dato del motor ni cambia ninguna regla: es la identidad
+ * de la partida. Con ella el servidor deriva una clave única por informe, y
+ * repetir el mismo informe no vuelve a contar ni a premiar. Es el `seed` que el
+ * cliente ya guarda para construir el enlace de reproducción, no un identificador
+ * inventado ni una cantidad que el cliente pueda inflar.
+ */
+export interface GameReport extends GameFacts {
+  readonly seed: number;
 }
 
 /**
@@ -70,6 +83,24 @@ function isCount(value: unknown): value is number {
 
 function isDifficulty(value: unknown): value is 'normal' | 'agony' {
   return value === 'normal' || value === 'agony';
+}
+
+/**
+ * El tope de la semilla, el mismo que `src/app/seed.ts`.
+ *
+ * Treinta y dos bits sin signo. Se comprueba aquí con el mismo techo que allá
+ * para que una semilla imposible se rechace en el borde, no se convierta en
+ * una clave de la que nadie sabe qué contiene.
+ */
+const MAX_SEED = 0xffffffff;
+
+function isSeed(value: unknown): value is number {
+  return (
+    typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= 0 &&
+    value <= MAX_SEED
+  );
 }
 
 /**
@@ -131,7 +162,7 @@ export async function readStats(
 export async function recordGame(
   database: Database,
   playerId: string,
-  report: GameReport,
+  report: GameFacts,
 ): Promise<StatsSummary> {
   const now = Date.now();
 
@@ -190,5 +221,10 @@ export function parseGameReport(payload: unknown): GameReport | null {
     return null;
   }
 
-  return { turns, level, difficulty };
+  const seed = payload['seed'];
+  if (!isSeed(seed)) {
+    return null;
+  }
+
+  return { turns, level, difficulty, seed };
 }

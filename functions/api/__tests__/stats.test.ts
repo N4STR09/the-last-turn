@@ -47,7 +47,7 @@ async function dentro(): Promise<string> {
 
 /** Una partida bien escrita, para no repetirla en cada prueba. */
 function partida(extra: Record<string, unknown> = {}): Record<string, unknown> {
-  return { turns: 12, level: 2, difficulty: 'normal', ...extra };
+  return { turns: 12, level: 2, difficulty: 'normal', seed: 4242, ...extra };
 }
 
 describe('GET /api/stats', () => {
@@ -191,6 +191,58 @@ describe('POST /api/stats', () => {
       gamesPlayed: 2,
       totalTurns: 17,
       hardestLevel: 2,
+    });
+  });
+
+  it('vuelve a responder lo mismo si el mismo informe llega dos veces', async () => {
+    // La respuesta se pierde, el cliente reintenta, y el servidor ya había
+    // anotado la partida. Sin la clave por informe, el contador subiría dos
+    // veces y las monedas se otorgarían dos veces: dos juegos distintos
+    // contando como uno solo no se nota, pero uno solo contando como dos sí.
+    const cookie = await dentro();
+
+    const primera = await anotar(
+      contexto(post('/api/stats', partida(), { cookie }), env),
+    );
+    const segunda = await anotar(
+      contexto(post('/api/stats', partida(), { cookie }), env),
+    );
+
+    await expect(primera.json()).resolves.toEqual({
+      autenticado: true,
+      bestTurns: 12,
+      gamesPlayed: 1,
+      totalTurns: 12,
+      hardestLevel: 2,
+    });
+    await expect(segunda.json()).resolves.toEqual({
+      autenticado: true,
+      bestTurns: 12,
+      gamesPlayed: 1,
+      totalTurns: 12,
+      hardestLevel: 2,
+    });
+  });
+
+  it('corta a la sesión que manda informes sin parar', async () => {
+    // El tope está en `REPORT_LIMIT`. Los intentos rechazados cuentan, así
+    // que el que llega el primero de más es el 61 y se va con 429.
+    const cookie = await dentro();
+
+    for (let intento = 0; intento < 60; intento += 1) {
+      const respuesta = await anotar(
+        contexto(post('/api/stats', partida({ turns: intento }), { cookie }), env),
+      );
+      expect(respuesta.status).toBe(200);
+    }
+
+    const fuera = await anotar(
+      contexto(post('/api/stats', partida({ turns: 999 }), { cookie }), env),
+    );
+
+    expect(fuera.status).toBe(429);
+    await expect(fuera.json()).resolves.toEqual({
+      error: 'Demasiadas partidas en poco tiempo. Intentalo mas tarde.',
     });
   });
 });
