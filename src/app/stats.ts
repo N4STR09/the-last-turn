@@ -5,10 +5,11 @@ import type { Difficulty } from '../game';
  *
  * Este módulo es la mitad de página del sistema de cuentas: lo que hay en el
  * servidor se lee aquí y lo que se sube se escribe aquí. No conoce React ni el
- * estado del juego; recibe tres enteros y devuelve lo que el servidor dice que
- * hay. Por eso no hace falta hilo por `App.tsx`: quien necesita la marca es la
- * sesión de juego, y quien sabe cuándo cambia la cuenta es el panel de cuenta,
- * y las dos cosas se encuentran en esta función y no en una pantalla.
+ * estado del juego; recibe los hechos de una partida y devuelve lo que el
+ * servidor dice que hay. Por eso no hace falta hilo por `App.tsx`: quien
+ * necesita la marca es la sesión de juego, y quien sabe cuándo cambia la
+ * cuenta es el panel de cuenta, y las dos cosas se encuentran en esta función
+ * y no en una pantalla.
  *
  * **Todo fallo se queda en silencio y devuelve lo que significaría "no hay
  * nada".** Sin red, con el servidor caído o con un cuerpo que no se entiende,
@@ -29,11 +30,21 @@ export interface StatsSummary {
   readonly bestTurns: number | null;
 }
 
-/** Lo que se declara de una partida. Tres enteros y una letra, nada más. */
+/** Lo que se declara de una partida: tres enteros, una letra y la semilla. */
 export interface GameReport {
   readonly turns: number;
   readonly level: number;
   readonly difficulty: Difficulty;
+  /**
+   * La identidad de la partida, no un dato del motor.
+   *
+   * Es la misma semilla que ya guarda la sesión para el enlace de
+   * reproducción. Con ella el servidor distingue un informe repetido —una
+   * respuesta perdida que el cliente vuelve a mandar— de una partida nueva, y
+   * por eso tiene que viajar en cada parte: sin ella el servidor rechazaría el
+   * cuerpo, y con ella un reintento no cuenta dos veces.
+   */
+  readonly seed: number;
 }
 
 const STATS_URL = '/api/stats';

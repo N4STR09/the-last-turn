@@ -1,0 +1,89 @@
+/**
+ * La colección de la cuenta, hablando con `/api/unlocks`.
+ *
+ * Monedas, personajes y logros se leen aquí, del mismo modo que las marcas se
+ * leen en `stats.ts` y por las mismas razones: sin React, sin estado del juego
+ * y con todo fallo traducido a `null`. El panel de cuenta es quien lo necesita
+ * para pintarlo, y un despliegue sin cuentas ni siquiera llega a llamar a esta
+ * función, igual que no llega a la de sesión.
+ *
+ * **El cliente no manda nada.** Esta es solo lectura: no hay POST a
+ * `/api/unlocks`, no hay cuerpos que escribir y no hay identidad que mandar —
+ * la cuenta viene en la cookie. La progresión se gana jugando, y eso entra
+ * exclusivamente por `reportGame`, con los hechos de la partida validados en
+ * el servidor. Aquí solo se traduce lo que el servidor devuelve.
+ */
+
+/** Lo que se lee de la colección: un saldo y dos listas de identificadores. */
+export interface ProgressionSummary {
+  /** Saldo en monedas. */
+  readonly coins: number;
+  /** Personajes desbloqueados, en el orden que manda el servidor. */
+  readonly unlocks: readonly string[];
+  /** Logros ganados, en el orden que manda el servidor. */
+  readonly achievements: readonly string[];
+}
+
+const UNLOCKS_URL = '/api/unlocks';
+
+function isCount(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0;
+}
+
+function isStringList(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
+/**
+ * Traduce el cuerpo de la ruta en una colección, o `null` si no se entiende.
+ *
+ * `autenticado` va primero por el mismo motivo que en `stats.ts`: distingue
+ * «esta cuenta no tiene colección» de «esto no es la respuesta de este
+ * servidor». Una lista con un número dentro, un saldo negativo o un cuerpo
+ * que no es un objeto acaban en `null`, que el panel enseña como «no hay nada
+ * que enseñar» —que es exactamente lo que hace hoy con cualquier fallo.
+ */
+function progressionFrom(payload: unknown): ProgressionSummary | null {
+  if (typeof payload !== 'object' || payload === null) {
+    return null;
+  }
+
+  const body = payload as {
+    autenticado?: unknown;
+    coins?: unknown;
+    unlocks?: unknown;
+    achievements?: unknown;
+  };
+  if (body.autenticado !== true) {
+    return null;
+  }
+  if (!isCount(body.coins)) {
+    return null;
+  }
+  if (!isStringList(body.unlocks) || !isStringList(body.achievements)) {
+    return null;
+  }
+
+  return {
+    coins: body.coins,
+    unlocks: body.unlocks,
+    achievements: body.achievements,
+  };
+}
+
+/**
+ * Lee la colección de la cuenta que está dentro, o `null` si no hay.
+ *
+ * `null` significa las dos cosas a la vez, igual que en `fetchStats`: sin
+ * sesión y sin servidor la pantalla sigue funcionando, y la diferencia entre
+ * «no hay cuenta» y «no hay red» no le cambia nada al panel, que en los dos
+ * casos enseña el correo y nada más.
+ */
+export async function fetchUnlocks(): Promise<ProgressionSummary | null> {
+  try {
+    const response = await fetch(UNLOCKS_URL);
+    return progressionFrom(await response.json());
+  } catch {
+    return null;
+  }
+}

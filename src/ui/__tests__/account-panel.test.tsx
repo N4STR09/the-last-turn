@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -210,6 +210,7 @@ describe('AccountPanel', () => {
     await waitFor(() => expect(pintadoEn).not.toBeNull());
     expect(peticiones).toEqual([
       '/api/auth/session',
+      '/api/unlocks',
       '/api/auth/logout',
     ]);
     expect(screen.queryByText(CORREO)).toBeNull();
@@ -228,7 +229,11 @@ describe('AccountPanel', () => {
     );
 
     expect(await screen.findByText(CORREO)).toBeInTheDocument();
-    expect(peticiones).toEqual(['/api/auth/session', '/api/auth/google']);
+    expect(peticiones).toEqual([
+      '/api/auth/session',
+      '/api/auth/google',
+      '/api/unlocks',
+    ]);
     expect(cuerpos).toEqual([{ credential: 'identificador-firmado' }]);
   });
 
@@ -594,7 +599,11 @@ describe('AccountPanel', () => {
     await enviarFormulario(user, 'Entrar');
 
     expect(await screen.findByText(CORREO)).toBeInTheDocument();
-    expect(peticiones).toEqual(['/api/auth/session', '/api/auth/login']);
+    expect(peticiones).toEqual([
+      '/api/auth/session',
+      '/api/auth/login',
+      '/api/unlocks',
+    ]);
     expect(cuerpos).toEqual([{ email: CORREO, password: CONTRASENA }]);
   });
 
@@ -612,7 +621,11 @@ describe('AccountPanel', () => {
     await enviarFormulario(user, 'Crear cuenta');
 
     expect(await screen.findByText(CORREO)).toBeInTheDocument();
-    expect(peticiones).toEqual(['/api/auth/session', '/api/auth/register']);
+    expect(peticiones).toEqual([
+      '/api/auth/session',
+      '/api/auth/register',
+      '/api/unlocks',
+    ]);
   });
 
   it('alterna entre entrar y crear sin preguntarle nada al servidor', async () => {
@@ -761,5 +774,219 @@ describe('AccountPanel', () => {
     await user.click(screen.getByRole('button', { name: 'Crear una cuenta' }));
 
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+});
+
+/**
+ * La colección dentro del panel: monedas, personajes y logros.
+ *
+ * Se consulta solo cuando hay alguien dentro y se enseña debajo del correo.
+ * Lo que hay que mirar aquí es el silencio: un fallo de la consulta no pone
+ * un aviso rojo en una pantalla que funciona, y una lista vacía no ocupa
+ * nada. El orden de las etiquetas y los nombres sale de `_lib/unlocks.ts` en
+ * el servidor; aquí solo se comprueba que el panel los traduce y los pinta.
+ */
+describe('AccountPanel · la colección', () => {
+  /** Sesión abierta y una colección dada para la consulta de `/api/unlocks`. */
+  function conColeccion(coleccion: unknown): void {
+    responder = (ruta) =>
+      ruta === '/api/unlocks'
+        ? cuerpo(200, coleccion)
+        : cuerpo(200, { autenticado: true, email: CORREO });
+  }
+
+  it('enseña la colección que ha ganado la cuenta', async () => {
+    conColeccion({
+      autenticado: true,
+      coins: 12,
+      unlocks: ['explorador', 'insomne'],
+      achievements: ['primera-partida', 'turno-50'],
+    });
+
+    render(<AccountPanel />);
+
+    expect(await screen.findByText('12 monedas')).toBeInTheDocument();
+    expect(peticiones).toEqual(['/api/auth/session', '/api/unlocks']);
+    expect(screen.getByText('Personajes')).toBeInTheDocument();
+    expect(screen.getByText('Explorador · Insomne')).toBeInTheDocument();
+    expect(screen.getByText('Logros')).toBeInTheDocument();
+    expect(
+      screen.getByText('Primera partida · 50 turnos'),
+    ).toBeInTheDocument();
+  });
+
+  it('cuenta las monedas en singular y calla las listas vacías', async () => {
+    conColeccion({ autenticado: true, coins: 1, unlocks: [], achievements: [] });
+
+    render(<AccountPanel />);
+
+    expect(await screen.findByText('1 moneda')).toBeInTheDocument();
+    expect(screen.queryByText('Personajes')).toBeNull();
+    expect(screen.queryByText('Logros')).toBeNull();
+  });
+
+  it('enseña tal cual un identificador que todavía no conoce', async () => {
+    // Una actualización del servidor que añada un personaje o un logro no
+    // puede dejar la línea muda en una página desplegada ayer: el id se
+    // enseña crudo hasta que la interfaz aprenda su nombre.
+    conColeccion({
+      autenticado: true,
+      coins: 3,
+      unlocks: ['explorador', 'futuro'],
+      achievements: ['logro-nuevo'],
+    });
+
+    render(<AccountPanel />);
+
+    expect(await screen.findByText('Explorador · futuro')).toBeInTheDocument();
+    expect(screen.getByText('logro-nuevo')).toBeInTheDocument();
+  });
+
+  it('no enseña nada de colección si la consulta no se puede hacer', async () => {
+    responder = (ruta) => {
+      if (ruta === '/api/unlocks') {
+        throw new Error('sin red');
+      }
+      return cuerpo(200, { autenticado: true, email: CORREO });
+    };
+
+    render(<AccountPanel />);
+
+    await screen.findByText(CORREO);
+    await despuesDeUnPaso();
+
+    expect(screen.queryByText(/monedas/)).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('tira la colección al salir y no enseña la de una cuenta bajo otra', async () => {
+    const user = userEvent.setup();
+    const vieja = {
+      autenticado: true,
+      coins: 12,
+      unlocks: ['explorador'],
+      achievements: ['primera-partida'],
+    };
+    let primeraConsulta = true;
+    const pendientes: Array<(valor: unknown) => void> = [];
+
+    responder = (ruta) => {
+      if (ruta === '/api/unlocks') {
+        if (primeraConsulta) {
+          primeraConsulta = false;
+          return cuerpo(200, vieja);
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: () =>
+            new Promise<unknown>((resolve) => {
+              pendientes.push(resolve);
+            }),
+        } as unknown as Response;
+      }
+      if (ruta === '/api/auth/logout') {
+        return cuerpo(204, null);
+      }
+      return cuerpo(200, { autenticado: true, email: CORREO });
+    };
+
+    render(<AccountPanel />);
+    await screen.findByText('12 monedas');
+
+    await user.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
+    expect(await screen.findByLabelText('Correo')).toBeInTheDocument();
+    expect(screen.queryByText('12 monedas')).toBeNull();
+
+    // El correo se conserva entre sesiones, así que se limpia a mano antes
+    // de rellenarlo otra vez: lo que se envía es lo que se escribió, no lo
+    // que quedó pegado del intento anterior.
+    await user.clear(await screen.findByLabelText('Correo'));
+    await enviarFormulario(user, 'Entrar');
+    await screen.findByText(CORREO);
+    await despuesDeUnPaso();
+
+    // La segunda colección todavía no ha llegado. Si la de la cuenta
+    // anterior siguiera guardada, estaría pintando bajo el correo de la
+    // nueva sesión mientras la respuesta se hace esperar.
+    expect(pendientes).toHaveLength(1);
+    expect(screen.queryByText('12 monedas')).toBeNull();
+
+    await act(async () => {
+      pendientes[0]?.({
+        autenticado: true,
+        coins: 3,
+        unlocks: [],
+        achievements: [],
+      });
+    });
+    expect(await screen.findByText('3 monedas')).toBeInTheDocument();
+  });
+
+  it('no aplica la colección que llega después de haber salido', async () => {
+    const user = userEvent.setup();
+    const vieja = {
+      autenticado: true,
+      coins: 12,
+      unlocks: ['explorador'],
+      achievements: ['primera-partida'],
+    };
+    const resolvers: Array<(valor: unknown) => void> = [];
+    let consultas = 0;
+
+    responder = (ruta) => {
+      if (ruta === '/api/unlocks') {
+        consultas += 1;
+        return {
+          ok: true,
+          status: 200,
+          json: () =>
+            new Promise<unknown>((resolve) => {
+              resolvers.push(resolve);
+            }),
+        } as unknown as Response;
+      }
+      if (ruta === '/api/auth/logout') {
+        return cuerpo(204, null);
+      }
+      return cuerpo(200, { autenticado: true, email: CORREO });
+    };
+
+    render(<AccountPanel />);
+    await screen.findByText(CORREO);
+    await despuesDeUnPaso();
+    expect(resolvers).toHaveLength(1);
+
+    // Se sale mientras la primera colección sigue en el aire.
+    await user.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
+    expect(await screen.findByLabelText('Correo')).toBeInTheDocument();
+
+    await act(async () => {
+      resolvers[0]?.(vieja);
+      await despuesDeUnPaso();
+    });
+
+    // Se vuelve a entrar con la segunda colección todavía sin responder. La
+    // respuesta de la cuenta anterior llega tarde y se descarta: si el efecto
+    // la aplicara, la colección vieja saldría bajo el correo de la sesión
+    // nueva hasta que la respuesta nueva llegara.
+    await user.clear(await screen.findByLabelText('Correo'));
+    await enviarFormulario(user, 'Entrar');
+    await screen.findByText(CORREO);
+    await despuesDeUnPaso();
+
+    expect(consultas).toBe(2);
+    expect(resolvers).toHaveLength(2);
+    expect(screen.queryByText('12 monedas')).toBeNull();
+
+    await act(async () => {
+      resolvers[1]?.({
+        autenticado: true,
+        coins: 3,
+        unlocks: [],
+        achievements: [],
+      });
+    });
+    expect(await screen.findByText('3 monedas')).toBeInTheDocument();
   });
 });

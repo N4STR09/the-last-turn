@@ -647,6 +647,10 @@ describe('las estadísticas de la cuenta', () => {
       turns: 0,
       level: 0,
       difficulty: 'normal',
+      // La semilla con la que se jugó, que es la identidad de la partida para
+      // el servidor. Sale del azar de la sesión, así que la prueba solo puede
+      // comprobar que viaja y no cuál es.
+      seed: expect.any(Number),
     });
   });
 
@@ -697,7 +701,7 @@ describe('las estadísticas de la cuenta', () => {
     });
 
     expect(subidas).toEqual([
-      { turns: 0, level: 0, difficulty: 'normal' },
+      { turns: 0, level: 0, difficulty: 'normal', seed: expect.any(Number) },
     ]);
   });
 

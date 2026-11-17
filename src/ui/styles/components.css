@@ -1083,6 +1083,43 @@
 }
 
 /*
+ * La colección. Va debajo de la fila del correo, sin caja ni viñetas: son
+ * cifras y nombres cortos que se leen de un vistazo, y una lista con una
+ * marca por personaje ocuparía más alto que el propio panel. La etiqueta va
+ * en el gris de pista, como los rótulos de los campos, y los datos en el
+ * cuerpo de la aplicación para que la línea se lea primero como «cuánto» y
+ * después como «qué».
+ */
+.account-panel__collection {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  width: 100%;
+}
+
+.account-panel__coins {
+  margin: 0;
+  color: var(--color-light);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.account-panel__line {
+  max-width: 46ch;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.account-panel__key {
+  color: var(--color-hint);
+  letter-spacing: 0.04em;
+}
+
+/*
  * El formulario de correo y contraseña. Es lo primero que se puede hacer sin
  * cuenta, y el botón de Google va debajo como la otra forma de hacer lo mismo.
  */

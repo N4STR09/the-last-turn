@@ -353,9 +353,17 @@ export function useGameSession(
       turns: state.game.end.turnsSurvived,
       level: state.game.threat,
       difficulty: state.game.difficulty,
+      // La identidad de la partida, que es lo que le permite al servidor
+      // distinguir un reintento de una partida nueva. En la pantalla de
+      // muerte la semilla no puede faltar: solo se llega a ella desde
+      // `selectDifficulty`, que la pone, o desde un enlace de reproducción,
+      // que la trae —y esta de reproducción no se sube. Por eso se afirma y
+      // no se comprueba: comprobarla abriría un segundo camino para un caso
+      // que no tiene caso.
+      seed: seed!,
     });
     void flushReports();
-  }, [flushReports, replayed, state]);
+  }, [flushReports, replayed, seed, state]);
 
   // El menú de ajustes y la hoja de reglas.
   //

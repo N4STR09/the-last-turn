@@ -98,7 +98,7 @@ describe('reportGame', () => {
     });
 
     await expect(
-      reportGame({ turns: 12, level: 2, difficulty: 'agony' }),
+      reportGame({ turns: 12, level: 2, difficulty: 'agony', seed: 4242 }),
     ).resolves.toBe(true);
 
     expect(mandado).toEqual({
@@ -106,7 +106,12 @@ describe('reportGame', () => {
       init: {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ turns: 12, level: 2, difficulty: 'agony' }),
+        body: JSON.stringify({
+          turns: 12,
+          level: 2,
+          difficulty: 'agony',
+          seed: 4242,
+        }),
       },
     });
   });
@@ -114,9 +119,9 @@ describe('reportGame', () => {
   it('devuelve falso cuando el servidor no la cuenta', async () => {
     vi.stubGlobal('fetch', async () => respuesta({}, false));
 
-    await expect(reportGame({ turns: 1, level: 0, difficulty: 'normal' })).resolves.toBe(
-      false,
-    );
+    await expect(
+      reportGame({ turns: 1, level: 0, difficulty: 'normal', seed: 7 }),
+    ).resolves.toBe(false);
   });
 
   it('devuelve falso cuando la red no está', async () => {
@@ -124,8 +129,8 @@ describe('reportGame', () => {
       throw new Error('sin red');
     });
 
-    await expect(reportGame({ turns: 1, level: 0, difficulty: 'normal' })).resolves.toBe(
-      false,
-    );
+    await expect(
+      reportGame({ turns: 1, level: 0, difficulty: 'normal', seed: 7 }),
+    ).resolves.toBe(false);
   });
 });

@@ -8,6 +8,8 @@ import {
   loadGoogleIdentity,
   renderGoogleButton,
 } from '../../app/google-sign-in';
+import { fetchUnlocks } from '../../app/progression';
+import type { ProgressionSummary } from '../../app/progression';
 
 /**
  * La cuenta en la pantalla de inicio.
@@ -72,6 +74,35 @@ const LOGIN_ERROR = 'No se ha podido abrir la sesión. Inténtalo otra vez.';
 const REGISTER_ERROR = 'No se ha podido crear la cuenta. Inténtalo otra vez.';
 const SIGN_OUT_ERROR = 'No se ha podido cerrar la sesión.';
 const GOOGLE_LOAD_ERROR = 'No se ha podido cargar el acceso con Google.';
+
+/**
+ * El nombre con el que se enseña cada personaje.
+ *
+ * Son los mismos identificadores que otorga el servidor, ya traducidos al
+ * vocabulario de la interfaz: la columna guarda la letra tal cual, porque un
+ * solo vocabulario en los dos lados es la forma de que nadie escriba `agonia`
+ * y nadie espere `agony`. Un id que no esté en el mapa —un personaje
+ * añadido mañana— se enseña tal cual en lugar de desaparecer: la colección no
+ * puede quedarse muda porque el cliente se entere tarde de un estreno.
+ */
+const CHARACTER_LABELS: Record<string, string> = {
+  explorador: 'Explorador',
+  veterano: 'Veterano',
+  insomne: 'Insomne',
+  huesped: 'Huésped',
+};
+
+/** Lo mismo para los logros, que son los que se ganan jugando. */
+const ACHIEVEMENT_LABELS: Record<string, string> = {
+  'primera-partida': 'Primera partida',
+  'turno-50': '50 turnos',
+  'turno-100': '100 turnos',
+  'agonia-50': '50 turnos en Agonía',
+};
+
+function labelFor(labels: Record<string, string>, id: string): string {
+  return labels[id] ?? id;
+}
 
 /**
  * El correo de la sesión abierta, o `null` si no la hay.
@@ -247,6 +278,14 @@ export function AccountPanel({ onSessionChange }: AccountPanelProps) {
   const [formEmail, setFormEmail] = useState('');
   const [formPassword, setFormPassword] = useState('');
 
+  // La colección de la cuenta: monedas, personajes y logros. Se consulta
+  // cuando hay alguien dentro y se tira al salir, para que la colección de
+  // una cuenta no se quede enseñando bajo la de otra. Un fallo la deja en
+  // `null`, que para la interfaz es lo mismo que «no hay nada que enseñar».
+  const [progression, setProgression] = useState<ProgressionSummary | null>(
+    null,
+  );
+
   // La consulta de sesión. Se hace una vez, al montar, y solo si el despliegue
   // tiene cuentas.
   useEffect(() => {
@@ -260,6 +299,10 @@ export function AccountPanel({ onSessionChange }: AccountPanelProps) {
         return;
       }
       if (sessionEmail === null) {
+        // Es una de las dos formas de acabar fuera —la otra es el cierre— y
+        // aquí es donde la salida ocurre, así que la colección se tira aquí y
+        // no en un efecto que la tuviera que imitar después.
+        setProgression(null);
         setState('fuera');
         onSessionChange?.(false);
         return;
@@ -273,6 +316,30 @@ export function AccountPanel({ onSessionChange }: AccountPanelProps) {
       alive = false;
     };
   }, [enabled, onSessionChange]);
+
+  // La consulta de la colección. Solo cuando hay alguien dentro. La colección
+  // no se tira aquí: un efecto no puede escribir estado de forma síncrona, y
+  // además cada salida tira la suya donde la salida ocurre —la sesión perdida
+  // en la consulta de sesión y el cierre en su propio éxito—, que es donde se
+  // sabe qué cuenta se va. Este efecto solo se suscribe: si el panel se va
+  // antes de que la respuesta llegue, no se escribe en una pantalla que ya no
+  // está, con el mismo cuidado que la consulta de sesión.
+  useEffect(() => {
+    if (state !== 'dentro') {
+      return;
+    }
+
+    let alive = true;
+    void fetchUnlocks().then((coleccion) => {
+      if (alive) {
+        setProgression(coleccion);
+      }
+    });
+
+    return () => {
+      alive = false;
+    };
+  }, [state]);
 
   const onGoogleCredential = useCallback(
     (credential: string) => {
@@ -298,6 +365,10 @@ export function AccountPanel({ onSessionChange }: AccountPanelProps) {
       }
       setEmail(null);
       setNotice(null);
+      // La colección se va con la sesión, en el sitio donde la salida ocurre:
+      // así no puede quedarse enseñando bajo la cuenta entre la que sale y la
+      // que entra después.
+      setProgression(null);
       setState('fuera');
       onSessionChange?.(false);
     });
@@ -368,12 +439,39 @@ export function AccountPanel({ onSessionChange }: AccountPanelProps) {
       hidden={state === 'cargando'}
     >
       {state === 'dentro' ? (
-        <div className="account-panel__session">
-          <p className="account-panel__mail">{email}</p>
-          <AppButton onClick={onSignOut} variant="quiet">
-            Cerrar sesión
-          </AppButton>
-        </div>
+        <>
+          <div className="account-panel__session">
+            <p className="account-panel__mail">{email}</p>
+            <AppButton onClick={onSignOut} variant="quiet">
+              Cerrar sesión
+            </AppButton>
+          </div>
+          {progression === null ? null : (
+            <div className="account-panel__collection">
+              <p className="account-panel__coins">
+                {progression.coins === 1
+                  ? '1 moneda'
+                  : `${progression.coins} monedas`}
+              </p>
+              {progression.unlocks.length > 0 ? (
+                <p className="account-panel__line">
+                  <span className="account-panel__key">Personajes</span>{' '}
+                  {progression.unlocks
+                    .map((id) => labelFor(CHARACTER_LABELS, id))
+                    .join(' · ')}
+                </p>
+              ) : null}
+              {progression.achievements.length > 0 ? (
+                <p className="account-panel__line">
+                  <span className="account-panel__key">Logros</span>{' '}
+                  {progression.achievements
+                    .map((id) => labelFor(ACHIEVEMENT_LABELS, id))
+                    .join(' · ')}
+                </p>
+              ) : null}
+            </div>
+          )}
+        </>
       ) : (
         <form
           className="account-panel__form"
