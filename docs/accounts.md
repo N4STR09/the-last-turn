@@ -477,8 +477,9 @@ Nada de esto se hace solo; hay que decidirlo o hacerlo fuera del código:
   actual, que no las consulta.
 - **`VITE_ACCOUNTS` en el despliegue de producción.** Sin ella (y sin cliente
   de Google) el panel de cuenta no aparece en producción. Es una variable de
-  build y vive en `wrangler.toml` (`[vars]`); el porqué de ese sitio y no el
-  del panel están contados en `docs/deployment.md`.
+  build y vive en `.env.production`; el porqué de ese sitio —y el porqué no
+  el panel de Cloudflare ni `wrangler.toml`— están contados en
+  `docs/deployment.md`.
 - **El cliente de OAuth de Google.** Hace falta crearlo en la consola de Google
   con el dominio del sitio como origen autorizado. El secreto no entra en el
   repositorio ni en el paquete del navegador.

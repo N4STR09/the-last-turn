@@ -824,7 +824,7 @@ el navegador decida nada. Todo el diseño y la economía están escritos en
 - [ ] Aplicar `npm run db:migrate` (migración `0002_progresion.sql`) a la
       base remota. **Requiere autorización explícita; hacerlo antes del
       `push`.**
-- [ ] Poner `VITE_ACCOUNTS` en Workers Builds y desplegar.
+- [ ] Habilitar `VITE_ACCOUNTS` (`.env.production`) y desplegar.
 - [ ] Verificación con dos navegadores en producción: dos cuentas en dos
       ventanas, jugar y morir en una, comprobar aislamiento y que la
       colección aparece al recargar.

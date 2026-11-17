@@ -92,23 +92,28 @@ build`, y un cambio de valor no hace efecto hasta el siguiente despliegue. Ningu
 de las dos es un secreto: las dos viajan dentro del paquete que descarga
 cualquiera.
 
-Viven en `wrangler.toml`, en la tabla `[vars]`:
+Viven en `.env.production`, en la raíz del repositorio:
 
-```toml
-[vars]
-VITE_ACCOUNTS = "1"
+```dotenv
+VITE_ACCOUNTS=1
 ```
 
-No en el panel de Cloudflare: *Variables & Secrets* es la sección de
-**runtime** —lo que el Worker recibe en `env` al ejecutarse—, y lo que
-decide el cliente es lo que Vite ve durante `npm run build`. La
-documentación de Cloudflare indica que `[vars]` de la configuración de
-Wrangler sí se inyecta en el build; la comprobación empírica de por qué no
-vale el panel está en el historial de esta tanda: con la variable solo en el
-panel, el bundle de producción salió idéntico byte a byte al de un build sin
-ella. Al estar en el archivo, el valor viaja con el repositorio y cada `push`
-a `main` lo compila tal cual; cambiarlo es editar el archivo y volver a
-desplegar. Un `.env` local no sirve: Workers Builds no lo lee.
+Es el mecanismo nativo de Vite: el archivo se carga solo en `vite build`
+—ni en `npm run dev` ni en los tests— y de ahí lo incrusta en el bundle. Al
+estar commiteado, el valor viaja con el repositorio y cada `push` a `main`
+lo compila tal cual; cambiarlo es editar el archivo y volver a desplegar.
+
+Los otros dos caminos que Cloudflare ofrece **no** llegan al build, y así se
+comprobó empíricamente durante esta tanda: las variables del panel
+(*Variables & Secrets*) son de **runtime** —llegan al Worker en `env`, no a
+`npm run build`—, y `[vars]` de `wrangler.toml` tampoco se inyecta en el
+paso de build. Con la variable en cada uno de esos dos sitios, el bundle de
+producción salió idéntico byte a byte al de un build sin ella (mismo hash),
+y con `.env.production` el hash cambió. El panel sí tiene un sitio propio
+para esto —*Settings → Build → «Build variables and secrets»*, descrito
+como «accessible only to your build»—, pensado para valores que no quieran
+ir en el repositorio: el día que haga falta uno así, esa es la vía y este
+archivo no se toca.
 
 En el lado del servidor hay variables propias del Worker que no llegan al
 navegador —la única hoy es `PBKDF2_ITERATIONS`—. Esas sí van en *Settings* →
