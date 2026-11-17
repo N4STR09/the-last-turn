@@ -768,3 +768,83 @@ el más útil no era el que se sospechaba:
 - `docs/qa.md`
 - `CHANGELOG.md`
 - `README.md`
+
+## Bloque de progresión por cuenta (monedas, personajes y logros)
+
+**Estado:** implementado y verificado con los comandos automáticos (las fases
+interna 0 a 4 de este bloque: habilitar D1, servidor, cliente y documentación).
+Pendiente solo lo que exige autorización o el despliegue.
+
+**Descripción:** la cuenta ya existía —sesión, contraseñas, estadísticas—; este
+bloque añade encima monedas, personajes y logros que se ganan jugando, sin que
+el navegador decida nada. Todo el diseño y la economía están escritos en
+[`docs/accounts.md`](../docs/accounts.md).
+
+**Decisiones confirmadas antes de implementar:**
+- **Economía:** monedas `min(25, 1 + ⌊turnos/10⌋ + 3 si es Agonía)` por
+  partida aceptada, con techo de 25; logros `primera-partida`, `turno-50`,
+  `turno-100` (mejor marca) y `agonia-50` (partida única de Agonía ≥ 50
+  turnos); personajes `explorador` (por defecto con el primer informe),
+  `veterano` (100 turnos totales), `insomne` (mismo disparador que
+  `agonia-50`) y `huesped` (10 partidas).
+- **Identidad semilla:** `gameKey = sha256(player_id | seed | difficulty |
+  turns | level)`; todo lo demás va gateado por `player_reports`, así que un
+  informe repetido devuelve las estadísticas actuales sin escribir.
+- **`VITE_ACCOUNTS` para producción:** variable de en Workers Builds, no
+  commiteada.
+
+**Criterios de aceptación:**
+- [x] La identidad sale solo de la sesión resuelta; el cliente nunca manda
+      cantidades, ids, `obtained_at` ni `player_id`.
+- [x] Un informe repetido no otorga dos veces, y dos cuentas con la misma
+      partida no comparten filas.
+- [x] Freno de ritmo por sesión: 60 informes cada diez minutos, `429`, y los
+      rechazados cuentan.
+- [x] `GET /api/unlocks` responde 200 siempre, con `{autenticado:true, coins,
+      unlocks, achievements}` o `{autenticado:false}`.
+- [x] Todo fallo en el cliente se queda en silencio devolviendo «nada»; sin
+      localStorage/sessionStorage/URL para la progresión, sin dependencias
+      nuevas y sin peticiones a terceros. El modo invitado no cambia.
+- [x] `src/game` y `functions/_lib` al 100 % en las cuatro métricas;
+      `functions/api` por encima de su umbral; lint con `--max-warnings 0`.
+
+**Verificación de este bloque:**
+- [x] `npm run verify` en verde: 1 066 pruebas en 53 archivos; cobertura
+      global 99.44 % statements / 98.75 % branches / 100 % functions /
+      99.44 % lines; `functions/_lib` y `functions/api` al 100 %, `src/ui` y
+      `src/game` al 100 %, `src/app` en 98.3; bundle de 82.81 KiB JS gzip y
+      5.14 KiB CSS gzip.
+- [x] Servidor probado contra SQLite de verdad: idempotencia, techo de
+      monedas, umbrales, aislamiento por cuenta y freno de ritmo en sus cuatro
+      sentidos (tope, rechazados cuentan, reinicio de ventana, cubo por
+      sesión).
+- [x] Cliente probado en la frontera de `fetch`: silencio ante cualquier
+      fallo, singular y listas vacías, identificador desconocido, colección
+      tirada al salir y respuesta tardía descartada.
+- [ ] Aplicar `npm run db:migrate` (migración `0002_progresion.sql`) a la
+      base remota. **Requiere autorización explícita; hacerlo antes del
+      `push`.**
+- [ ] Poner `VITE_ACCOUNTS` en Workers Builds y desplegar.
+- [ ] Verificación con dos navegadores en producción: dos cuentas en dos
+      ventanas, jugar y morir en una, comprobar aislamiento y que la
+      colección aparece al recargar.
+- [ ] Publicar. **Requiere autorización explícita.**
+- [ ] Limitación conocida: al entrar, la consulta de la colección puede
+      correr a la par que el vaciado de la cola de invitado; la primera
+      colección puede no incluir las partidas recién subidas hasta recargar.
+
+**Archivos tocados:**
+- `migrations/0002_progresion.sql` (nuevo)
+- `functions/_lib/unlocks.ts` (nuevo)
+- `functions/api/unlocks.ts` (nuevo)
+- `functions/api/stats.ts`
+- `functions/_lib/stats.ts`
+- `src/app/progression.ts` (nuevo)
+- `src/app/stats.ts`
+- `src/app/use-game-session.ts`
+- `src/ui/components/AccountPanel.tsx`
+- `src/ui/styles/components.css`
+- `docs/accounts.md`
+- `docs/deployment.md`
+- `CHANGELOG.md`
+- `README.md`

@@ -57,6 +57,16 @@ Hoy el repositorio está escrito para el proyecto que existe:
    `/api/health` responde 200 con `{"ok":true,"jugadores":0}`; si no llega a
    responder, 503 diciendo la verdad. Las migraciones se aplican con
    `npm run db:migrate:local` (copia local) y `npm run db:migrate` (la real).
+   La segunda migración, `0002_progresion.sql` —`player_reports` y
+   `report_attempts`— está escrita y probada pero **todavía no se ha aplicado a
+   la base remota**: hacerlo requiere autorización explícita y conviene
+   hacerlo **antes** del `push` que publique el código que la consulta, porque
+   sin esas dos tablas `POST /api/stats` falla con 500. Aplicarla antes no
+   afecta al código actual, que no las lee.
+4. El cliente y las funciones se despliegan juntos en el mismo build, así que
+   no hay versión vieja de la página hablando con API nueva ni al revés. Lo
+   único que se mueve por separado es el esquema de la base: por eso el orden
+   es migración primero, `push` después.
 
 `functions/` sigue siendo el origen del servidor; lo que cambia respecto de un
 proyecto Pages es que no hay enrutado por ficheros en la plataforma: el Worker
@@ -64,6 +74,32 @@ compilado lleva dentro las rutas. El juego sigue siendo un solo origen: sin CORS
 y con `SameSite=Lax` suficiente para la cookie de sesión. No se pide
 `nodejs_compat`, porque el servidor solo usa funciones web estándar (`fetch`,
 `crypto.subtle`, `TextEncoder`, `URL`).
+
+## Variables de entorno de la aplicación
+
+Dos variables deciden qué ve la persona que abre la página:
+
+- **`VITE_ACCOUNTS`** — cualquier valor no vacío habilita el panel de cuenta
+  (correo y contraseña, con o sin Google). Sin ella, y sin cliente de Google,
+  la página se comporta como antes de existir las cuentas: sin panel, sin
+  consulta de sesión y sin una sola petición a `/api`.
+- **`VITE_GOOGLE_CLIENT_ID`** — identificador del cliente de OAuth de Google;
+  solo añade el botón de Google al formulario. Opcional.
+
+**Son variables de build.** Vite las resuelve al compilar y las incrusta en el
+bundle, así que el valor hay que tenerlo puesto cuando se ejecuta `npm run
+build`, y un cambio de valor no hace efecto hasta el siguiente despliegue. Ninguna
+de las dos es un secreto: las dos viajan dentro del paquete que descarga
+cualquiera.
+
+En Workers Builds se ponen así: proyecto **the-last-turn** → *Settings* →
+*Environment variables* → *Add variable*, con alcance de producción. Guardar no
+despliega nada; el valor se aplica en la siguiente compilación, que Workers
+Builds ejecuta en cada `push` a `main`.
+
+En el lado del servidor hay variables propias del Worker que no llegan al
+navegador —la única hoy es `PBKDF2_ITERATIONS`—. Se configuran en las mismas
+pantallas de Cloudflare y su efecto está descrito en `docs/accounts.md`.
 
 ## Verificación antes de publicar
 
@@ -141,6 +177,10 @@ resuelven igual y no hace falta añadir reglas de reescritura.
    - solo recursos del propio origen.
 5. Comprobar que los botones mantienen foco visible, contraste y objetivos táctiles.
 6. Verificar que no aparece ninguna instalación, descarga o registro de usuario.
+7. Si el despliegue tiene `VITE_ACCOUNTS`, además en **dos ventanas distintas**:
+   entrar con una cuenta en cada una, jugar y morir en una, y comprobar que la
+   otra no ve ni la marca ni la colección de la primera; después recargar la
+   primera y ver las monedas, personajes y logros debajo del correo.
 
 Cloudflare conserva los despliegues anteriores; desde el dashboard se puede
 volver a una implementación de producción conocida si una versión publicada

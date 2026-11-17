@@ -4,7 +4,15 @@ Versión web de *The Last Turn* construida con React + Vite + TypeScript. La apl
 
 No hay victoria. La partida siempre termina; la única forma de durar más es aguantar más turnos frente a una escalada que no se detiene. Con juego ordenado en Normal la mediana es el turno 119 y el techo absoluto con el mejor azar posible es el 152, así que la escalada aprieta sin convertirse en un muro.
 
-La aplicación es una web 100 % estática preparada para publicarse en Cloudflare Pages. No tiene backend, cuentas, multijugador, telemetría, persistencia, Web Storage, endpoints ni recursos de terceros en runtime. Una persona jugará abriendo una URL HTTPS, sin instalar ni configurar nada.
+Una persona jugará abriendo una URL HTTPS, sin instalar ni configurar nada, y
+**sin cuenta**: sin ella se juega igual que siempre. El despliegue sí tiene
+servidor —rutas de `functions/` en el mismo origen— para las **cuentas
+opcionales** (correo y contraseña, con o sin Google), las estadísticas que se
+acumulan en la cuenta y su progresión: monedas, personajes y logros. Las
+cuentas se activan con la variable `VITE_ACCOUNTS` y, sin ella, la página no
+hace ni una petición a `/api`. No hay multijugador, telemetría, Web Storage ni
+recursos de terceros en runtime —el único posible es el script de Google, y
+solo si el despliegue configura acceso con Google—.
 
 ## Requisitos de desarrollo
 
@@ -58,14 +66,18 @@ npm run preview
 
 ## Publicación web
 
-El artefacto desplegable es `dist/`. En Cloudflare Pages se debe usar:
+Si se publicara como proyecto estático (por ejemplo en Cloudflare Pages), hay
+que usar:
 
 - comando de build: `npm run build`;
 - directorio de salida: `dist`;
 - directorio raíz: el repositorio raíz;
 - versión de Node: `.node-version` (`24.19.0`).
 
-La guía completa para integración Git, carga directa, aceptación, rollback y límites de la versión web está en [`docs/deployment.md`](docs/deployment.md). No se ha creado un proyecto remoto ni se ha iniciado ningún despliegue.
+El proyecto real es otro: un **Worker con Static Assets** conectado a Git, que
+se despliega solo con cada `push` a `main`. La guía completa —integración Git,
+variables de entorno, migraciones de base de datos, aceptación, rollback y
+límites de la versión web— está en [`docs/deployment.md`](docs/deployment.md).
 
 ## Flujo y controles
 
@@ -84,6 +96,22 @@ Durante la partida también funcionan los atajos `E` (explorar), `C` (comer), `S
 El banner lleva una tercera cifra: la mejor partida de esta sesión, en turnos aguantados. Solo aparece cuando ya ha muerto alguna, porque antes de eso no hay nada contra lo que medir. Mientras vas por detrás dice «Tu mejor» y enseña la marca; en cuanto lo superas la cifra pasa a decir «Récord» y enseña la nueva. No hay ninguna frase que te diga cuántos turnos te faltan: el marcador es un número y restar es cosa del jugador. La cuenta va sobre los turnos ya aguantados y no sobre la ronda del banner, que es la que aún no has jugado, porque es la misma medida que usa el «Nuevo récord» del parte de muerte.
 
 Vive solo en memoria: recargar la página lo borra. Es lo que lo hace un rival y no un récord, y es lo que permite no guardar nada. Una partida abierta desde un enlace ajeno no cuenta como tu marca.
+
+## Cuentas y progresión (opcional)
+
+Con la variable `VITE_ACCOUNTS` activa, la pantalla de inicio muestra un panel
+para entrar con correo y contraseña —o con Google, si el despliegue tiene
+cliente—. **Sin cuenta no se pierde nada del juego:** se juega igual que
+siempre, y las partidas de esa sesión se suben la primera vez que haya cuenta.
+
+Con cuenta, cada partida deja monedas —`min(25, 1 + ⌊turnos/10⌋ + 3 si es
+Agonía)`— y se ganan personajes y logros por umbrales: 100 turnos totales, 10
+partidas empezadas, 50 turnos en una sola partida de Agonía… El saldo y las
+colecciones se ven debajo del correo en el panel. Todo se guarda en el
+servidor y en la cuenta de cada cual: el navegador nunca manda cantidades,
+identificadores ni instantes, y repetir un informe no otorga dos veces. La
+economía entera, el esquema y las rutas están en
+[`docs/accounts.md`](docs/accounts.md).
 
 ## Semillas y enlaces
 
@@ -155,6 +183,8 @@ cuesta nada medible.
 src/game/   Motor puro de reglas; no conoce React, CSS ni APIs del navegador.
 src/ui/     Componentes y pantallas; reciben modelos de vista y emiten callbacks.
 src/app/    App-shell, reducer, navegación, foco, atajos y adaptación de modelos.
+functions/  Servidor en el Worker de Cloudflare: cuentas, sesión y estadísticas; solo funciones web estándar, sin dependencias de Node.
+migrations/ Esquema de D1, aplicado con `npm run db:migrate`.
 scripts/    Utilidades de verificación reproducible.
 docs/       Ledger de fidelidad y documentación de la migración.
 ```
@@ -169,7 +199,16 @@ La pantalla de escalada usa rojo sangre `#8b0000` sobre negro puro, con 2.10:1 d
 
 ## Build web estático
 
-El build se genera en `dist/` y se publica directamente como contenido estático, sin backend ni Pages Functions. La puerta `npm run check:budget` vuelve a comprimir cada archivo de `dist/assets/` con gzip nivel 9 y confirma que el total está dentro de los presupuestos: **78.77 KiB de JavaScript** (39,4 % de 200 KiB) y **4.37 KiB de CSS** (8,7 % de 50 KiB). Vite imprime cifras propias que difieren en unos pocos KiB porque ajusta gzip de forma distinta, y la puerta aplica siempre su propia medición. El favicon y todos los recursos visuales se incluyen en el artefacto.
+El build compila el cliente con Vite en `dist/` y, con
+`wrangler pages functions build`, el servidor de `functions/` en un Worker
+único; `wrangler deploy` publica los dos juntos, así que la página y la API
+viajan siempre en la misma versión. La puerta `npm run check:budget` vuelve a
+comprimir cada archivo de `dist/assets/` con gzip nivel 9 y confirma que el
+total está dentro de los presupuestos: **82.81 KiB de JavaScript** (41,4 % de
+200 KiB) y **5.14 KiB de CSS** (10,3 % de 50 KiB). Vite imprime cifras
+propias que difieren en unos pocos KiB porque ajusta gzip de forma distinta, y
+la puerta aplica siempre su propia medición. El favicon y todos los recursos
+visuales se incluyen en el artefacto.
 
 ## Alcance de QA
 

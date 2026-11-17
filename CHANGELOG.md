@@ -4,6 +4,36 @@
 
 ### Added
 
+- **Cuentas con sesión y estadísticas que se acumulan en la cuenta.** Alta y
+  acceso con correo y contraseña —PBKDF2-HMAC-SHA-256 con 5 000 iteraciones,
+  bloqueo progresivo de intentos y un solo mensaje de error al entrar—,
+  acceso con Google verificado contra su JWKS, cookie de sesión que guarda el
+  hash del token, y `GET`/`POST /api/stats` para la marca y los acumulados.
+  Todo se guarda en D1 y el motor no se toca ni una línea. Las decisiones
+  están en `docs/accounts.md`.
+- **La progresión de cuenta: monedas, personajes y logros.** Cada partida
+  aceptada otorga `min(25, 1 + ⌊turnos/10⌋ + 3 si es Agonía)` monedas —contadas
+  como filas de `player_unlocks`, así que no hay doble gasto posible—, más los
+  logros `primera-partida`, `turno-50`, `turno-100` y `agonia-50`, y los
+  personajes `explorador` (por defecto), `veterano`, `insomne` y `huesped`
+  según sus umbrales. La identidad de la partida la calcula el servidor con un
+  hash de `player_id`, semilla, dificultad, turnos y nivel, que se guarda en
+  `player_reports` (`migrations/0002_progresion.sql`): repetir un informe no
+  otorga dos veces ni escribe dos veces. El ritmo va frenado en servidor —60
+  informes por ventana de diez minutos y por sesión, con `429`—, y la única
+  puerta de escritura sigue siendo `POST /api/stats`, donde están validados
+  los hechos. Nuevos: `functions/_lib/unlocks.ts`, `functions/api/unlocks.ts`
+  (`GET /api/unlocks`, solo lectura y 200 siempre) y `src/app/progression.ts`.
+- **La colección, en el panel de cuenta.** Debajo del correo, cuando hay
+  alguien dentro: el saldo con su singular («1 moneda» / «N monedas»), la
+  línea de Personajes y la de Logros, con etiquetas propias y el
+  identificador en crudo si el cliente aún no lo conoce —una actualización
+  que estrene un personaje no deja la línea muda—. Cualquier fallo de la
+  consulta se queda en silencio y no enseña nada: un servidor caído no pone
+  un aviso rojo en una pantalla que funciona. La semilla viaja ahora en el
+  informe de partida, porque es la identidad con la que el servidor distingue
+  un reintento de una partida nueva.
+
 - **El menú de ajustes, con el engranaje en el banner.** Sustituye a la tecla de
   reglas que se pensó al principio. Una tecla es un atajo para quien ya conoce el
   juego, y lo que faltaba era lo contrario: una puerta visible para quien no lo
@@ -328,6 +358,40 @@
 - Reequilibrio de la economía de comida: comer quita `4 + hambreExtraPorTurno`
   en lugar de 4 fijos. Con carga 0 y 1 no cambia nada, así que la Fase 1 queda
   intacta, y a partir de ahí la ración vuelve a tapar el gasto del turno.
+
+### Verification de la tanda de progresión
+
+- `npm run verify` en verde: typecheck, lint sin warnings, cobertura, build,
+  presupuestos y residuos. **1 066 pruebas en 53 archivos.** Cobertura global
+  99.44 % statements, 98.75 % branches, 100 % functions y 99.44 % lines;
+  `functions/_lib` (462 sentencias) y `functions/api` (126) al 100 % en las
+  cuatro métricas, `src/ui` y `src/game` al 100 %, y `src/app` en 98.3/96.7
+  —los huecos son los mismos de antes: `app-keyboard.ts:85`,
+  `game-view-model.ts` y dos ramas de `use-game-session.ts`. Bundle de
+  82.81 KiB JS gzip (41,4 % de 200) y 5.14 KiB CSS gzip (10,3 % de 50).
+- La idempotencia se probó en su sentido de fallo: repetir el mismo cuerpo
+  sin la clave de informe volvería a otorgar, y con ella el segundo informe no
+  escribe ni una fila y la respuesta es idéntica. El freno de ritmo se probó
+  en el tope, en que los rechazados cuentan, en que la ventana se reinicia
+  sola al pasar los diez minutos y en que cada sesión tiene su propio cubo.
+- La identidad salió de la sesión en todos los caminos: sin sesión no se
+  otorga nada, y el recuento de filas —no la respuesta— es lo que comprueba
+  que un cuerpo sin cookie no escribe. Dos cuentas con la misma partida
+  escrita tienen cada una las suyas.
+- En el cliente, la colección se probó en silencio (red caída, cuerpo
+  roto, saldo no entero), en el singular y las listas vacías, en el
+  identificador desconocido, en que la colección de una cuenta no se quede
+  bajo la de otra al salir, y en que una respuesta que llega después de
+  haber salido se descarta.
+- **Sin comprobar todavía en producción.** `0002_progresion.sql` no se ha
+  aplicado a la base remota —falta la autorización— y `VITE_ACCOUNTS` no está
+  puesta en Workers Builds, así que ni el panel ni la colección se han visto
+  en el despliegue real. La comprobación con dos navegadores queda pendiente
+  por lo mismo.
+- Limitación conocida, documentada en `docs/accounts.md`: al entrar, la
+  consulta de la colección puede correr a la par que el vaciado de la cola de
+  invitado, así que la primera colección puede no incluir las partidas
+  recién subidas hasta recargar.
 
 ### Verification de la tanda de ajustes
 

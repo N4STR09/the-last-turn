@@ -197,8 +197,10 @@ respuesta plana para las dos convertiría el 409 en un misterio.
   ella (ni cliente de Google) no hay panel, no se pide el script y no se hace
   ninguna petición. El botón solo necesita `VITE_GOOGLE_CLIENT_ID`; sin cliente
   no se pide el script ni se pinta nada, pero el formulario sigue. Las dos
-  variables se leen en tiempo de ejecución y no al empaquetar, porque qué acceso
-  hay es cosa del despliegue y no del build.
+  variables las incrusta el build: Vite las resuelve al compilar, así que el
+  valor hay que tenerlo puesto cuando se ejecuta `npm run build`, y un cambio
+  de valor solo hace efecto en el siguiente despliegue. Dónde se ponen, en
+  `docs/deployment.md`.
 - **`AccountPanel` se monta en `StartScreen` y se lleva su estado él mismo.** No
   se hila por `App.tsx`, porque la cuenta no forma parte de la partida: una
   sesión abierta o cerrada no tiene por qué arrastrar un cambio de pantalla. Lo
@@ -213,7 +215,7 @@ respuesta plana para las dos convertiría el 409 en un misterio.
 - **Tres estados y ninguno más:** `cargando` (la consulta de sesión, que no se
   enseña para que la cuenta aparezca ya dicha y no crezca debajo del texto),
   `fuera` (el formulario y, si hay cliente, el botón de Google) y `dentro` (el
-  correo y «Cerrar sesión»).
+  correo, «Cerrar sesión» y, cuando llega, la colección).
 - **Un fallo de la consulta de sesión significa jugar sin cuenta, no un error.**
   Sin red o con el servidor caído, la pantalla se comporta exactamente como se
   comportaría sin sistema de cuentas. Enseñar un error rojo en una pantalla que
@@ -261,6 +263,12 @@ sobre una base en memoria comprueba la lista completa de tablas. Si algún día
 alguien añade una tabla `games`, esa prueba falla y hay que explicar para qué
 sirve.
 
+La segunda migración añade dos tablas que no rompen esa promesa, y conviene
+decirlo: `player_reports` guarda la **clave** de un informe ya procesado —un
+hash de una sola dirección, no una semilla ni un tablero— y `report_attempts`
+el freno de ritmo. Ninguna de las dos guarda qué se jugó; solo que ya se contó
+y a qué ritmo se pregunta.
+
 La ruta de estadísticas no recibe un estado de partida: recibe enteros. El cliente
 manda lo que pasó en una partida —su mejor turno, un contador— y **el servidor
 suma**, con `MAX` o con una suma dentro del propio SQL. Dos cosas se siguen de
@@ -292,17 +300,21 @@ en lo que cruza la frontera en cualquiera de los dos sentidos.
   partida de cero turnos, que existe; `null` es no haber jugado nunca. Si se
   confundieran, la primera partida de cualquiera parecería batir un récord que no
   existe.
-- **`POST /api/stats` comprueba en este orden: origen, sesión y cuerpo.** Al
-  revés, un cuerpo mal formado de alguien sin sesión recibiría un 400 que
-  contesta una pregunta que no se ha hecho. 400 si el cuerpo no se entiende, 401
-  sin sesión, 403 sin same-origin.
+- **`POST /api/stats` comprueba en este orden: origen, sesión, cuerpo y ritmo.**
+  Al revés, un cuerpo mal formado de alguien sin sesión recibiría un 400 que
+  contesta una pregunta que no se ha hecho. 400 si el cuerpo no se entiende,
+  401 sin sesión, 403 sin same-origin, 429 cuando la ventana de diez minutos se
+  queda sin presupuesto; la escritura va después, y con ella los premios de la
+  progresión.
 - **El nivel que se sube es `state.game.threat`**, el más alto alcanzado, y no el
   que le tocaría por los turnos aguantados. La amenaza solo sube, así que es la
   misma cifra que el jugador vio en el banner y no una que el servidor recalcule
   por su cuenta.
 - **El servidor suma, el cliente no manda totales.** Se manda `{ turns, level,
-  difficulty }` y el servidor aplica `MAX` o incrementa dentro del propio SQL. Si
-  el cliente mandara los acumulados, dos dispositivos a la vez se pisarían.
+  difficulty, seed }` y el servidor aplica `MAX` o incrementa dentro del propio
+  SQL. Si el cliente mandara los acumulados, dos dispositivos a la vez se
+  pisarían. La semilla no es un acumulado: es la identidad con la que el
+  servidor distingue un informe repetido de una partida nueva.
 - **El cliente solo usa `bestTurns`.** `gamesPlayed`, `totalTurns` y
   `hardestLevel` viajan porque el contrato los tiene, no porque hoy se pinten.
 
@@ -367,11 +379,11 @@ Dos efectos y ninguno más:
   vez y ninguna sabe de la otra. Se acepta: una petición de más al abrir la página
   es más barata que un estado compartido que las coordine.
 
-## Las tres cosas futuras
+## La progresión: monedas, personajes y logros
 
-Monedas, personajes y logros van en **una sola tabla**, `player_unlocks`, con
-`kind` tomando `moneda`, `personaje` o `logro`. La tabla existe desde la primera
-migración y no escribe nadie todavía.
+Ya está implementado, en `functions/_lib/unlocks.ts` con sus pruebas contra
+SQLite de verdad. Monedas, personajes y logros viven en **una sola tabla**,
+`player_unlocks`, con `kind` tomando `moneda`, `personaje` o `logro`.
 
 Las monedas en concreto son un saldo, y un saldo guardado como número se puede
 descontar dos veces. Contando filas no hay doble gasto posible, porque no hay
@@ -379,13 +391,94 @@ nada que restar: hay filas que están o no están, y la clave primaria impide
 duplicar la misma. Es la razón por la que el saldo es un `count` y no una
 columna.
 
+### La economía, tal y como está escrita
+
+- **Monedas por partida:** `min(25, 1 + ⌊turnos/10⌋ + 3 si es Agonía)`. El
+  techo de 25 corta también el peor cuerpo que la validación admite: sin él, un
+  informe de un millón de turnos dejaría cien mil monedas.
+- **Logros:** `primera-partida` (en cuanto hay una partida anotada),
+  `turno-50` y `turno-100` (con la mejor marca de la cuenta) y `agonia-50`
+  (una sola partida en Agonía de 50 turnos o más). Este último se decide con
+  el informe y no con un acumulado, porque en la base no hay columna con la
+  mejor marca en Agonía.
+- **Personajes:** `explorador` (por defecto, se otorga con el primer informe
+  aceptado), `veterano` (100 turnos totales), `insomne` (mismo disparador que
+  `agonia-50`) y `huesped` (10 partidas empezadas).
+
+Ningún premio depende del reloj: son contadores y mejores marcas. `obtained_at`
+se estampa con el reloj del servidor y solo sirve para enseñar cuándo se ganó:
+mover ese reloj no desbloquea nada.
+
+### Un informe solo cuenta una vez
+
+- **La identidad de la partida la calcula el servidor.** La clave es
+  `sha256(player_id | seed | difficulty | turns | level)` y se guarda en
+  `player_reports` (migración `0002_progresion.sql`). Repetir el mismo informe
+  —una respuesta perdida que el cliente vuelve a mandar— encuentra la fila, no
+  escribe nada y devuelve las estadísticas actuales. Como la clave lleva el
+  `player_id` dentro, ni siquiera dos cuentas que juegan la misma semilla
+  comparten fila.
+- **La semilla viaja en el informe** por eso: es la identidad de la partida,
+  no un dato del motor. Sin ella el servidor rechazaría el cuerpo; con ella un
+  reintento no cuenta dos veces. Desde el hash no se reconstruye ninguna
+  semilla ni ningún tablero, así que la promesa de no guardar partidas sigue
+  sin depender de que nadie se acuerde de cumplirla.
+- **El ritmo se cuenta en servidor**, en `report_attempts`, con la misma forma
+  que `login_attempts`: 60 informes como máximo por ventana de diez minutos y
+  por sesión, con `429` al pasar el tope. Cuentan también los rechazados, o un
+  script seguiría probando, y la ventana se reinicia sola cuando pasa el
+  tiempo.
+- **La identidad solo sale de la sesión resuelta dentro.** El cliente manda
+  los hechos de la partida —turnos, nivel, dificultad, semilla— y jamás una
+  cantidad, un id, un `obtained_at` ni un `player_id`.
+
+### `GET /api/unlocks`
+
+Solo lectura, y una razón: la única forma de escribir progresión es acabar una
+partida, y eso entra por `POST /api/stats`, donde están validados los hechos y
+donde está el freno de ritmo. Si esta ruta aceptara un POST, habría dos
+caminos que mantener en sincronía. Responde **200 siempre**, con la misma forma
+que `GET /api/auth/session`:
+
+- con sesión: `{ autenticado: true, coins, unlocks, achievements }`
+- sin sesión: `{ autenticado: false }`
+
+La identidad viene de la cookie y la ruta no lee ningún campo de la petición.
+En el cliente la traduce `src/app/progression.ts`, que devuelve `null` ante
+cualquier fallo —sin red, con el servidor caído o con un cuerpo que no se
+entiende—, y el panel lo enseña como «no hay nada que enseñar»: un fallo de
+esta consulta no pone un aviso rojo en una pantalla que funciona.
+
+### Lo que la interfaz enseña
+
+`AccountPanel` consulta `/api/unlocks` cuando hay alguien dentro y pinta, debajo
+del correo: el saldo («1 moneda» / «N monedas»), la línea de Personajes y la de
+Logros, con etiquetas propias y el identificador en crudo si aún no lo conoce
+—una actualización que estrene personaje no deja la línea muda—. La colección
+se tira en cada salida de la sesión, en el sitio donde la salida ocurre, para
+que no pueda quedarse enseñando bajo la cuenta siguiente.
+
+**Limitación conocida:** al entrar, la consulta de la colección puede correr a
+la par que el vaciado de la cola de invitado, así que la primera colección que
+se ve puede no incluir todavía las partidas que se acaban de subir; se arregla
+al recargar. No se pierde nada escrito: lo que no se pudo subir sigue en la
+cola hasta que el servidor lo acepta.
+
 ## Lo que falta y hay que decidir
 
-Nada de esto se puede hacer desde el repositorio:
+Nada de esto se hace solo; hay que decidirlo o hacerlo fuera del código:
 
-- **El `database_id` de D1.** Sale de `wrangler d1 create the-last-turn`, y hace
-  falta una sesión iniciada en Cloudflare. Está marcado como pendiente en
-  `wrangler.toml` a propósito, para que no se pase por alto.
+- **Aplicar `0002_progresion.sql` a la base remota.** La migración está
+  escrita y probada contra SQLite de verdad, y se aplica con
+  `npm run db:migrate` —`npm run db:migrate:local` ya la tiene en la copia
+  local—. Falta la autorización explícita para tocar la base real, y
+  conviene hacerlo **antes** del `push` que publique el código nuevo: sin las
+  dos tablas, `POST /api/stats` fallaría. Aplicarla antes no afecta al código
+  actual, que no las consulta.
+- **`VITE_ACCOUNTS` en el despliegue de producción.** Sin ella (y sin cliente
+  de Google) el panel de cuenta no aparece en producción. Es una variable de
+  build y se pone en Workers Builds; el paso a paso está en
+  `docs/deployment.md`.
 - **El cliente de OAuth de Google.** Hace falta crearlo en la consola de Google
   con el dominio del sitio como origen autorizado. El secreto no entra en el
   repositorio ni en el paquete del navegador.
@@ -402,7 +495,7 @@ La regla de "sin backend, cuentas ni persistencia" está escrita en `README.md`
 `SPEC-verification.md`, `SPEC-web-interface.md`, `CHANGELOG.md`, `docs/qa.md` y
 `tasks/todo.md`.
 
-No se reescriben ahora a propósito, y la regla para hacerlo es esta:
+No se reescriben todos ahora, y la regla para hacerlo es esta:
 
 - **Lo que describe una fase** se deja. «La Fase 5 no toca el motor» seguirá siendo
   cierto dentro de mil años, y reescribirlo sería hacer que la historia del
@@ -410,6 +503,12 @@ No se reescriben ahora a propósito, y la regla para hacerlo es esta:
 - **Lo que describe el proyecto hoy** se reescribe cuando el sistema esté
   funcionando. Reescribirlo ahora documentaría un sistema que no existe, que es
   peor que un documento que va con retraso.
+
+Ese momento llegó con este bloque: `README.md` se ha reescrito —ya no dice que
+no hay backend ni cuentas—, y a `CHANGELOG.md` y `tasks/todo.md` se les ha
+añadido la entrada de esta tanda. Los SPEC, `CAPABILITIES.md`, `docs/fidelity.md`
+y `docs/qa.md` describen fases y decisiones concretas que siguen siendo ciertas
+tal como están escritas: no se tocan.
 
 Faltan dos familias más: la ayuda dentro del juego y el aviso de privacidad de la
 página. El formulario de alta, que era lo que bloqueaba al segundo, ya está;
