@@ -105,7 +105,8 @@
  * El engranaje de ajustes vive dentro pero se sale del flujo, así que la cabecera
  * reserva su ancho por los dos lados. Reservarlo solo por el derecho descentraría
  * el título, y eso se nota justo en los anchos estrechos, que son donde el
- * engranaje se le acerca de verdad.
+ * engranaje se le acerca de verdad. La reserva es 2.75rem, el ancho del propio
+ * engranaje, para que título y botón ni se toquen.
  */
 .banner {
   position: relative;
@@ -113,7 +114,7 @@
   justify-items: center;
   gap: var(--space-3);
   margin-bottom: var(--space-6);
-  padding-inline: 2.5rem;
+  padding-inline: 2.75rem;
   text-align: center;
 }
 
@@ -952,11 +953,19 @@
   right: 0;
 }
 
+/*
+ * El engranaje mide 2.75rem —44 px— porque es el objetivo táctil mínimo que
+ * pide la interfaz, y lo es también en móvil: aquí no hay media query que lo
+ * reduzca, porque un pulgar no se hace más pequeño al estrechar la ventana.
+ * El círculo crece hacia dentro y hacia abajo desde la esquina, así que no se
+ * sale del banner; el padding en línea de `.banner` reserva ese mismo ancho
+ * por los dos lados para que el título centrado no se le acerque.
+ */
 .settings__toggle {
   display: grid;
   place-items: center;
-  width: 2rem;
-  height: 2rem;
+  width: 2.75rem;
+  height: 2.75rem;
   padding: 0;
   border: 1px solid transparent;
   border-radius: 50%;
@@ -987,6 +996,11 @@
   display: grid;
   gap: var(--space-3);
   min-width: 13rem;
+  /* El menú lleva ya cinco entradas y en una pantalla apaisada corta no cabe
+     entero: si se desbordara, la última quedaría fuera de vista sin forma de
+     llegar a ella. Con techo y scroll propio siempre hay salida. */
+  max-height: calc(100svh - 7rem);
+  overflow-y: auto;
   padding: var(--space-4);
   border: 1px solid var(--color-track);
   border-radius: 2px;
@@ -1184,6 +1198,12 @@
  */
 .account-panel__switch {
   justify-self: center;
+  /* Es texto, pero sigue siendo un objetivo táctil: se le da el alto mínimo
+     sin cambiar su aspecto, porque un segundo botón con el mismo peso que el
+     de enviar haría dudar de cuál envía el formulario. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
   border: none;
   padding: 0;
   background: none;
@@ -1225,6 +1245,119 @@
  * lea como una frase y no como una salida de terminal.
  */
 .account-panel__notice {
+  max-width: 46ch;
+  margin: 0;
+  color: var(--color-alarm);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+/* ------------------------------------------------------------- tienda -- */
+
+.shop-panel {
+  display: grid;
+  gap: 0.75rem;
+}
+
+/*
+ * Mientras consulta, el panel entero está oculto con el atributo `hidden`, que
+ * el `display: grid` de arriba se saldría: aquí se lo devuelve al navegador.
+ */
+.shop-panel[hidden] {
+  display: none;
+}
+
+.shop-panel__heading {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/*
+ * El catálogo. Cada objeto es una fila con su nombre, su precio y su botón,
+ * para que se pueda comparar de un vistazo sin ir yendo y viniendo.
+ */
+.shop-panel__items {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shop-panel__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--color-dim);
+  background: color-mix(in srgb, var(--color-dark) 70%, transparent);
+}
+
+.shop-panel__name {
+  min-width: 0;
+  font-size: 0.85rem;
+  color: var(--color-light);
+}
+
+.shop-panel__price {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  color: var(--color-dim);
+}
+
+/*
+ * «Comprado». En versalitas y sin botón: lo que ya se tiene no se vuelve a
+ * comprar, y la marca en texto se lee antes que cualquier estado de un botón.
+ */
+.shop-panel__owned {
+  flex: none;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-dim);
+}
+
+.shop-panel__buy {
+  flex: none;
+}
+
+.shop-panel__buy:disabled {
+  opacity: 0.6;
+}
+
+.shop-panel__error {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+}
+
+.shop-panel__hint {
+  max-width: 46ch;
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--color-dim);
+}
+
+/*
+ * El saldo. En mono porque es una cifra y se quiere leer como tal.
+ */
+.shop-panel__balance {
+  margin: 0;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.8rem;
+  color: var(--color-dim);
+}
+
+/*
+ * Mismo criterio que el aviso de la cuenta: el cuerpo de la aplicación y no
+ * en mono, para que un mensaje largo se lea como una frase.
+ */
+.shop-panel__notice {
   max-width: 46ch;
   margin: 0;
   color: var(--color-alarm);
@@ -1476,4 +1609,54 @@
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/*
+ * Movimiento reducido a mano, desde el menú de ajustes.
+ *
+ * Es el mismo corte que la preferencia del sistema, de arriba, escrito como
+ * clase en la raíz: quien lo pide desde el menú quiere exactamente lo mismo
+ * que quien lo pide en el sistema, y las dos formas tienen que poder convivir
+ * —si las hay dos, se aplican las dos—. La clase va en `<html>` y no en la
+ * pantalla de partida para que el ajuste siga vigente después de morir o al
+ * volver a empezar: un cambio de movimiento no se pierde en cada partida.
+ *
+ * Las dos animaciones con estado propio también se bajan a la versión de
+ * sistema, para que queden paradas y visibles y no a 0.01 ms de empezar.
+ */
+html.motion-reduced *,
+html.motion-reduced *::before,
+html.motion-reduced *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.01ms !important;
+}
+
+html.motion-reduced .stat--critical,
+html.motion-reduced .escalation-overlay__hint {
+  animation: none;
+  opacity: 1;
+}
+
+/*
+ * Doble velocidad, la otra mitad del mismo menú. Los tiempos de transición
+ * salen de los tokens de movimiento y las dos animaciones con bucle llevan el
+ * suyo escrito a mano en su regla, así que aquí se les pone la mitad: no hay
+ * en la interfaz ningún otro sitio donde una duración esté escrita.
+ *
+ * Con movimiento reducido puesto, manda el bloque de arriba: este solo acelera
+ * lo que ya se mueve.
+ */
+html.motion-fast {
+  --motion-quick: 80ms ease;
+  --motion-slow: 210ms ease;
+}
+
+html.motion-fast .stat--critical {
+  animation-duration: 0.9s;
+}
+
+html.motion-fast .escalation-overlay__hint {
+  animation-duration: 1.2s;
 }

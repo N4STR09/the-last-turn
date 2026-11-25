@@ -144,6 +144,17 @@ export function useGameSession(
   // partida cuyo contador no baja.
   const pending = useRef<GameReport[]>([]);
   const signedIn = useRef(false);
+  // Espejo de `signedIn` para pintar. El ref manda en la lógica —`flushReports`
+  // lo lee sin esperar a un render— y por eso no puede quedarse solo en estado;
+  // el estado, al revés, es lo único que vuelve a pintar, y el menú de ajustes
+  // lo necesita para elegir entre «Perfil» e «Iniciar sesión». Los dos van
+  // juntos en `setSignedIn` para que el menú y la cola de informes no puedan
+  // decir cada uno una cosa.
+  const [insideAccount, setInsideAccount] = useState(false);
+  const setSignedIn = useCallback((value: boolean) => {
+    signedIn.current = value;
+    setInsideAccount(value);
+  }, []);
   const reported = useRef<FinishedGameState | null>(null);
 
   const showDifficulty = useCallback(() => {
@@ -291,16 +302,37 @@ export function useGameSession(
   const accountChanged = useCallback(
     async (autenticado: boolean) => {
       if (!autenticado) {
-        signedIn.current = false;
+        setSignedIn(false);
         pending.current = [];
         return;
       }
 
-      signedIn.current = true;
+      setSignedIn(true);
       await flushReports();
       mergeBest(await fetchStats());
     },
-    [flushReports, mergeBest],
+    [flushReports, mergeBest, setSignedIn],
+  );
+
+  // Lo que la hoja de cuenta —la de dentro de la partida— avisa cuando cambia
+  // quién está dentro.
+  //
+  // Reenvía todo salvo un caso: el `false` de arranque del panel. Ese aviso no
+  // es una salida, es el estado inicial que el panel lee al montar su consulta
+  // de sesión, y aquí el estado inicial ya se sabe. Reenviarlo tiraría la cola
+  // de invitado justo cuando alguien abre la hoja para entrar, que es el
+  // momento en el que esa cola hace falta: lo jugado de invitado se sube al
+  // entrar, no se pierde al preguntar. La salida de verdad llega después de
+  // haber estado dentro, con `signedIn` ya puesto, y esa sí se reenvía y tira
+  // la cola como siempre.
+  const accountSheetChange = useCallback(
+    (autenticado: boolean) => {
+      if (!autenticado && !signedIn.current) {
+        return;
+      }
+      void accountChanged(autenticado);
+    },
+    [accountChanged],
   );
 
   // La marca del servidor, al abrir.
@@ -316,7 +348,7 @@ export function useGameSession(
         return;
       }
       if (summary !== null) {
-        signedIn.current = true;
+        setSignedIn(true);
       }
       mergeBest(summary);
       void flushReports();
@@ -325,7 +357,7 @@ export function useGameSession(
     return () => {
       alive = false;
     };
-  }, [flushReports, mergeBest]);
+  }, [flushReports, mergeBest, setSignedIn]);
 
   // Subir la partida al morir.
   //
@@ -386,17 +418,22 @@ export function useGameSession(
       overlay: state.overlay,
       seedLabel: encodeSeed(seed),
       rules: createRulesViewModel(state.game),
+      signedIn: insideAccount,
       open: () => {
         dispatch({ type: 'open-settings' });
       },
       showRules: () => {
         dispatch({ type: 'open-rules' });
       },
+      openAccount: () => {
+        dispatch({ type: 'open-account' });
+      },
       close: () => {
         dispatch({ type: 'close-overlay' });
       },
+      onAccountSessionChange: accountSheetChange,
     };
-  }, [seed, state]);
+  }, [accountSheetChange, insideAccount, seed, state]);
 
   const gameModel = useMemo(() => {
     if (state.screen !== 'playing') {

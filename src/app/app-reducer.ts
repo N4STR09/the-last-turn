@@ -130,6 +130,23 @@ export function appReducer(state: AppState, command: AppCommand): AppState {
         overlay: 'rules',
       };
     }
+    case 'open-account': {
+      // Mismas condiciones que las otras dos capas. Se puede pedir con el menú
+      // puesto, porque así es como se llega: la hoja sustituye al menú en vez
+      // de apilarse encima, igual que la de reglas.
+      if (
+        state.screen !== 'playing' ||
+        state.threatNotice !== null ||
+        state.surrenderPending
+      ) {
+        return state;
+      }
+
+      return {
+        ...state,
+        overlay: 'account',
+      };
+    }
     case 'close-overlay': {
       if (state.screen !== 'playing' || state.overlay === 'none') {
         return state;

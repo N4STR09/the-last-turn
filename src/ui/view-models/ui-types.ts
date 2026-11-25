@@ -144,16 +144,17 @@ export interface RulesViewModel {
 /**
  * Qué está puesto encima de la partida.
  *
- * Un solo campo y no dos banderas, porque las dos opciones son excluyentes por
- * construcción: el menú y la hoja no pueden estar abiertos a la vez, y con un par
- * de banderas sí se podría. `none` es el estado normal de juego.
+ * Un solo campo y no varias banderas, porque las opciones son excluyentes por
+ * construcción: el menú, la hoja de reglas y la hoja de cuenta no pueden estar
+ * abiertas a la vez, y con un par de banderas sí se podría. `none` es el estado
+ * normal de juego.
  *
  * Vive en el estado de la aplicación y no en el del juego porque su único trabajo
  * es congelar la partida mientras está puesto, por lo mismo que la confirmación de
  * rendirse: un atajo que se dispara por detrás de un overlay es un turno que el
  * jugador no eligió gastar.
  */
-export type Overlay = 'none' | 'settings' | 'rules';
+export type Overlay = 'none' | 'settings' | 'rules' | 'account';
 
 export interface GameViewModel {
   readonly difficulty: Difficulty;

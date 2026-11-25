@@ -26,10 +26,10 @@ export type AppState =
        */
       readonly surrenderPending: boolean;
       /**
-       * Menú de ajustes o hoja de reglas puestos encima. La partida está congelada
-       * mientras alguno lo esté, por lo mismo que la confirmación de rendirse: un
-       * atajo que se dispara por detrás de un overlay es un turno que el jugador no
-       * eligió gastar.
+       * Menú de ajustes, hoja de reglas o hoja de cuenta puestos encima. La
+       * partida está congelada mientras alguno lo esté, por lo mismo que la
+       * confirmación de rendirse: un atajo que se dispara por detrás de un
+       * overlay es un turno que el jugador no eligió gastar.
        */
       readonly overlay: Overlay;
     }
@@ -54,6 +54,7 @@ export type AppCommand =
   | { readonly type: 'surrender' }
   | { readonly type: 'open-settings' }
   | { readonly type: 'open-rules' }
+  | { readonly type: 'open-account' }
   | { readonly type: 'close-overlay' }
   | { readonly type: 'restart' };
 

@@ -1,11 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   SettingsMenu,
   type SettingsControl,
 } from '../components/SettingsMenu';
+import { setMotionFast, setMotionReduced } from '../../app/motion';
 import type { RulesViewModel } from '../view-models/ui-types';
 
 const rules: RulesViewModel = {
@@ -31,9 +32,12 @@ function createSettings(
     overlay: 'none',
     seedLabel: 'K3F9Z',
     rules,
+    signedIn: false,
     open: vi.fn(),
     showRules: vi.fn(),
+    openAccount: vi.fn(),
     close: vi.fn(),
+    onAccountSessionChange: vi.fn(),
     ...overrides,
   };
 }
@@ -41,6 +45,15 @@ function createSettings(
 function renderMenu(settings: SettingsControl) {
   return render(<SettingsMenu settings={settings} />);
 }
+
+afterEach(() => {
+  // Los ajustes de movimiento son de la página entera y no del menú, así que
+  // se quedan puestos en la raíz: se quitan aquí para que un test no arrastre
+  // el suyo al siguiente.
+  setMotionReduced(false);
+  setMotionFast(false);
+  vi.unstubAllEnvs();
+});
 
 describe('SettingsMenu', () => {
   it('deja el engranaje a la vista y el menú cerrado', () => {
@@ -146,5 +159,146 @@ describe('SettingsMenu', () => {
     });
 
     expect(settings.close).not.toHaveBeenCalled();
+  });
+
+  it('ofrece el movimiento reducido y lo aplica en la raíz', async () => {
+    const user = userEvent.setup();
+    renderMenu(createSettings({ overlay: 'settings' }));
+
+    const toggle = screen.getByRole('button', { name: 'Movimiento reducido' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+
+    await user.click(toggle);
+
+    expect(
+      screen.getByRole('button', { name: 'Movimiento reducido' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(document.documentElement.classList.contains('motion-reduced')).toBe(
+      true,
+    );
+
+    await user.click(
+      screen.getByRole('button', { name: 'Movimiento reducido' }),
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Movimiento reducido' }),
+    ).toHaveAttribute('aria-pressed', 'false');
+    expect(document.documentElement.classList.contains('motion-reduced')).toBe(
+      false,
+    );
+  });
+
+  it('ofrece la doble velocidad por separado del movimiento reducido', async () => {
+    const user = userEvent.setup();
+    renderMenu(createSettings({ overlay: 'settings' }));
+
+    const toggle = screen.getByRole('button', { name: 'Velocidad x2' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+
+    await user.click(toggle);
+
+    expect(
+      screen.getByRole('button', { name: 'Velocidad x2' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(document.documentElement.classList.contains('motion-fast')).toBe(
+      true,
+    );
+    expect(document.documentElement.classList.contains('motion-reduced')).toBe(
+      false,
+    );
+  });
+
+  it('ofrece el perfil cuando hay alguien dentro', async () => {
+    vi.stubEnv('VITE_ACCOUNTS', '1');
+    const user = userEvent.setup();
+    const settings = createSettings({
+      overlay: 'settings',
+      signedIn: true,
+    });
+    renderMenu(settings);
+
+    await user.click(screen.getByRole('button', { name: 'Perfil' }));
+
+    expect(settings.openAccount).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: 'Iniciar sesión' })).toBeNull();
+  });
+
+  it('ofrece el inicio de sesión cuando no lo hay', () => {
+    vi.stubEnv('VITE_ACCOUNTS', '1');
+    renderMenu(createSettings({ overlay: 'settings' }));
+
+    expect(
+      screen.getByRole('button', { name: 'Iniciar sesión' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Perfil' })).toBeNull();
+  });
+
+  it('no ofrece la cuenta donde no la hay', () => {
+    vi.stubEnv('VITE_ACCOUNTS', '');
+    vi.stubEnv('VITE_GOOGLE_CLIENT_ID', '');
+    renderMenu(createSettings({ overlay: 'settings', signedIn: true }));
+
+    expect(screen.queryByRole('button', { name: 'Perfil' })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Iniciar sesión' }),
+    ).toBeNull();
+  });
+
+  it('es un grupo etiquetado, para que el lector salte al panel entero', () => {
+    renderMenu(createSettings({ overlay: 'settings' }));
+
+    const panel = screen.getByRole('group', { name: 'Ajustes' });
+
+    expect(panel).toHaveAttribute('id', 'settings-menu');
+    expect(screen.getByText('Ajustes')).toHaveAttribute(
+      'id',
+      'settings-heading',
+    );
+  });
+
+  it('no roba el foco al montar, que sigue en el encabezado de la pantalla', () => {
+    renderMenu(createSettings());
+
+    expect(screen.getByRole('button', { name: 'Ajustes' })).not.toHaveFocus();
+  });
+
+  it('devuelve el foco al engranaje cuando el menú se cierra', () => {
+    const { rerender } = renderMenu(createSettings({ overlay: 'settings' }));
+    // El foco queda en una entrada, como si se hubiera llegado con el
+    // tabulador. Ese botón va a desaparecer con el panel.
+    screen.getByRole('button', { name: 'Información' }).focus();
+
+    rerender(<SettingsMenu settings={createSettings({ overlay: 'none' })} />);
+
+    expect(screen.getByRole('button', { name: 'Ajustes' })).toHaveFocus();
+  });
+
+  it('devuelve el foco al engranaje al cerrar una hoja abierta desde el menú', () => {
+    const { rerender } = renderMenu(createSettings({ overlay: 'rules' }));
+    // El foco está dentro de la hoja, que es quien lo recibe al abrirse. La
+    // hoja no la pinta este componente, así que se representa con un elemento
+    // suelto que va a seguir existiendo al cerrar.
+    const dentroDeLaHoja = document.createElement('button');
+    document.body.append(dentroDeLaHoja);
+    dentroDeLaHoja.focus();
+
+    try {
+      rerender(<SettingsMenu settings={createSettings({ overlay: 'none' })} />);
+
+      expect(screen.getByRole('button', { name: 'Ajustes' })).toHaveFocus();
+    } finally {
+      dentroDeLaHoja.remove();
+    }
+  });
+
+  it('no toca el foco al pasar de una capa a otra, que es de la siguiente', () => {
+    const { rerender } = renderMenu(createSettings({ overlay: 'settings' }));
+
+    rerender(<SettingsMenu settings={createSettings({ overlay: 'rules' })} />);
+
+    // Quien recibe el foco al abrirse la hoja es la hoja, con su propio
+    // efecto: si el menú se lo devolviera al engranaje, se lo quitaría.
+    expect(screen.getByRole('button', { name: 'Ajustes' })).not.toHaveFocus();
   });
 });

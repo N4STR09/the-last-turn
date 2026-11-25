@@ -348,6 +348,21 @@ describe('ajustes y ayuda', () => {
     });
   });
 
+  it('levanta la hoja de cuenta en vez del menú que la pide', () => {
+    const state = playingState(
+      createGame('normal'),
+      null,
+      null,
+      false,
+      'settings',
+    );
+
+    expect(appReducer(state, { type: 'open-account' })).toEqual({
+      ...state,
+      overlay: 'account',
+    });
+  });
+
   it('cambia el menú por la hoja en vez de apilarla', () => {
     const state = playingState(
       createGame('normal'),
@@ -385,6 +400,7 @@ describe('ajustes y ayuda', () => {
     for (const state of [withNotice, asking]) {
       expect(appReducer(state, { type: 'open-settings' })).toBe(state);
       expect(appReducer(state, { type: 'open-rules' })).toBe(state);
+      expect(appReducer(state, { type: 'open-account' })).toBe(state);
     }
   });
 
@@ -430,6 +446,7 @@ describe('ajustes y ayuda', () => {
     for (const state of [initial, difficulty, dead]) {
       expect(appReducer(state, { type: 'open-settings' })).toBe(state);
       expect(appReducer(state, { type: 'open-rules' })).toBe(state);
+      expect(appReducer(state, { type: 'open-account' })).toBe(state);
       expect(appReducer(state, { type: 'close-overlay' })).toBe(state);
     }
   });

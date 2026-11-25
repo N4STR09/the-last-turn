@@ -1,4 +1,5 @@
 import type { GameAction } from '../../game/types';
+import { AccountOverlay } from '../components/AccountOverlay';
 import { ActionGrid } from '../components/ActionGrid';
 import { ResolutionPanel } from '../components/ResolutionPanel';
 import { ResourcePanel } from '../components/ResourcePanel';
@@ -94,6 +95,12 @@ export function GameScreen({ model, settings, onAction, surrender }: GameScreenP
       />
       {settings.overlay === 'rules' ? (
         <RulesOverlay model={settings.rules} onClose={settings.close} />
+      ) : null}
+      {settings.overlay === 'account' ? (
+        <AccountOverlay
+          onClose={settings.close}
+          onSessionChange={settings.onAccountSessionChange}
+        />
       ) : null}
     </main>
   );

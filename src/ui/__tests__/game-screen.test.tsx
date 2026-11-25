@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { SettingsControl } from '../components/SettingsMenu';
 import type { SurrenderControl } from '../components/SurrenderControl';
@@ -80,7 +80,7 @@ const model: GameViewModel = {
       {
         type: 'storm',
         headline: 'Tormenta',
-        description: 'Tu refugio ha resultado dañado por las fuertes tormentas!',
+        description: '¡Tu refugio ha resultado dañado por las fuertes tormentas!',
       },
     ],
   },
@@ -128,12 +128,20 @@ function createSettings(
     overlay: 'none',
     seedLabel: 'K3F9Z',
     rules,
+    signedIn: false,
     open: vi.fn(),
     showRules: vi.fn(),
+    openAccount: vi.fn(),
     close: vi.fn(),
+    onAccountSessionChange: vi.fn(),
     ...overrides,
   };
 }
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+});
 
 /**
  * Los props de la pantalla y, además, trozos sueltos del modelo. Se mezclan sobre
@@ -692,6 +700,25 @@ describe('GameScreen', () => {
     expect(screen.getByRole('dialog', { name: rules.title })).toBeInTheDocument();
     // El menú se sustituye, no se apila: dos capas encima del mismo tablero
     // serían dos cosas que cerrar y un jugador sin saber cuál.
+    expect(screen.queryByText('Ajustes')).toBeNull();
+  });
+
+  it('levanta la hoja de cuenta con el panel de dentro', async () => {
+    vi.stubEnv('VITE_ACCOUNTS', '1');
+    vi.stubGlobal('fetch', async () =>
+      ({
+        ok: true,
+        status: 200,
+        json: async () => ({ autenticado: false }),
+      }) as unknown as Response,
+    );
+
+    renderScreen({ settings: createSettings({ overlay: 'account' }) });
+
+    expect(screen.getByRole('dialog', { name: 'Cuenta' })).toBeInTheDocument();
+    // El panel consulta su sesión antes de enseñar nada: la hoja no pinta un
+    // acceso que aún no sabe si hace falta, igual que en la portada.
+    expect(await screen.findByRole('button', { name: 'Entrar' })).toBeInTheDocument();
     expect(screen.queryByText('Ajustes')).toBeNull();
   });
 

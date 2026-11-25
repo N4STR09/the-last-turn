@@ -1,5 +1,12 @@
 import { StrictMode } from 'react';
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -279,8 +286,30 @@ describe('useGameSession', () => {
 
     await user.click(within(dialog).getByRole('button', { name: 'Cerrar' }));
     expect(screen.queryByRole('dialog')).toBeNull();
+    // La hoja se fue con el foco dentro, y el foco no se queda en el vacío:
+    // vuelve al engranaje, el primer control de la página y el sitio del que
+    // se había salido.
+    expect(screen.getByRole('button', { name: 'Ajustes' })).toHaveFocus();
 
     expect(resolveTurnMock).not.toHaveBeenCalled();
+  });
+
+  it('devuelve el foco al engranaje al cerrar el menú con Escape', async () => {
+    const user = userEvent.setup();
+    render(<SessionHarness options={{ randomInt: () => 4 }} />);
+
+    await user.click(screen.getByRole('button', { name: 'Comenzar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+    await user.click(screen.getByRole('button', { name: 'Ajustes' }));
+
+    // El foco queda en una entrada del menú, como si se hubiera llegado con el
+    // tabulador: ese botón desaparece al cerrar.
+    const entrada = screen.getByRole('button', { name: 'Información' });
+    entrada.focus();
+    fireEvent.keyDown(entrada, { key: 'Escape' });
+
+    expect(screen.queryByText('Ajustes')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Ajustes' })).toHaveFocus();
   });
 
   it('congela la partida con el menú puesto, que es un desplegable pequeño', async () => {
@@ -561,6 +590,7 @@ describe('las estadísticas de la cuenta', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   /**
@@ -815,5 +845,109 @@ describe('las estadísticas de la cuenta', () => {
 
     expect(subidas).toHaveLength(2);
     expect(subidas[1]).toEqual(subidas[0]);
+  });
+
+  it('la hoja de cuenta no tira la cola de invitado al abrirse', async () => {
+    const user = userEvent.setup();
+    const guardada = capturar();
+
+    render(
+      <SessionHarness
+        options={{ randomInt: () => 4 }}
+        onSession={(session) => {
+          guardada.sesion = session;
+        }}
+      />,
+    );
+
+    await waitFor(() => expect(consultas).toBe(1));
+    await asentar();
+
+    await user.click(screen.getByRole('button', { name: 'Comenzar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+    await user.click(screen.getByRole('button', { name: /Rendirse/ }));
+    await user.click(screen.getByRole('button', { name: 'Rendirme' }));
+
+    await asentar();
+    expect(subidas).toEqual([]);
+
+    // Vuelve a jugar: ahora sí hay ajustes con su hoja de cuenta detrás.
+    await user.click(screen.getByRole('button', { name: 'Volver a jugar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+
+    // El panel de la hoja consulta su sesión al montar y no encuentra a nadie.
+    // Ese aviso no es una salida: es el estado inicial, que aquí ya se sabe, y
+    // reenviarlo tiraría lo de invitado justo antes de entrar.
+    await act(async () => {
+      guardada.sesion!.settings!.onAccountSessionChange(false);
+    });
+
+    consulta = cuenta(null);
+    await act(async () => {
+      await guardada.sesion!.accountChanged(true);
+    });
+
+    expect(subidas).toEqual([
+      { turns: 0, level: 0, difficulty: 'normal', seed: expect.any(Number) },
+    ]);
+  });
+
+  it('la hoja de cuenta sí reenvía la salida de alguien que estaba dentro', async () => {
+    const user = userEvent.setup();
+    const guardada = capturar();
+    consulta = cuenta(47);
+
+    render(
+      <SessionHarness
+        options={{ randomInt: () => 4 }}
+        onSession={(session) => {
+          guardada.sesion = session;
+        }}
+      />,
+    );
+
+    await waitFor(() => expect(consultas).toBe(1));
+    await asentar();
+
+    await user.click(screen.getByRole('button', { name: 'Comenzar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+
+    expect(guardada.sesion!.settings!.signedIn).toBe(true);
+
+    await act(async () => {
+      guardada.sesion!.settings!.onAccountSessionChange(false);
+    });
+
+    // La salida de verdad llega con la sesión puesta, y esa sí cuenta: tira la
+    // cola de la cuenta que se va y baja el aviso que pinta el menú.
+    expect(guardada.sesion!.settings!.signedIn).toBe(false);
+  });
+
+  it('levanta la hoja de cuenta desde el menú de ajustes', async () => {
+    vi.stubEnv('VITE_ACCOUNTS', '1');
+    vi.stubEnv('VITE_GOOGLE_CLIENT_ID', '');
+    const user = userEvent.setup();
+
+    render(
+      <SessionHarness
+        options={{ randomInt: () => 4 }}
+        onSession={() => undefined}
+      />,
+    );
+
+    await waitFor(() => expect(consultas).toBe(1));
+    await asentar();
+
+    await user.click(screen.getByRole('button', { name: 'Comenzar' }));
+    await user.click(screen.getByRole('button', { name: 'Jugar en Normal' }));
+    await user.click(screen.getByRole('button', { name: 'Ajustes' }));
+
+    // Sin sesión, la entrada dice lo que hace falta: entrar.
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
+
+    expect(screen.getByRole('dialog', { name: 'Cuenta' })).toBeInTheDocument();
+    // El menú se sustituye, igual que con la ayuda: dos capas encima serían
+    // dos cosas que cerrar.
+    expect(screen.queryByText('Ajustes')).toBeNull();
   });
 });
