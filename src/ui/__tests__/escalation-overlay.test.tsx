@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { EscalationOverlay } from '../components/EscalationOverlay';
@@ -49,6 +49,22 @@ describe('EscalationOverlay', () => {
     );
 
     expect(screen.getByRole('dialog')).toHaveFocus();
+  });
+
+  it('no deja que el tabulador salga al juego congelado de detrás', () => {
+    render(
+      <EscalationOverlay model={createModel()} onContinue={vi.fn()} />,
+    );
+    const dialog = screen.getByRole('dialog');
+
+    // El aviso es modal y dentro no hay ni un control: el diálogo es el único
+    // destino, en las dos direcciones.
+    dialog.focus();
+    fireEvent.keyDown(dialog, { key: 'Tab' });
+    expect(dialog).toHaveFocus();
+
+    fireEvent.keyDown(dialog, { key: 'Tab', shiftKey: true });
+    expect(dialog).toHaveFocus();
   });
 
   it('continúa con un click en el fondo', async () => {

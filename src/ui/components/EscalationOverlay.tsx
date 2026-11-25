@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 
 import type { ThreatNoticeViewModel } from '../view-models/ui-types';
 
@@ -39,6 +39,29 @@ export function EscalationOverlay({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onContinue]);
 
+  /*
+   * El tabulador no sale de aquí.
+   *
+   * El aviso es modal —`aria-modal` lo promete— y dentro no hay ni un solo
+   * control: se descarta con click o con Enter, y el propio diálogo es el
+   * único destino al que se puede volver. Sin este manejador, un tabulador
+   * saltaría al juego congelado de detrás, que es justo lo que la promesa de
+   * `aria-modal` dice que no puede pasar, y el foco caería en una partida que
+   * no acepta nada.
+   *
+   * Mismo criterio que el trap de los otros diálogos: el manejador vive en el
+   * diálogo, así que `currentTarget` es él mismo y a él vuelve, en las dos
+   * direcciones.
+   */
+  function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>): void {
+    if (event.key !== 'Tab') {
+      return;
+    }
+
+    event.preventDefault();
+    dialogRef.current?.focus();
+  }
+
   return (
     // El click vive en la capa exterior y los clicks interiores suben hasta
     // ella: así "click en cualquier sitio" incluye el propio diálogo. El
@@ -54,6 +77,7 @@ export function EscalationOverlay({
         aria-labelledby="escalation-message"
         aria-modal="true"
         className="escalation-overlay__dialog"
+        onKeyDown={handleKeyDown}
         ref={dialogRef}
         role="dialog"
         tabIndex={-1}
