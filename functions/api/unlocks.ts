@@ -4,18 +4,25 @@ import { jsonResponse, readSessionToken } from '../_lib/http';
 import { readProgression } from '../_lib/unlocks';
 
 /**
- * La colección de la cuenta: monedas, personajes y logros.
+ * La colección de la cuenta: monedas, personajes, logros y objetos de la tienda.
  *
- * Solo lectura, y una razón: la única forma de escribir progresión es acabar
- * una partida, y eso entra por `POST /api/stats`, que es donde están validados
- * los hechos y donde está el freno de ritmo. Si esta ruta aceptara un POST,
- * habría dos caminos que mantener en sincronía y dos sitios donde olvidar una
+ * Solo lectura, y una razón: los dos caminos que escriben progresión están
+ * validados y probados fuera de aquí —acabar una partida entra por
+ * `POST /api/stats`, con los hechos comprobados y el freno de ritmo, y comprar
+ * un objeto entra por `POST /api/shop/purchase`, con el catálogo cerrado y el
+ * saldo comprobado en la propia sentencia—. Si esta ruta aceptara un POST, habría
+ * tres caminos que mantener en sincronía y dos sitios donde olvidar una
  * comprobación.
  *
  * Responde 200 siempre, con la misma forma que `GET /api/auth/session`:
  *
- * - con sesión: `{ autenticado: true, coins, unlocks, achievements }`
+ * - con sesión: `{ autenticado: true, coins, unlocks, achievements, balance, objects }`
  * - sin sesión: `{ autenticado: false }`
+ *
+ * `balance` es el saldo restante —monedas ganadas menos lo ya gastado en la
+ * tienda— y `objects` son los objetos comprados; los dos los calcula
+ * `_lib/unlocks.ts` al leer la colección y esta ruta solo los despacha con el
+ * resto.
  *
  * Un 401 aquí convertiría «todavía no he iniciado sesión» en un fallo que la
  * interfaz tendría que interpretar, y no hay nada que interpretar: la pregunta

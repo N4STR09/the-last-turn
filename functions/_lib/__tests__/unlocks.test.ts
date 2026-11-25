@@ -8,12 +8,15 @@ import type { GameReport, StatsSummary } from '../stats';
 import {
   COIN_CAP,
   REPORT_LIMIT,
+  SHOP_CATALOG,
   acceptReport,
   awardGame,
   coinsFor,
   dueAchievements,
   dueCharacters,
   gameKeyFor,
+  priceOf,
+  purchaseObject,
   readProgression,
   reportBucket,
   withinReportBudget,
@@ -350,6 +353,8 @@ describe('awardGame', () => {
       coins: 2,
       unlocks: ['explorador'],
       achievements: ['primera-partida'],
+      balance: 2,
+      objects: [],
     });
   });
 
@@ -383,6 +388,8 @@ describe('awardGame', () => {
       coins: 2 + 11,
       unlocks: ['explorador', 'veterano'],
       achievements: ['primera-partida', 'turno-100', 'turno-50'],
+      balance: 13,
+      objects: [],
     });
   });
 
@@ -397,6 +404,8 @@ describe('awardGame', () => {
       coins: 1,
       unlocks: ['explorador'],
       achievements: [],
+      balance: 1,
+      objects: [],
     });
   });
 
@@ -421,6 +430,8 @@ describe('readProgression', () => {
       coins: 0,
       unlocks: [],
       achievements: [],
+      balance: 0,
+      objects: [],
     });
   });
 
@@ -429,6 +440,8 @@ describe('readProgression', () => {
       coins: 0,
       unlocks: [],
       achievements: [],
+      balance: 0,
+      objects: [],
     });
   });
 
@@ -449,6 +462,8 @@ describe('readProgression', () => {
       coins: 14,
       unlocks: ['explorador', 'insomne', 'veterano'],
       achievements: ['agonia-50', 'primera-partida', 'turno-100', 'turno-50'],
+      balance: 14,
+      objects: [],
     });
   });
 
@@ -464,5 +479,156 @@ describe('readProgression', () => {
       ),
     ).rejects.toThrow();
     expect(await countRows(database, 'player_unlocks')).toBe(0);
+  });
+});
+
+/**
+ * Pone `cantidad` monedas de prueba en una cuenta, sin pasar por ninguna
+ * partida. La tienda necesita un saldo que normalmente deja un informe, y aquí
+ * lo que se prueba es la compra, no la fórmula de monedas —esa tiene sus
+ * propias pruebas arriba—.
+ */
+async function darMonedas(playerId: string, cantidad: number): Promise<void> {
+  const values = Array.from({ length: cantidad }, () => '(?, ?, ?, 1)').join(', ');
+  const parameters = Array.from({ length: cantidad }, (_empty, index) => [
+    playerId,
+    'moneda',
+    `moneda-prueba-${index}`,
+  ]).flat();
+  await database.run(
+    `INSERT OR IGNORE INTO player_unlocks (player_id, kind, id, obtained_at) VALUES ${values}`,
+    parameters,
+  );
+}
+
+describe('el catálogo de la tienda', () => {
+  it('es una lista cerrada con los seis precios aprobados', () => {
+    expect(SHOP_CATALOG).toEqual({
+      ceniza: 10,
+      superviviente: 15,
+      ambar: 20,
+      oxido: 25,
+      'calavera-doble': 30,
+      nomada: 40,
+    });
+  });
+
+  it('priceOf da el precio de lo que está en el catálogo', () => {
+    expect(priceOf('ceniza')).toBe(10);
+    expect(priceOf('calavera-doble')).toBe(30);
+  });
+
+  it('priceOf devuelve null de lo que no está, incluidas claves del prototipo', () => {
+    expect(priceOf('inventado')).toBeNull();
+    // `toString` no es una clave del catálogo, pero su valor tampoco es
+    // `undefined`: viene de `Object.prototype`. Mirar «está definido» daría
+    // una función como precio en lugar de no dar nada.
+    expect(priceOf('toString')).toBeNull();
+    expect(priceOf('constructor')).toBeNull();
+  });
+});
+
+describe('purchaseObject', () => {
+  it('escribe el objeto cuando el saldo llega', async () => {
+    await darMonedas(JUGADOR, 10);
+
+    expect(await purchaseObject(database, JUGADOR, 'ceniza')).toBe(true);
+
+    const progression = await readProgression(database, JUGADOR);
+    expect(progression.objects).toEqual(['ceniza']);
+    expect(progression.coins).toBe(10);
+    expect(progression.balance).toBe(0);
+    expect(await countRows(database, 'player_unlocks', "WHERE kind = 'objeto'")).toBe(1);
+  });
+
+  it('no escribe nada cuando el saldo no llega', async () => {
+    await darMonedas(JUGADOR, 9);
+
+    expect(await purchaseObject(database, JUGADOR, 'ceniza')).toBe(false);
+
+    const progression = await readProgression(database, JUGADOR);
+    expect(progression.objects).toEqual([]);
+    expect(progression.balance).toBe(9);
+    expect(await countRows(database, 'player_unlocks', "WHERE kind = 'objeto'")).toBe(0);
+  });
+
+  it('repetir la compra con el saldo ya gastado no escribe ni descuenta dos veces', async () => {
+    await darMonedas(JUGADOR, 10);
+
+    expect(await purchaseObject(database, JUGADOR, 'ceniza')).toBe(true);
+    expect(await purchaseObject(database, JUGADOR, 'ceniza')).toBe(false);
+
+    const progression = await readProgression(database, JUGADOR);
+    expect(progression.objects).toEqual(['ceniza']);
+    expect(progression.balance).toBe(0);
+    expect(await countRows(database, 'player_unlocks', "WHERE kind = 'objeto'")).toBe(1);
+  });
+
+  it('la repetición con saldo todavía disponible choca con la clave y no duplica', async () => {
+    // El `OR IGNORE` es el otro lado de la idempotencia: cuando la comprobación
+    // de saldo pasa pero la fila ya está, la sentencia choca con la clave
+    // primaria y no escribe nada.
+    await darMonedas(JUGADOR, 20);
+    await purchaseObject(database, JUGADOR, 'ceniza');
+
+    expect(await purchaseObject(database, JUGADOR, 'ceniza')).toBe(false);
+
+    expect(await countRows(database, 'player_unlocks', "WHERE kind = 'objeto'")).toBe(1);
+    expect((await readProgression(database, JUGADOR)).balance).toBe(10);
+  });
+
+  it('la segunda compra ya ve lo que gastó la primera', async () => {
+    // La suma de lo gastado vive dentro de la sentencia que inserta: con 25
+    // monedas caben ceniza (10) y superviviente (15), y un tercero se queda
+    // fuera porque el saldo de la comprobación ya descuenta a los dos.
+    await darMonedas(JUGADOR, 25);
+
+    expect(await purchaseObject(database, JUGADOR, 'ceniza')).toBe(true);
+    expect(await purchaseObject(database, JUGADOR, 'superviviente')).toBe(true);
+    expect(await purchaseObject(database, JUGADOR, 'oxido')).toBe(false);
+
+    const progression = await readProgression(database, JUGADOR);
+    expect(progression.objects).toEqual(['ceniza', 'superviviente']);
+    expect(progression.balance).toBe(0);
+  });
+
+  it('un id fuera del catálogo no toca la base', async () => {
+    expect(await purchaseObject(database, JUGADOR, 'inventado')).toBe(false);
+    expect(await countRows(database, 'player_unlocks')).toBe(0);
+  });
+});
+
+describe('readProgression con la tienda', () => {
+  it('el saldo resta los objetos comprados a las monedas ganadas', async () => {
+    await darMonedas(JUGADOR, 30);
+    await purchaseObject(database, JUGADOR, 'ambar');
+
+    expect(await readProgression(database, JUGADOR)).toEqual({
+      coins: 30,
+      unlocks: [],
+      achievements: [],
+      balance: 10,
+      objects: ['ambar'],
+    });
+  });
+
+  it('una fila de objeto fuera del catálogo no descuenta nada', async () => {
+    // Solo se llega aquí escribiendo a mano, fuera de la ruta de la tienda: la
+    // ruta solo inserta ids del catálogo. Un precio desconocido se valora en
+    // cero, igual en la suma del cliente que en la sentencia del servidor.
+    await darMonedas(JUGADOR, 5);
+    await database.run(
+      `INSERT INTO player_unlocks (player_id, kind, id, obtained_at)
+       VALUES (?, 'objeto', 'fuera-del-catalogo', 1)`,
+      [JUGADOR],
+    );
+
+    expect(await readProgression(database, JUGADOR)).toEqual({
+      coins: 5,
+      unlocks: [],
+      achievements: [],
+      balance: 5,
+      objects: ['fuera-del-catalogo'],
+    });
   });
 });

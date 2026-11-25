@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { DifficultyScreen } from '../screens/DifficultyScreen';
 import { StartScreen } from '../screens/StartScreen';
@@ -41,6 +41,59 @@ describe('StartScreen', () => {
     await user.click(screen.getByRole('button', { name: 'Comenzar' }));
 
     expect(onBegin).toHaveBeenCalledOnce();
+  });
+});
+
+describe('StartScreen con tienda', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it('monta la tienda bajo la cuenta cuando el despliegue tiene cuentas', async () => {
+    vi.stubEnv('VITE_ACCOUNTS', '1');
+    const consultas: string[] = [];
+    vi.stubGlobal('fetch', (input: unknown) => {
+      consultas.push(String(input));
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => ({ autenticado: false }),
+      } as Response);
+    });
+
+    const { container } = render(<StartScreen onBegin={vi.fn()} />);
+
+    // El panel existe desde el montaje, pero oculto mientras consulta: se
+    // asoma cuando `/api/unlocks` contesta que no hay nadie dentro.
+    const panel = container.querySelector('.shop-panel');
+    expect(panel).not.toBeNull();
+    expect(panel).not.toBeVisible();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('complementary', { name: 'Tienda' }),
+      ).toBeVisible(),
+    );
+    expect(consultas).toContain('/api/unlocks');
+  });
+
+  it('no monta la tienda cuando no hay cuentas', async () => {
+    vi.stubEnv('VITE_ACCOUNTS', '');
+    vi.stubEnv('VITE_GOOGLE_CLIENT_ID', '');
+    const consultas: string[] = [];
+    vi.stubGlobal('fetch', (input: unknown) => {
+      consultas.push(String(input));
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => ({}),
+      } as Response);
+    });
+
+    const { container } = render(<StartScreen onBegin={vi.fn()} />);
+
+    expect(container.querySelector('.shop-panel')).toBeNull();
+    await waitFor(() => expect(consultas).toEqual([]));
   });
 });
 

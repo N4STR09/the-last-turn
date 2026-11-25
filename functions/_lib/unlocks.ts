@@ -37,14 +37,50 @@ export const REPORT_LIMIT = 60;
 /** Cuanto dura la ventana de ritmo. */
 export const REPORT_WINDOW_MS = 10 * 60 * 1000;
 
-/** Lo que se devuelve al cliente: el saldo y las dos colecciones. */
+/**
+ * El catálogo cerrado de la tienda: el id del objeto y su precio en monedas.
+ *
+ * Este mapa es la única fuente de precios que existe en el proyecto: el servidor
+ * lo usa para comprobar el saldo y para sumar lo ya gastado, y el cliente tiene
+ * su propia copia solo para pintar. Un id que no esté aquí no se puede comprar,
+ * ni aunque venga en el cuerpo de la petición, y un precio que no esté aquí no
+ * se puede pagar: la tienda no admite nada que no venga de esta lista.
+ */
+export const SHOP_CATALOG: Readonly<Record<string, number>> = Object.freeze({
+  ceniza: 10,
+  superviviente: 15,
+  ambar: 20,
+  oxido: 25,
+  'calavera-doble': 30,
+  nomada: 40,
+});
+
+/**
+ * El precio de un objeto del catálogo, o `null` si no está en él.
+ *
+ * Se comprueba el tipo y no el `undefined`, y el motivo es la cadena de
+ * prototipos: un id como `toString` no es una clave propia del mapa, pero su
+ * valor tampoco es `undefined` —viene de `Object.prototype`—, así que mirar
+ * «está definido» daría una función como precio. `typeof` descarta de una vez
+ * las claves ajenas y cualquier valor que no sea un número.
+ */
+export function priceOf(objectId: string): number | null {
+  const price = SHOP_CATALOG[objectId];
+  return typeof price === 'number' ? price : null;
+}
+
+/** Lo que se devuelve al cliente: el saldo, las colecciones y la tienda. */
 export interface ProgressionSummary {
-  /** Saldo en monedas, que es el recuento de filas `moneda`. */
+  /** Monedas ganadas, que es el recuento de filas `moneda`. */
   readonly coins: number;
   /** Personajes desbloqueados, ordenados. */
   readonly unlocks: readonly string[];
   /** Logros ganados, ordenados. */
   readonly achievements: readonly string[];
+  /** Objetos comprados en la tienda, ordenados. */
+  readonly objects: readonly string[];
+  /** Saldo restante: monedas ganadas menos lo ya gastado en la tienda. */
+  readonly balance: number;
 }
 
 /**
@@ -269,11 +305,91 @@ async function insertUnlocks(
 }
 
 /**
+ * La expresión SQL que suma lo ya gastado en la tienda.
+ *
+ * Devuelve la parte de sentencia y sus parámetros, nunca los valores dentro del
+ * texto: el `CASE` traduce cada id del catálogo a su precio con `?` en su sitio,
+ * igual que el resto del archivo. Sumar aquí y no en JavaScript es la pieza que
+ * hace imposible el doble gasto: si el total leído se pasara a la sentencia
+ * como un número, dos peticiones simultáneas leerían el mismo total antes de
+ * escribir ninguna, y las dos entrarían con la misma moneda. Dentro de la propia
+ * sentencia, la segunda ve ya lo que escribió la primera.
+ *
+ * Un objeto con un id que ya no está en el catálogo aporta `NULL` al `CASE`,
+ * `SUM` lo salta y el `COALESCE` pone el hueco a cero: lo que no se puede
+ * valorar no se cobra, que es lo mismo que hace `readProgression` al traducir
+ * el saldo para el cliente.
+ */
+function spentExpression(): { sql: string; parameters: readonly unknown[] } {
+  const entries = Object.entries(SHOP_CATALOG);
+  const sql = `COALESCE(SUM(CASE id ${entries.map(() => 'WHEN ? THEN ?').join(' ')} END), 0)`;
+  const parameters = entries.flatMap(([id, price]) => [id, price]);
+  return { sql, parameters };
+}
+
+/**
+ * Compra un objeto con una sola sentencia. `true` si esta llamada escribió la fila.
+ *
+ * La comprobación de saldo y la escritura son la misma sentencia, y esa es
+ * toda la defensa contra el doble gasto. Un `SELECT` de saldo seguido de un
+ * `INSERT` serían dos sentencias con una brecha entre las dos: en esa brecha
+ * caben otras peticiones, y las dos leerían el mismo saldo antes de escribir
+ * ninguna. Aquí no hay brecha porque SQLite ejecuta cada sentencia de forma
+ * atómica, tanto en las pruebas con `node:sqlite` como en D1.
+ *
+ * La idempotencia la pone la clave primaria. `OR IGNORE` convierte el choque de
+ * una repetición en un «no escrito nada», y `RETURNING id` distingue los tres
+ * casos sin otra consulta: fila escrita (`true`), fila ya puesta (`false`) y
+ * saldo insuficiente (`false`).
+ *
+ * Un id fuera del catálogo no escribe nada y devuelve `false`: quien llama es
+ * quien decide qué respuesta le corresponde a esa situación, porque aquí no hay
+ * HTTP ni códigos de estado.
+ */
+export async function purchaseObject(
+  database: Database,
+  playerId: string,
+  objectId: string,
+): Promise<boolean> {
+  const price = priceOf(objectId);
+  if (price === null) {
+    return false;
+  }
+
+  const spent = spentExpression();
+  const row = await database.first<{ id: string }>(
+    `INSERT OR IGNORE INTO player_unlocks (player_id, kind, id, obtained_at)
+     SELECT ?, 'objeto', ?, ?
+      WHERE (SELECT count(*) FROM player_unlocks WHERE player_id = ? AND kind = 'moneda')
+          - (SELECT ${spent.sql} FROM player_unlocks WHERE player_id = ? AND kind = 'objeto')
+            >= ?
+      RETURNING id`,
+    [
+      playerId,
+      objectId,
+      Date.now(),
+      playerId,
+      ...spent.parameters,
+      playerId,
+      price,
+    ],
+  );
+  return row !== null;
+}
+
+/**
  * Lee la colección entera de una cuenta.
  *
  * El orden sale de la consulta, no de JavaScript: `ORDER BY` sobre las dos
  * columnas deja cada colección ordenada y estable, que es lo que hace que la
  * respuesta pueda compararse de una carga a otra.
+ *
+ * El saldo restante se calcula aquí y no se guarda en ninguna parte: monedas
+ * ganadas menos los precios de los objetos comprados. La resta no puede salir
+ * por debajo de cero por el único camino que escribe objetos —`purchaseObject`
+ * exige el precio completo en la misma sentencia que inserta—, así que un saldo
+ * negativo solo podría venir de una fila escrita a mano, fuera de la ruta de la
+ * tienda.
  */
 export async function readProgression(
   database: Database,
@@ -286,9 +402,17 @@ export async function readProgression(
     [playerId],
   );
 
+  const coins = rows.filter((row) => row.kind === 'moneda').length;
+  const objects = rows
+    .filter((row) => row.kind === 'objeto')
+    .map((row) => row.id);
+  const spent = objects.reduce((total, id) => total + (priceOf(id) ?? 0), 0);
+
   return {
-    coins: rows.filter((row) => row.kind === 'moneda').length,
+    coins,
     unlocks: rows.filter((row) => row.kind === 'personaje').map((row) => row.id),
     achievements: rows.filter((row) => row.kind === 'logro').map((row) => row.id),
+    objects,
+    balance: coins - spent,
   };
 }

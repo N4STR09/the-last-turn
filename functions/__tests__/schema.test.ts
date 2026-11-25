@@ -194,7 +194,7 @@ describe('la tabla de desbloqueos', () => {
       .run('jugador-1', kind, id);
   }
 
-  it.each(['moneda', 'personaje', 'logro'])('acepta el tipo %s', (kind) => {
+  it.each(['moneda', 'personaje', 'logro', 'objeto'])('acepta el tipo %s', (kind) => {
     expect(() => unlock(kind, `${kind}-1`)).not.toThrow();
   });
 

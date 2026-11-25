@@ -1,5 +1,6 @@
 import { AccountPanel } from '../components/AccountPanel';
 import { AppButton } from '../components/AppButton';
+import { ShopPanel } from '../components/ShopPanel';
 
 export interface StartScreenProps {
   readonly onBegin: () => void;
@@ -40,6 +41,13 @@ export function StartScreen({ onBegin, onSessionChange }: StartScreenProps) {
           * aquí abajo y llega hasta esa misma marca, sin tocar la pantalla.
           */}
         <AccountPanel onSessionChange={onSessionChange} />
+        {/*
+          * La tienda va debajo de la cuenta y no en otra pantalla: compra con
+          * el saldo que la misma sesión acaba de traer, así que el sitio donde
+          * se entra y se sale es también el sitio donde se gasta. Como
+          * `AccountPanel`, sin cuentas no pinta nada ni hace ninguna petición.
+          */}
+        <ShopPanel />
       </section>
     </main>
   );

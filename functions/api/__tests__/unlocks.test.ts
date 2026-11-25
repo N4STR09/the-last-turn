@@ -81,6 +81,8 @@ describe('GET /api/unlocks', () => {
       coins: 0,
       unlocks: [],
       achievements: [],
+      balance: 0,
+      objects: [],
     });
   });
 
@@ -95,6 +97,8 @@ describe('GET /api/unlocks', () => {
       coins: 2,
       unlocks: ['explorador'],
       achievements: ['primera-partida'],
+      balance: 2,
+      objects: [],
     });
   });
 
@@ -113,6 +117,8 @@ describe('GET /api/unlocks', () => {
       coins: 2,
       unlocks: ['explorador'],
       achievements: ['primera-partida'],
+      balance: 2,
+      objects: [],
     });
   });
 
@@ -130,6 +136,8 @@ describe('GET /api/unlocks', () => {
       coins: 0,
       unlocks: [],
       achievements: [],
+      balance: 0,
+      objects: [],
     });
   });
 
