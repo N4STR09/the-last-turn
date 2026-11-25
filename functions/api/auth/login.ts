@@ -46,14 +46,14 @@ interface LoginBody {
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (!isSameOrigin(request)) {
-    return errorResponse('No se puede hacer esta peticion desde aqui.', 403);
+    return errorResponse('No se puede hacer esta petición desde aquí.', 403);
   }
 
   let body: LoginBody;
   try {
     body = (await request.json()) as LoginBody;
   } catch {
-    return errorResponse('El cuerpo de la peticion no es valido.', 400);
+    return errorResponse('El cuerpo de la petición no es válido.', 400);
   }
 
   const email = typeof body.email === 'string' ? body.email : '';

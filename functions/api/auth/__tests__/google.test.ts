@@ -157,7 +157,7 @@ describe('POST /api/auth/google', () => {
 
       expect(respuesta.status).toBe(503);
       expect(await respuesta.json()).toEqual({
-        error: 'El acceso con Google no esta configurado.',
+        error: 'El acceso con Google no está configurado.',
       });
     }
   });
@@ -169,7 +169,7 @@ describe('POST /api/auth/google', () => {
 
     expect(respuesta.status).toBe(400);
     expect(await respuesta.json()).toEqual({
-      error: 'El cuerpo de la peticion no es valido.',
+      error: 'El cuerpo de la petición no es válido.',
     });
   });
 
@@ -206,7 +206,7 @@ describe('POST /api/auth/google', () => {
 
     expect(respuesta.status).toBe(401);
     expect(await respuesta.json()).toEqual({
-      error: 'Google no ha confirmado la direccion de correo de esta cuenta.',
+      error: 'Google no ha confirmado la dirección de correo de esta cuenta.',
     });
   });
 
@@ -219,7 +219,7 @@ describe('POST /api/auth/google', () => {
 
     expect(respuesta.status).toBe(401);
     expect(await respuesta.json()).toEqual({
-      error: 'Google no ha devuelto una direccion de correo valida.',
+      error: 'Google no ha devuelto una dirección de correo válida.',
     });
     expect(cookieDe(respuesta)).toBeNull();
   });
@@ -265,7 +265,7 @@ describe('POST /api/auth/google', () => {
     expect(respuesta.status).toBe(409);
     expect(await respuesta.json()).toEqual({
       error:
-        'Ya hay una cuenta con este correo y no se puede abrir con Google. Entra con tu contrasena.',
+        'Ya hay una cuenta con este correo y no se puede abrir con Google. Entra con tu contraseña.',
     });
     expect(cookieDe(respuesta)).toBeNull();
     const fila = sqlite.prepare('SELECT google_subject FROM players').get() as

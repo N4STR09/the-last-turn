@@ -95,7 +95,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
  */
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (!isSameOrigin(request)) {
-    return errorResponse('No se puede hacer esta peticion desde aqui.', 403);
+    return errorResponse('No se puede hacer esta petición desde aquí.', 403);
   }
 
   const database = bindD1(env.DB);
@@ -106,25 +106,25 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   // para un token nulo—, pero el compilador no lo sabe, y comprobarlo junto
   // aqui es lo que evita una asignacion forzada mas abajo.
   if (player === null || token === null) {
-    return errorResponse('Inicia sesion para guardar tus estadisticas.', 401);
+    return errorResponse('Inicia sesión para guardar tus estadísticas.', 401);
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return errorResponse('El cuerpo de la peticion no es valido.', 400);
+    return errorResponse('El cuerpo de la petición no es válido.', 400);
   }
 
   const report = parseGameReport(body);
   if (report === null) {
-    return errorResponse('El cuerpo de la peticion no es valido.', 400);
+    return errorResponse('El cuerpo de la petición no es válido.', 400);
   }
 
   const bucket = await reportBucket(token);
   if (!(await withinReportBudget(database, bucket))) {
     return errorResponse(
-      'Demasiadas partidas en poco tiempo. Intentalo mas tarde.',
+      'Demasiadas partidas en poco tiempo. Inténtalo más tarde.',
       429,
     );
   }

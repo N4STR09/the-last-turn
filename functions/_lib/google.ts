@@ -80,7 +80,7 @@ export function googleTokenMessage(failure: GoogleTokenFailure): string {
     return 'El identificador de Google ha caducado. Vuelve a intentarlo.';
   }
   if (failure === 'correo') {
-    return 'Google no ha confirmado la direccion de correo de esta cuenta.';
+    return 'Google no ha confirmado la dirección de correo de esta cuenta.';
   }
   return 'No se ha podido verificar el identificador de Google.';
 }

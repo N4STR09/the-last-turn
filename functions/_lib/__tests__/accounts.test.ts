@@ -414,7 +414,7 @@ describe('signIn', () => {
     if (!outcome.ok) {
       // El mismo mensaje que cualquier otra, porque sigue sin haber nada que
       // distinguir.
-      expect(outcome.error.message).toBe('El correo o la contrasena no coinciden.');
+      expect(outcome.error.message).toBe('El correo o la contraseña no coinciden.');
     }
   });
 });

@@ -55,7 +55,7 @@ const clavesDeGoogle = createGoogleKeySource();
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (!isSameOrigin(request)) {
-    return errorResponse('No se puede hacer esta peticion desde aqui.', 403);
+    return errorResponse('No se puede hacer esta petición desde aquí.', 403);
   }
 
   const clientId = env.GOOGLE_CLIENT_ID;
@@ -63,14 +63,14 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     // Antes de leer el cuerpo a proposito. Si el servidor no tiene cliente, el
     // problema no es lo que ha mandado quien llama, y responderle que su `credential`
     // falta o sobra learia un error de configuracion como si fuera el suyo.
-    return errorResponse('El acceso con Google no esta configurado.', 503);
+    return errorResponse('El acceso con Google no está configurado.', 503);
   }
 
   let body: GoogleBody;
   try {
     body = (await request.json()) as GoogleBody;
   } catch {
-    return errorResponse('El cuerpo de la peticion no es valido.', 400);
+    return errorResponse('El cuerpo de la petición no es válido.', 400);
   }
 
   const credential = typeof body.credential === 'string' ? body.credential : '';

@@ -175,7 +175,7 @@ cuentas de la misma persona.
 
 Un token de Google con el correo de una cuenta que ya tiene contraseña **no abre
 nada: responde 409 con el código `'cuenta'`** y el mensaje «Entra con tu
-contrasena». Enlazarlo automáticamente sería entregar la cuenta de la contraseña
+contraseña». Enlazarlo automáticamente sería entregar la cuenta de la contraseña
 a quienquiera que controle el buzón de ese correo en Google en ese momento, y
 sin sesión abierta no hay nada que demuestre que el que está delante es el
 titular.
@@ -234,7 +234,7 @@ El servidor acepta correo y contraseña desde la primera ronda —`/api/auth/reg
 y `/api/auth/login`—, pero al principio la interfaz no tenía dónde escribirlas: el
 único acceso en la pantalla de inicio era el de Google. El formulario ya vive en
 `AccountPanel`, en el mismo bloque que el botón, y por eso el 409 de Google
-—«Entra con tu contrasena»— ya apunta a algún sitio.
+—«Entra con tu contraseña»— ya apunta a algún sitio.
 
 - **Uno solo, para entrar y para crear la cuenta.** Son dos rutas y la diferencia
   es un campo; separarlas en dos pantallas obligaría a adivinar cuál quiere quien

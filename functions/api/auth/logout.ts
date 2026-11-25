@@ -28,7 +28,7 @@ interface Env {
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (!isSameOrigin(request)) {
-    return new Response('No se puede hacer esta peticion desde aqui.', {
+    return new Response('No se puede hacer esta petición desde aquí.', {
       status: 403,
       headers: { 'content-type': 'text/plain; charset=utf-8' },
     });

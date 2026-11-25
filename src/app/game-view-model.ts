@@ -360,13 +360,13 @@ function eventCopy(event: GameEvent): EventViewModel {
       return {
         type: event.type,
         headline: 'Tormenta',
-        description: 'Tu refugio ha resultado dañado por las fuertes tormentas!',
+        description: '¡Tu refugio ha resultado dañado por las fuertes tormentas!',
       };
     case 'raccoon':
       return {
         type: event.type,
         headline: 'Mapache',
-        description: 'Un mapache te ha robado tu comida!',
+        description: '¡Un mapache te ha robado tu comida!',
       };
     case 'meteorite':
       return {

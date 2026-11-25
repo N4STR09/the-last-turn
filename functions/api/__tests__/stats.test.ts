@@ -125,7 +125,7 @@ describe('POST /api/stats', () => {
 
     expect(respuesta.status).toBe(401);
     await expect(respuesta.json()).resolves.toEqual({
-      error: 'Inicia sesion para guardar tus estadisticas.',
+      error: 'Inicia sesión para guardar tus estadísticas.',
     });
   });
 
@@ -141,7 +141,7 @@ describe('POST /api/stats', () => {
 
     expect(respuesta.status).toBe(403);
     await expect(respuesta.json()).resolves.toEqual({
-      error: 'No se puede hacer esta peticion desde aqui.',
+      error: 'No se puede hacer esta petición desde aquí.',
     });
   });
 
@@ -154,7 +154,7 @@ describe('POST /api/stats', () => {
 
     expect(respuesta.status).toBe(400);
     await expect(respuesta.json()).resolves.toEqual({
-      error: 'El cuerpo de la peticion no es valido.',
+      error: 'El cuerpo de la petición no es válido.',
     });
   });
 
@@ -242,7 +242,7 @@ describe('POST /api/stats', () => {
 
     expect(fuera.status).toBe(429);
     await expect(fuera.json()).resolves.toEqual({
-      error: 'Demasiadas partidas en poco tiempo. Intentalo mas tarde.',
+      error: 'Demasiadas partidas en poco tiempo. Inténtalo más tarde.',
     });
   });
 });

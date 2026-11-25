@@ -286,7 +286,7 @@ describe('verifyGoogleIdToken', () => {
 describe('googleTokenMessage', () => {
   it('distingue lo que se arregla reintentando de lo que no', () => {
     expect(googleTokenMessage('caducado')).toMatch(/caducado/i);
-    expect(googleTokenMessage('correo')).toMatch(/confirmado la direccion/i);
+    expect(googleTokenMessage('correo')).toMatch(/confirmado la dirección/i);
   });
 
   it('dice lo mismo de todos los fallos de verificacion', () => {

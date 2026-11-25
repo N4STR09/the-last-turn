@@ -223,8 +223,12 @@ describe('createGameViewModel', () => {
 
   it('traduce los tres eventos de Agonía', () => {
     const cases = [
-      ['storm', 'Tormenta', 'Tu refugio ha resultado dañado por las fuertes tormentas!'],
-      ['raccoon', 'Mapache', 'Un mapache te ha robado tu comida!'],
+      [
+        'storm',
+        'Tormenta',
+        '¡Tu refugio ha resultado dañado por las fuertes tormentas!',
+      ],
+      ['raccoon', 'Mapache', '¡Un mapache te ha robado tu comida!'],
       ['meteorite', 'Meteorito', 'Un meteorito te golpea y te deja herido.'],
     ] as const;
 

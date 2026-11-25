@@ -124,16 +124,16 @@ export function validateCredentials(
 ): AccountOutcome<{ readonly email: string; readonly password: string }> {
   const trimmed = email.trim();
   if (!hasEmailShape(trimmed)) {
-    return failure('correo', 'El correo no parece una direccion valida.');
+    return failure('correo', 'El correo no parece una dirección válida.');
   }
   if (trimmed.length > 254) {
     return failure('correo', 'El correo es demasiado largo.');
   }
   if (password.length < MIN_PASSWORD_LENGTH) {
-    return failure('contrasena', 'La contrasena es demasiado corta.');
+    return failure('contrasena', 'La contraseña es demasiado corta.');
   }
   if (password.length > MAX_PASSWORD_LENGTH) {
-    return failure('contrasena', 'La contrasena es demasiado larga.');
+    return failure('contrasena', 'La contraseña es demasiado larga.');
   }
   return succeed({ email: normalizeEmail(trimmed), password });
 }
@@ -285,7 +285,7 @@ export async function signIn(
 
 /** El mismo fallo para todos los casos que no deben distinguirse. */
 function denied(): { ok: false; error: AccountError } {
-  return failure('credenciales', 'El correo o la contrasena no coinciden.');
+  return failure('credenciales', 'El correo o la contraseña no coinciden.');
 }
 
 /**
@@ -347,7 +347,7 @@ export async function signInWithGoogle(
 
   const email = normalizeEmail(identity.email);
   if (!hasEmailShape(email)) {
-    return failure('correo', 'Google no ha devuelto una direccion de correo valida.');
+    return failure('correo', 'Google no ha devuelto una dirección de correo válida.');
   }
 
   const byEmail = await database.first(
@@ -362,7 +362,7 @@ export async function signInWithGoogle(
   if (owner === null || normalizeEmail(owner.email) !== email) {
     return failure(
       'cuenta',
-      'Ya hay una cuenta con este correo y no se puede abrir con Google. Entra con tu contrasena.',
+      'Ya hay una cuenta con este correo y no se puede abrir con Google. Entra con tu contraseña.',
     );
   }
 

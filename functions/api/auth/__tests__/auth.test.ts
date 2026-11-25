@@ -100,7 +100,7 @@ describe('POST /api/auth/login', () => {
 
     expect(respuesta.status).toBe(401);
     expect(await respuesta.json()).toEqual({
-      error: 'El correo o la contrasena no coinciden.',
+      error: 'El correo o la contraseña no coinciden.',
     });
     // Y no pone cookie: un fallo no puede dejar una sesion puesta.
     expect(cookieDe(respuesta)).toBeNull();
@@ -237,7 +237,7 @@ describe('POST /api/auth/login', () => {
     const respuesta = await login(contexto(post('/api/auth/login', 'esto no es json', {}), env));
 
     expect(respuesta.status).toBe(400);
-    expect(await respuesta.json()).toEqual({ error: 'El cuerpo de la peticion no es valido.' });
+    expect(await respuesta.json()).toEqual({ error: 'El cuerpo de la petición no es válido.' });
   });
 
   it('rechaza una peticion de otra pagina', async () => {

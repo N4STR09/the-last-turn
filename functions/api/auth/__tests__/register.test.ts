@@ -71,7 +71,7 @@ describe('POST /api/auth/register', () => {
 
     expect(cuerpoRepetido).toBe(cuerpoAcceso);
     expect(JSON.parse(cuerpoRepetido) as { error: string }).toEqual({
-      error: 'El correo o la contrasena no coinciden.',
+      error: 'El correo o la contraseña no coinciden.',
     });
     expect(cookieDe(repetido)).toBeNull();
   });
