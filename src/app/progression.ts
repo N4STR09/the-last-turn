@@ -24,6 +24,45 @@ export interface ProgressionSummary {
   readonly achievements: readonly string[];
 }
 
+/**
+ * El nombre con el que se enseña cada personaje.
+ *
+ * Son los mismos identificadores que otorga el servidor, ya traducidos al
+ * vocabulario de la interfaz: la columna guarda la letra tal cual, porque un
+ * solo vocabulario en los dos lados es la forma de que nadie escriba `agonia`
+ * y nadie espere `agony`. Un id que no esté en el mapa —un personaje
+ * añadido mañana— se enseña tal cual en lugar de desaparecer: la colección no
+ * puede quedarse muda porque el cliente se entere tarde de un estreno.
+ */
+const CHARACTER_LABELS: Record<string, string> = {
+  explorador: 'Explorador',
+  veterano: 'Veterano',
+  insomne: 'Insomne',
+  huesped: 'Huésped',
+};
+
+/** Lo mismo para los logros, que son los que se ganan jugando. */
+const ACHIEVEMENT_LABELS: Record<string, string> = {
+  'primera-partida': 'Primera partida',
+  'turno-50': '50 turnos',
+  'turno-100': '100 turnos',
+  'agonia-50': '50 turnos en Agonía',
+};
+
+function labelFor(labels: Record<string, string>, id: string): string {
+  return labels[id] ?? id;
+}
+
+/** Cómo se enseña un personaje de la colección; sin traducir, si aún no lo hay. */
+export function characterLabel(id: string): string {
+  return labelFor(CHARACTER_LABELS, id);
+}
+
+/** Lo mismo para un logro. */
+export function achievementLabel(id: string): string {
+  return labelFor(ACHIEVEMENT_LABELS, id);
+}
+
 const UNLOCKS_URL = '/api/unlocks';
 
 function isCount(value: unknown): value is number {

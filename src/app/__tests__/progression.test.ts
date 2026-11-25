@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { fetchUnlocks } from '../progression';
+import { achievementLabel, characterLabel, fetchUnlocks } from '../progression';
 
 /**
  * La frontera de red de la colección, simulada en `fetch`.
@@ -136,5 +136,41 @@ describe('fetchUnlocks', () => {
     );
 
     await expect(fetchUnlocks()).resolves.toBeNull();
+  });
+});
+
+/**
+ * El vocabulario de la colección.
+ *
+ * Los mapas viven en `progression.ts` porque pertenecen al id que manda el
+ * servidor, no a la pantalla que lo pinta: aquí se comprueba lo único que
+ * puede fallar, que un id conocido se traduzca y que uno desconocido se
+ * enseñe tal cual en lugar de desaparecer.
+ */
+describe('el vocabulario de la colección', () => {
+  it.each([
+    ['explorador', 'Explorador'],
+    ['veterano', 'Veterano'],
+    ['insomne', 'Insomne'],
+    ['huesped', 'Huésped'],
+  ] as const)('traduce el personaje %s', (id, nombre) => {
+    expect(characterLabel(id)).toBe(nombre);
+  });
+
+  it.each([
+    ['primera-partida', 'Primera partida'],
+    ['turno-50', '50 turnos'],
+    ['turno-100', '100 turnos'],
+    ['agonia-50', '50 turnos en Agonía'],
+  ] as const)('traduce el logro %s', (id, nombre) => {
+    expect(achievementLabel(id)).toBe(nombre);
+  });
+
+  it('enseña tal cual un personaje que todavía no conoce', () => {
+    expect(characterLabel('futuro')).toBe('futuro');
+  });
+
+  it('enseña tal cual un logro que todavía no conoce', () => {
+    expect(achievementLabel('logro-nuevo')).toBe('logro-nuevo');
   });
 });

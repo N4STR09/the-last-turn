@@ -210,6 +210,7 @@ describe('AccountPanel', () => {
     await waitFor(() => expect(pintadoEn).not.toBeNull());
     expect(peticiones).toEqual([
       '/api/auth/session',
+      '/api/stats',
       '/api/unlocks',
       '/api/auth/logout',
     ]);
@@ -232,6 +233,7 @@ describe('AccountPanel', () => {
     expect(peticiones).toEqual([
       '/api/auth/session',
       '/api/auth/google',
+      '/api/stats',
       '/api/unlocks',
     ]);
     expect(cuerpos).toEqual([{ credential: 'identificador-firmado' }]);
@@ -243,7 +245,7 @@ describe('AccountPanel', () => {
       ruta === '/api/auth/google'
         ? cuerpo(409, {
             error:
-              'Ya hay una cuenta con este correo y no se puede abrir con Google. Entra con tu contrasena.',
+              'Ya hay una cuenta con este correo y no se puede abrir con Google. Entra con tu contraseña.',
           })
         : cuerpo(200, { autenticado: false });
 
@@ -602,6 +604,7 @@ describe('AccountPanel', () => {
     expect(peticiones).toEqual([
       '/api/auth/session',
       '/api/auth/login',
+      '/api/stats',
       '/api/unlocks',
     ]);
     expect(cuerpos).toEqual([{ email: CORREO, password: CONTRASENA }]);
@@ -624,6 +627,7 @@ describe('AccountPanel', () => {
     expect(peticiones).toEqual([
       '/api/auth/session',
       '/api/auth/register',
+      '/api/stats',
       '/api/unlocks',
     ]);
   });
@@ -650,14 +654,14 @@ describe('AccountPanel', () => {
     const user = userEvent.setup();
     responder = (ruta) =>
       ruta === '/api/auth/login'
-        ? cuerpo(401, { error: 'El correo o la contrasena no coinciden.' })
+        ? cuerpo(401, { error: 'El correo o la contraseña no coinciden.' })
         : cuerpo(200, { autenticado: false });
 
     render(<AccountPanel />);
     await enviarFormulario(user, 'Entrar');
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'El correo o la contrasena no coinciden.',
+      'El correo o la contraseña no coinciden.',
     );
     expect(screen.queryByText(CORREO)).toBeNull();
     expect(screen.getByLabelText('Contraseña')).toBeInTheDocument();
@@ -764,7 +768,7 @@ describe('AccountPanel', () => {
     const user = userEvent.setup();
     responder = (ruta) =>
       ruta === '/api/auth/login'
-        ? cuerpo(401, { error: 'El correo o la contrasena no coinciden.' })
+        ? cuerpo(401, { error: 'El correo o la contraseña no coinciden.' })
         : cuerpo(200, { autenticado: false });
 
     render(<AccountPanel />);
@@ -806,7 +810,11 @@ describe('AccountPanel · la colección', () => {
     render(<AccountPanel />);
 
     expect(await screen.findByText('12 monedas')).toBeInTheDocument();
-    expect(peticiones).toEqual(['/api/auth/session', '/api/unlocks']);
+    expect(peticiones).toEqual([
+      '/api/auth/session',
+      '/api/stats',
+      '/api/unlocks',
+    ]);
     expect(screen.getByText('Personajes')).toBeInTheDocument();
     expect(screen.getByText('Explorador · Insomne')).toBeInTheDocument();
     expect(screen.getByText('Logros')).toBeInTheDocument();

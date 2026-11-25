@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import { AppButton } from './AppButton';
+import { ProfilePanel } from './ProfilePanel';
 import { accountsEnabled } from '../../app/accounts';
 import {
   googleClientId,
@@ -74,35 +75,6 @@ const LOGIN_ERROR = 'No se ha podido abrir la sesión. Inténtalo otra vez.';
 const REGISTER_ERROR = 'No se ha podido crear la cuenta. Inténtalo otra vez.';
 const SIGN_OUT_ERROR = 'No se ha podido cerrar la sesión.';
 const GOOGLE_LOAD_ERROR = 'No se ha podido cargar el acceso con Google.';
-
-/**
- * El nombre con el que se enseña cada personaje.
- *
- * Son los mismos identificadores que otorga el servidor, ya traducidos al
- * vocabulario de la interfaz: la columna guarda la letra tal cual, porque un
- * solo vocabulario en los dos lados es la forma de que nadie escriba `agonia`
- * y nadie espere `agony`. Un id que no esté en el mapa —un personaje
- * añadido mañana— se enseña tal cual en lugar de desaparecer: la colección no
- * puede quedarse muda porque el cliente se entere tarde de un estreno.
- */
-const CHARACTER_LABELS: Record<string, string> = {
-  explorador: 'Explorador',
-  veterano: 'Veterano',
-  insomne: 'Insomne',
-  huesped: 'Huésped',
-};
-
-/** Lo mismo para los logros, que son los que se ganan jugando. */
-const ACHIEVEMENT_LABELS: Record<string, string> = {
-  'primera-partida': 'Primera partida',
-  'turno-50': '50 turnos',
-  'turno-100': '100 turnos',
-  'agonia-50': '50 turnos en Agonía',
-};
-
-function labelFor(labels: Record<string, string>, id: string): string {
-  return labels[id] ?? id;
-}
 
 /**
  * El correo de la sesión abierta, o `null` si no la hay.
@@ -439,39 +411,11 @@ export function AccountPanel({ onSessionChange }: AccountPanelProps) {
       hidden={state === 'cargando'}
     >
       {state === 'dentro' ? (
-        <>
-          <div className="account-panel__session">
-            <p className="account-panel__mail">{email}</p>
-            <AppButton onClick={onSignOut} variant="quiet">
-              Cerrar sesión
-            </AppButton>
-          </div>
-          {progression === null ? null : (
-            <div className="account-panel__collection">
-              <p className="account-panel__coins">
-                {progression.coins === 1
-                  ? '1 moneda'
-                  : `${progression.coins} monedas`}
-              </p>
-              {progression.unlocks.length > 0 ? (
-                <p className="account-panel__line">
-                  <span className="account-panel__key">Personajes</span>{' '}
-                  {progression.unlocks
-                    .map((id) => labelFor(CHARACTER_LABELS, id))
-                    .join(' · ')}
-                </p>
-              ) : null}
-              {progression.achievements.length > 0 ? (
-                <p className="account-panel__line">
-                  <span className="account-panel__key">Logros</span>{' '}
-                  {progression.achievements
-                    .map((id) => labelFor(ACHIEVEMENT_LABELS, id))
-                    .join(' · ')}
-                </p>
-              ) : null}
-            </div>
-          )}
-        </>
+        <ProfilePanel
+          email={email!}
+          progression={progression}
+          onSignOut={onSignOut}
+        />
       ) : (
         <form
           className="account-panel__form"
